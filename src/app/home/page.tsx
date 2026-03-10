@@ -52,10 +52,11 @@ export default function HomePage() {
   const progress = profile ? levelProgress(profile.totalXP) : 0;
 
   useEffect(() => {
+    if (!user) return;
     fetchAdminConfig().then((data) => {
       if (data) setAdminConfig(data as AdminConfig);
     }).catch((e) => console.error("Failed to fetch admin config:", e));
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -99,14 +100,14 @@ export default function HomePage() {
 
   // FCM: listen for foreground messages
   useEffect(() => {
+    if (!user) return;
     return onFCMMessage((payload: unknown) => {
       const p = payload as { notification?: { title?: string; body?: string } };
       if (p.notification?.title) {
-        // Show as a simple alert for foreground messages
         alert(`${p.notification.title}\n${p.notification.body || ""}`);
       }
     });
-  }, []);
+  }, [user]);
 
   const handleEnableNotifications = async () => {
     if (!user) return;
