@@ -45,6 +45,22 @@ const AuthContext = createContext<AuthContextType>({
   refreshFollowing: async () => {},
 });
 
+async function fetchProfileWithRetry(uid: string, retries = 3): Promise<UserProfile | null> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const snap = await getDoc(doc(db, "users", uid));
+      if (snap.exists()) return snap.data() as UserProfile;
+      return null;
+    } catch (e) {
+      console.warn(`Profile fetch attempt ${i + 1} failed:`, e);
+      if (i < retries - 1) {
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      }
+    }
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -52,17 +68,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (uid: string) => {
-    const snap = await getDoc(doc(db, "users", uid));
-    if (snap.exists()) {
-      setProfile(snap.data() as UserProfile);
-    } else {
-      setProfile(null);
-    }
+    const data = await fetchProfileWithRetry(uid);
+    setProfile(data);
   };
 
   const fetchFollowing = async (uid: string) => {
-    const ids = await getFollowingIds(uid);
-    setFollowing(ids);
+    try {
+      const ids = await getFollowingIds(uid);
+      setFollowing(ids);
+    } catch {
+      setFollowing([]);
+    }
   };
 
   const refreshProfile = async () => {
@@ -80,22 +96,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Validate auth token first
         try {
-          // Ensure auth token is fresh before Firestore requests
           await firebaseUser.getIdToken(true);
-          await Promise.all([
-            fetchProfile(firebaseUser.uid),
-            fetchFollowing(firebaseUser.uid),
-          ]);
-          setUser(firebaseUser);
-        } catch (e) {
-          console.error("Failed to fetch user data, signing out:", e);
-          // Stale session or permission error — clear auth state
+        } catch {
+          // Token is truly invalid — sign out
+          console.error("Auth token invalid, signing out");
           await signOut(auth);
           setUser(null);
           setProfile(null);
           setFollowing([]);
+          setLoading(false);
+          return;
         }
+
+        // Auth is valid — set user immediately
+        setUser(firebaseUser);
+
+        // Fetch profile/following (may fail on first attempt, retries built in)
+        await Promise.all([
+          fetchProfile(firebaseUser.uid),
+          fetchFollowing(firebaseUser.uid),
+        ]);
       } else {
         setUser(null);
         setProfile(null);
