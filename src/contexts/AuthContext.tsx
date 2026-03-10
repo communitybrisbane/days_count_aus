@@ -81,10 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        await Promise.all([
-          fetchProfile(firebaseUser.uid),
-          fetchFollowing(firebaseUser.uid),
-        ]);
+        try {
+          await Promise.all([
+            fetchProfile(firebaseUser.uid),
+            fetchFollowing(firebaseUser.uid),
+          ]);
+        } catch (e) {
+          console.error("Failed to fetch user data:", e);
+        }
       } else {
         setProfile(null);
         setFollowing([]);
