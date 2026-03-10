@@ -36,6 +36,22 @@ yarn-error.log*
 # vercel
 .vercel
 
+# PWA
+public/sw.js
+public/workbox-*.js
+public/sw.js.map
+public/workbox-*.js.map
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code
+.claude/
+
+# firebase functions
+functions/node_modules/
+functions/lib/
+
+# service account keys
+sa-key.json

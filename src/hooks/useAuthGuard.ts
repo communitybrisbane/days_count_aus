@@ -1,10 +1,12 @@
-"use client";
-
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function RootPage() {
+interface AuthGuardOptions {
+  requireProfile?: boolean;
+}
+
+export function useAuthGuard({ requireProfile = true }: AuthGuardOptions = {}) {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
 
@@ -12,16 +14,12 @@ export default function RootPage() {
     if (loading) return;
     if (!user) {
       router.replace("/login");
-    } else if (!profile) {
-      router.replace("/onboarding");
-    } else {
-      router.replace("/home");
+      return;
     }
-  }, [user, profile, loading, router]);
+    if (requireProfile && !profile) {
+      router.replace("/onboarding");
+    }
+  }, [user, profile, loading, router, requireProfile]);
 
-  return (
-    <div className="flex items-center justify-center min-h-dvh">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aussie-gold" />
-    </div>
-  );
+  return { user, profile, loading };
 }

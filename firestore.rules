@@ -1,0 +1,133 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+
+      // Own update: anything
+      allow update: if request.auth != null && request.auth.uid == userId;
+
+      // Other user update: only XP/like-related fields (from like system)
+      allow update: if request.auth != null
+                     && request.auth.uid != userId
+                     && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['totalXP', 'dailyLikeCount', 'lastLikeDate']);
+
+      // Following subcollection
+      match /following/{targetId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Posts
+    match /posts/{postId} {
+      // Read: active posts, or own posts regardless of status
+      allow read: if request.auth != null
+                   && (resource.data.status == 'active'
+                       || resource.data.userId == request.auth.uid);
+
+      // Create: authenticated, own post, content 1-500 chars, status must be 'active'
+      allow create: if request.auth != null
+                     && request.resource.data.userId == request.auth.uid
+                     && request.resource.data.content is string
+                     && request.resource.data.content.size() >= 1
+                     && request.resource.data.content.size() <= 500
+                     && request.resource.data.status == 'active'
+                     && request.resource.data.reportCount == 0;
+
+      // Update by owner: editable fields within time limit, or likeCount/imageUrl anytime
+      allow update: if request.auth != null
+                     && resource.data.userId == request.auth.uid
+                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'reportCount'])
+                     && (request.time < resource.data.editableUntil
+                         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'imageUrl']));
+
+      // Update by others: likeCount OR reportCount changes
+      allow update: if request.auth != null
+                     && resource.data.userId != request.auth.uid
+                     && (
+                       // Case 1: likeCount only
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount'])
+                       ||
+                       // Case 2: increment reportCount only
+                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount'])
+                        && request.resource.data.reportCount == resource.data.reportCount + 1)
+                       ||
+                       // Case 3: increment reportCount + auto-hide when reaching threshold
+                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'status'])
+                        && request.resource.data.reportCount == resource.data.reportCount + 1
+                        && request.resource.data.reportCount >= 3
+                        && request.resource.data.status == 'hidden')
+                     );
+
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Likes subcollection
+      match /likes/{likeId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && request.auth.uid == likeId
+                       && resource == null;
+        allow delete: if request.auth != null && request.auth.uid == likeId;
+      }
+
+      // Post reports subcollection (prevent duplicate reports per user)
+      match /reports/{reporterId} {
+        allow read: if false;
+        allow create: if request.auth != null
+                       && request.auth.uid == reporterId
+                       && resource == null;
+      }
+    }
+
+    // Groups
+    match /groups/{groupId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+                     && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+        allow create: if request.auth != null
+                      && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() >= 1
+                      && request.resource.data.text.size() <= 100;
+        allow update: if request.auth != null
+                      && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+      }
+    }
+
+    // Reports
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read: if false;
+    }
+
+    // Admin config
+    match /admin_config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Banners
+    match /banners/{bannerId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Moderation config (banned words etc.)
+    match /moderation_config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
