@@ -8,7 +8,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { getDayCount, formatDayCount, calculateLevel, levelProgress } from "@/lib/utils";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
 import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
-import { requestFCMToken, onFCMMessage } from "@/lib/firebase";
+import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
