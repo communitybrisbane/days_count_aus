@@ -6,8 +6,6 @@ export interface Post {
   mode: string;
   imageUrl: string;
   content: string;
-  contentFun?: string;
-  contentGrowth?: string;
   phase: string;
   dayNumber: number;
   likeCount: number;
@@ -30,6 +28,9 @@ export interface Group {
   iconUrl?: string;
   goal?: string;
   password?: string;
+  lastMessageAt?: Timestamp;
+  lastMessageText?: string;
+  lastMessageBy?: string;
 }
 
 export interface UserProfile {
@@ -41,4 +42,15 @@ export interface UserProfile {
   region: string;
   goal: string;
   currentStreak?: number;
+  status?: "pre-departure" | "in-australia" | "post-return";
+  departureDate?: string;
+  returnStartDate?: string;
+  isPro?: boolean;
+  dailyLikeCount?: number;
+  lastLikeDate?: string;
+  weeklyGoal?: number;
+  blockedUsers?: string[];
+  groupIds?: string[];
+  lastPostAt?: string;
+  createdAt?: Timestamp;
 }

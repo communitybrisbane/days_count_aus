@@ -6,7 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import Avatar from "@/components/Avatar";
 import { IconHome, IconDiary, IconCamera, IconGroup } from "@/components/icons";
 
-export default function BottomNav() {
+interface BottomNavProps {
+  onExploreClick?: () => void;
+  onMyClick?: () => void;
+}
+
+export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps = {}) {
   const pathname = usePathname();
   const { profile, user } = useAuth();
 
@@ -22,9 +27,15 @@ export default function BottomNav() {
         </Link>
 
         {/* EXPLORE */}
-        <Link href="/explore" className="flex items-center justify-center w-12 h-12">
-          <IconDiary size={24} className={isActive("/explore") ? "text-aussie-gold" : "text-gray-400"} />
-        </Link>
+        {onExploreClick ? (
+          <button onClick={onExploreClick} className="flex items-center justify-center w-12 h-12">
+            <IconDiary size={24} className="text-aussie-gold" />
+          </button>
+        ) : (
+          <Link href="/explore" className="flex items-center justify-center w-12 h-12">
+            <IconDiary size={24} className={isActive("/explore") ? "text-aussie-gold" : "text-gray-400"} />
+          </Link>
+        )}
 
         {/* POST — center floating */}
         <Link href="/post" className="flex items-center justify-center -mt-6">
@@ -43,16 +54,29 @@ export default function BottomNav() {
         </Link>
 
         {/* MY */}
-        <Link href="/mypage" className="flex items-center justify-center w-12 h-12">
-          <div className={`rounded-full ${isActive("/mypage") ? "ring-2 ring-aussie-gold" : ""}`}>
-            <Avatar
-              photoURL={profile?.photoURL}
-              displayName={profile?.displayName || "?"}
-              uid={user?.uid || ""}
-              size={26}
-            />
-          </div>
-        </Link>
+        {onMyClick ? (
+          <button onClick={onMyClick} className="flex items-center justify-center w-12 h-12">
+            <div className="rounded-full ring-2 ring-aussie-gold">
+              <Avatar
+                photoURL={profile?.photoURL}
+                displayName={profile?.displayName || "?"}
+                uid={user?.uid || ""}
+                size={26}
+              />
+            </div>
+          </button>
+        ) : (
+          <Link href="/mypage" className="flex items-center justify-center w-12 h-12">
+            <div className={`rounded-full ${isActive("/mypage") ? "ring-2 ring-aussie-gold" : ""}`}>
+              <Avatar
+                photoURL={profile?.photoURL}
+                displayName={profile?.displayName || "?"}
+                uid={user?.uid || ""}
+                size={26}
+              />
+            </div>
+          </Link>
+        )}
       </div>
     </nav>
   );

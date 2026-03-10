@@ -5,27 +5,7 @@ import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { getFollowingIds } from "@/lib/follow";
-
-export interface UserProfile {
-  uid: string;
-  displayName: string;
-  photoURL: string;
-  status: "pre-departure" | "in-australia" | "post-return";
-  totalXP: number;
-  currentStreak: number;
-  lastPostAt: string;
-  departureDate: string;
-  returnStartDate: string;
-  mainMode: string;
-  region: string;
-  goal: string;
-  isPro: boolean;
-  dailyLikeCount: number;
-  lastLikeDate: string;
-  blockedUsers: string[];
-  groupIds: string[];
-  createdAt: unknown;
-}
+import type { UserProfile } from "@/types";
 
 interface AuthContextType {
   user: User | null;

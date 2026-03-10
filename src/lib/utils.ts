@@ -1,3 +1,9 @@
+/** Today's date as YYYY-MM-DD string */
+export function getTodayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /** Generate a deterministic color from a UID string */
 export function uidToColor(uid: string): string {
   let hash = 0;
@@ -35,31 +41,33 @@ export function levelProgress(totalXP: number): number {
 export function getDayCount(
   status: string,
   departureDate: string,
-  returnStartDate?: string
+  returnStartDate?: string,
+  createdAt?: Date | null
 ): { label: string; number: number } {
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const now = new Date(getTodayStr() + "T00:00:00");
 
   if (status === "pre-departure") {
+    if (!departureDate) return { label: "D", number: 0 };
     const dep = new Date(departureDate + "T00:00:00");
-    const now = new Date(todayStr + "T00:00:00");
-    const diff = Math.ceil((dep.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return { label: "D", number: -diff };
+    const diffDays = Math.ceil((dep.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    // 出発前: D-○日
+    if (diffDays > 0) return { label: "D", number: -diffDays };
+    // 出発日を過ぎたら自動的に D+ カウント（実質 In AUS と同じ計算）
+    const passed = Math.floor((now.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return { label: "D", number: passed };
   }
 
   if (status === "in-australia") {
     const dep = new Date(departureDate + "T00:00:00");
-    const now = new Date(todayStr + "T00:00:00");
     const diff = Math.floor((now.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     return { label: "D", number: diff };
   }
 
-  // post-return
-  if (returnStartDate) {
-    const ret = new Date(returnStartDate + "T00:00:00");
-    const now = new Date(todayStr + "T00:00:00");
-    const diff = Math.floor((now.getTime() - ret.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return { label: "R", number: diff };
+  // post-return: count from app start date (createdAt)
+  if (createdAt) {
+    const start = new Date(createdAt.toISOString().slice(0, 10) + "T00:00:00");
+    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return { label: "D", number: diff };
   }
 
   return { label: "D", number: 0 };

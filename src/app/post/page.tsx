@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS } from "@/lib/constants";
 import { getDayCount, calculateLevel } from "@/lib/utils";
 import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord } from "@/lib/services/posts";
 import ImageCropper from "@/components/ImageCropper";
@@ -12,9 +12,8 @@ import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
-import { IconCamera, IconGlobe, IconLock, IconBoomerang, FocusModeIcon } from "@/components/icons";
-
-type Step = 1 | 2 | 3 | 4;
+import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconHeart, FocusModeIcon } from "@/components/icons";
+import Avatar from "@/components/Avatar";
 
 export default function PostPage() {
   const { user, profile, loading } = useAuthGuard();
@@ -22,8 +21,8 @@ export default function PostPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep] = useState<Step>(1);
-  const [mode, setMode] = useState("");
+  const [step, setStep] = useState<1 | 2>(1);
+  const [mode, setMode] = useState(profile?.mainMode || "");
   const [content, setContent] = useState("");
   const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -35,10 +34,20 @@ export default function PostPage() {
   const [levelUpTo, setLevelUpTo] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
 
+  const createdAtDate = useMemo(() => {
+    const ca = profile?.createdAt as { toDate?: () => Date } | undefined;
+    return ca?.toDate?.() ?? null;
+  }, [profile]);
+
   const dayCount = useMemo(() => {
     if (!profile) return { label: "D", number: 0 };
-    return getDayCount(profile.status, profile.departureDate, profile.returnStartDate);
-  }, [profile]);
+    return getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
+  }, [profile, createdAtDate]);
+
+  // Set default mode from profile.mainMode once loaded
+  useEffect(() => {
+    if (profile?.mainMode && !mode) setMode(profile.mainMode);
+  }, [profile, mode]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -52,8 +61,6 @@ export default function PostPage() {
     setImageBlob(blob);
     setImagePreview(URL.createObjectURL(blob));
     setCropSrc("");
-    // Auto-advance to step 2 after cropping
-    setStep(2);
   };
 
   const handleSubmit = async () => {
@@ -61,7 +68,6 @@ export default function PostPage() {
 
     setSubmitting(true);
     try {
-      // Pre-submission banned word check
       const bannedWords = await getBannedWords();
       const matched = containsBannedWord(content.trim(), bannedWords);
       if (matched) {
@@ -76,7 +82,7 @@ export default function PostPage() {
         userId: user.uid,
         mode,
         content: content.trim(),
-        phase: profile.status,
+        phase: profile.status || "pre-departure",
         dayNumber: dayCount.number,
         visibility,
         imageBlob,
@@ -92,15 +98,13 @@ export default function PostPage() {
         const lastPostDate = new Date(profile.lastPostAt);
         const lastPostStr = lastPostDate.toISOString().slice(0, 10);
         if (lastPostStr === todayStr) {
-          // Same day — keep current streak
-          newStreak = profile.currentStreak;
+          newStreak = profile.currentStreak ?? 1;
         } else {
           const yesterday = new Date(now);
           yesterday.setDate(yesterday.getDate() - 1);
           const yesterdayStr = yesterday.toISOString().slice(0, 10);
           if (lastPostStr === yesterdayStr) {
-            // Consecutive day
-            newStreak = profile.currentStreak + 1;
+            newStreak = (profile.currentStreak ?? 0) + 1;
           }
         }
       }
@@ -110,18 +114,14 @@ export default function PostPage() {
       }
 
       const prevLevel = calculateLevel(profile.totalXP);
-
       await updateUserXPAndStreak(user.uid, xpGain, newStreak);
-
       await refreshProfile();
 
-      // Show XP toast
       setXpGained(xpGain);
       setShowXP(true);
 
       const newLevel = calculateLevel(profile.totalXP + xpGain);
       if (newLevel > prevLevel) {
-        // Show level up after XP toast
         setTimeout(() => {
           setShowXP(false);
           setLevelUpTo(newLevel);
@@ -144,8 +144,9 @@ export default function PostPage() {
     return <LoadingSpinner fullScreen />;
   }
 
-  const canGoStep3 = !!mode;
-  const canGoStep4 = !!content.trim();
+  const modeInfo = FOCUS_MODES.find((m) => m.id === mode);
+  const gradientIdx = mode ? FOCUS_MODES.findIndex((m) => m.id === mode) : 0;
+  const gradient = GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0];
 
   return (
     <div className="min-h-dvh pb-20 flex flex-col">
@@ -164,9 +165,9 @@ export default function PostPage() {
       )}
 
       {/* Progress bar */}
-      <div className="px-5 pt-4 pb-2">
+      <div className="px-5 pt-2 pb-1">
         <div className="flex items-center gap-1.5">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2].map((s) => (
             <div
               key={s}
               className={`h-1 flex-1 rounded-full transition-all duration-300 ${
@@ -176,47 +177,19 @@ export default function PostPage() {
           ))}
         </div>
         <div className="flex justify-between mt-1.5">
-          <span className="text-[10px] text-gray-400">Photo</span>
-          <span className="text-[10px] text-gray-400">Mode</span>
-          <span className="text-[10px] text-gray-400">Diary</span>
-          <span className="text-[10px] text-gray-400">Post</span>
+          <span className="text-[10px] text-gray-400">Setup</span>
+          <span className="text-[10px] text-gray-400">Diary & Post</span>
         </div>
       </div>
 
-      {/* Step container with slide animation */}
-      <div className="flex-1 relative overflow-hidden">
-        {/* STEP 1: Photo */}
+      <div className="flex-1 relative overflow-hidden min-h-0 flex flex-col">
+        {/* ===== STEP 1: Photo + Mode + Visibility（一画面に収める） ===== */}
         <div
-          className={`absolute inset-0 px-5 pt-4 transition-all duration-300 ease-out ${
+          className={`absolute inset-0 px-5 pt-2 flex flex-col min-h-0 transition-all duration-300 ease-out ${
             step === 1 ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
           }`}
+          style={{ scrollbarWidth: "none", overflow: "hidden" }}
         >
-          <h2 className="text-xl font-bold mb-1">Pick a photo</h2>
-          <p className="text-sm text-gray-400 mb-5">Square crop for your daily log</p>
-
-          {imagePreview ? (
-            <div className="relative">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full aspect-square object-cover rounded-2xl"
-              />
-              <button
-                onClick={() => { setImageBlob(null); setImagePreview(""); }}
-                className="absolute top-3 right-3 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm"
-              >
-                ×
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 active:border-aussie-gold active:text-aussie-gold transition-colors"
-            >
-              <IconCamera size={40} className="text-gray-400 mb-2" />
-              <span className="text-sm">Tap to select photo</span>
-            </button>
-          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -225,174 +198,148 @@ export default function PostPage() {
             className="hidden"
           />
 
-          <div className="flex gap-3 mt-5">
-            <button
-              onClick={() => setStep(2)}
-              className="flex-1 py-3 text-sm text-gray-500 border border-gray-200 rounded-xl active:scale-[0.98]"
-            >
-              Skip photo
-            </button>
-            {imagePreview && (
-              <button
-                onClick={() => setStep(2)}
-                className="flex-1 py-3 text-sm font-bold text-white bg-aussie-gold rounded-xl active:scale-[0.98]"
-              >
-                Next →
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* STEP 2: Focus Mode */}
-        <div
-          className={`absolute inset-0 px-5 pt-4 transition-all duration-300 ease-out ${
-            step === 2 ? "translate-x-0 opacity-100"
-              : step < 2 ? "translate-x-full opacity-0"
-              : "-translate-x-full opacity-0"
-          }`}
-        >
-          <h2 className="text-xl font-bold mb-1">Focus mode</h2>
-          <p className="text-sm text-gray-400 mb-5">What did you focus on today?</p>
-
-          <div className="grid grid-cols-2 gap-3">
+          {/* Mode selection */}
+          <p className="text-xs font-bold text-gray-500 mb-1">Focus Mode</p>
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
             {FOCUS_MODES.map((m) => (
               <button
                 key={m.id}
-                onClick={() => { setMode(m.id); setStep(3); }}
-                className={`flex flex-col items-center py-5 rounded-2xl border-2 transition-all active:scale-[0.97] ${
+                onClick={() => setMode(m.id)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full border-2 whitespace-nowrap transition-all active:scale-[0.97] ${
                   mode === m.id
-                    ? "border-aussie-gold bg-amber-50 shadow-sm"
+                    ? "border-aussie-gold bg-amber-50"
                     : "border-gray-100 bg-gray-50"
                 }`}
               >
-                <FocusModeIcon modeId={m.id} size={30} className="mb-1" />
-                <span className="text-sm font-medium text-gray-700">{m.label}</span>
-                <span className="text-[10px] text-gray-400 mt-0.5">{m.description}</span>
+                <FocusModeIcon modeId={m.id} size={16} />
+                <span className="text-xs font-medium text-gray-700">{m.label}</span>
               </button>
             ))}
           </div>
 
-          <button
-            onClick={() => setStep(1)}
-            className="mt-4 text-sm text-gray-400 active:text-gray-600"
-          >
-            ← Back
-          </button>
-        </div>
-
-        {/* STEP 3: Diary */}
-        <div
-          className={`absolute inset-0 px-5 pt-4 transition-all duration-300 ease-out flex flex-col ${
-            step === 3 ? "translate-x-0 opacity-100"
-              : step < 3 ? "translate-x-full opacity-0"
-              : "-translate-x-full opacity-0"
-          }`}
-        >
-          <h2 className="text-xl font-bold mb-1">Write your diary</h2>
-          <p className="text-sm text-gray-400 mb-4">Today&apos;s log</p>
-
-          <div className="mb-3">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value.replace(/[^\x20-\x7E\n]/g, ""))}
-              maxLength={400}
-              rows={6}
-              placeholder="What happened today?"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold resize-none"
-            />
-            <p className="text-[10px] text-gray-300 text-right">{content.length}/400</p>
-          </div>
-
-          <div className="flex gap-3 mt-auto pb-2">
-            <button
-              onClick={() => setStep(2)}
-              className="py-3 px-5 text-sm text-gray-500 border border-gray-200 rounded-xl active:scale-[0.98]"
-            >
-              ← Back
-            </button>
-            <button
-              disabled={!canGoStep4}
-              onClick={() => setStep(4)}
-              className="flex-1 py-3 text-sm font-bold text-white bg-aussie-gold rounded-xl disabled:opacity-40 active:scale-[0.98]"
-            >
-              Next →
-            </button>
-          </div>
-        </div>
-
-        {/* STEP 4: Visibility + Submit */}
-        <div
-          className={`absolute inset-0 px-5 pt-4 transition-all duration-300 ease-out flex flex-col ${
-            step === 4 ? "translate-x-0 opacity-100"
-              : step < 4 ? "translate-x-full opacity-0"
-              : "-translate-x-full opacity-0"
-          }`}
-        >
-          <h2 className="text-xl font-bold mb-1">Who can see this?</h2>
-          <p className="text-sm text-gray-400 mb-5">Choose visibility for your post</p>
-
-          <div className="space-y-3 mb-6">
+          {/* Visibility toggle */}
+          <p className="text-xs font-bold text-gray-500 mt-3 mb-1">Visibility</p>
+          <div className="flex gap-1.5">
             <button
               onClick={() => setVisibility("public")}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 transition-all active:scale-[0.98] ${
                 visibility === "public"
                   ? "border-aussie-gold bg-amber-50"
                   : "border-gray-100 bg-gray-50"
               }`}
             >
-              <IconGlobe size={24} />
-              <div className="text-left">
-                <p className="font-bold text-sm">Public</p>
-                <p className="text-xs text-gray-400">Everyone can see on Explore</p>
-              </div>
+              <IconGlobe size={16} />
+              <span className="text-xs font-bold">Public</span>
             </button>
             <button
               onClick={() => setVisibility("private")}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 transition-all active:scale-[0.98] ${
                 visibility === "private"
                   ? "border-aussie-gold bg-amber-50"
                   : "border-gray-100 bg-gray-50"
               }`}
             >
-              <IconLock size={24} />
-              <div className="text-left">
-                <p className="font-bold text-sm">Only Me</p>
-                <p className="text-xs text-gray-400">Private — only you can see</p>
-              </div>
+              <IconLock size={16} />
+              <span className="text-xs font-bold">Private</span>
             </button>
           </div>
 
-          {/* Preview summary */}
-          <div className="bg-gray-50 rounded-2xl p-4 mb-4">
-            <p className="text-xs font-medium text-gray-400 mb-2">Preview</p>
-            <div className="flex items-center gap-3">
-              {imagePreview && (
-                <img src={imagePreview} alt="" className="w-12 h-12 rounded-lg object-cover" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {mode && <FocusModeIcon modeId={mode} size={14} className="inline-block align-middle mr-1" />}
-                  {FOCUS_MODES.find((m) => m.id === mode)?.label}
-                </p>
-                <p className="text-xs text-gray-400 truncate">
-                  {content}
-                </p>
+          {/* Preview card — 正方形を大きくしてフッター上の余白を減らす */}
+          <div className="mt-3 mb-2 flex-shrink-0 flex flex-col items-center">
+            <div className="w-full max-w-[300px] rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white">
+              <div className="flex items-center gap-2 p-2">
+                <Avatar
+                  photoURL={profile.photoURL}
+                  displayName={profile.displayName}
+                  uid={user?.uid || ""}
+                  size={28}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold truncate">{profile.displayName}</p>
+                  <p className="text-[10px] text-gray-400 truncate">
+                    Today · {modeInfo?.description || "..."}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {profile.region && (
+                    <span className="text-[9px] bg-ocean-blue/10 text-ocean-blue px-1.5 py-0.5 rounded-full font-medium">
+                      {profile.region}
+                    </span>
+                  )}
+                  <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-full text-gray-500">
+                    {dayCount.number > 0 ? `D+${dayCount.number}` : `D${dayCount.number}`}
+                  </span>
+                </div>
               </div>
-              <span className="text-xs text-gray-400">
-                {visibility === "public" ? <IconGlobe size={14} className="text-gray-400" /> : <IconLock size={14} className="text-gray-400" />}
-              </span>
+
+              <div className="relative cursor-pointer flex justify-center" onClick={() => fileInputRef.current?.click()}>
+                <div className="w-full aspect-square">
+                  {imagePreview ? (
+                    <div className="relative group w-full h-full">
+                      <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
+                        <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${gradient} opacity-50 flex flex-col items-center justify-center gap-2`}>
+                      <IconCamera size={20} className="text-black" />
+                      <p className="text-black text-xs font-bold">Tap to add photo (optional)</p>
+                    </div>
+                  )}
+                </div>
+                {visibility === "private" && (
+                  <div className="absolute top-1 left-1 bg-black/50 text-white rounded-full p-1">
+                    <IconLock size={10} />
+                  </div>
+                )}
+              </div>
+
+              <div className="px-2 py-1.5 flex items-center justify-between">
+                <p className="text-[10px] text-gray-400 italic truncate flex-1">Your diary text will appear here...</p>
+                <span className="text-[10px] text-gray-300 flex items-center gap-0.5 shrink-0"><IconHeart size={12} /> 0</span>
+              </div>
             </div>
           </div>
 
+          {/* Next button */}
+          <button
+            disabled={!mode}
+            onClick={() => setStep(2)}
+            className="w-full py-2.5 text-sm font-bold text-white bg-aussie-gold rounded-xl disabled:opacity-40 active:scale-[0.98] mb-2"
+          >
+            Next — Write diary →
+          </button>
+        </div>
+
+        {/* ===== STEP 2: Diary + Submit ===== */}
+        <div
+          className={`absolute inset-0 px-5 pt-2 flex flex-col transition-all duration-300 ease-out ${
+            step === 2 ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+          }`}
+        >
+          <h2 className="text-xl font-bold mb-1">Write your diary</h2>
+          <p className="text-sm text-gray-400 mb-3">Today&apos;s log — {modeInfo?.label}</p>
+
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={400}
+            rows={8}
+            placeholder="What happened today?"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold resize-none"
+          />
+          <p className="text-[10px] text-gray-300 text-right mb-3">{content.length}/400</p>
+
           <div className="flex gap-3 mt-auto pb-2">
             <button
-              onClick={() => setStep(3)}
+              onClick={() => setStep(1)}
               className="py-3 px-5 text-sm text-gray-500 border border-gray-200 rounded-xl active:scale-[0.98]"
             >
               ← Back
             </button>
             <button
-              disabled={submitting}
+              disabled={!content.trim() || submitting}
               onClick={handleSubmit}
               className="flex-1 py-3.5 text-sm font-bold text-white bg-aussie-gold rounded-xl disabled:opacity-50 active:scale-[0.98]"
             >

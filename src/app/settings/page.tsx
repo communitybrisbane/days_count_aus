@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
 import { FOCUS_MODES, REGIONS } from "@/lib/constants";
+import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
 import { uploadAvatar, deleteAccount, submitReport } from "@/lib/services/users";
@@ -104,8 +105,7 @@ export default function SettingsPage() {
 
     const updates: Record<string, unknown> = { status: newStatus };
     if (newStatus === "post-return") {
-      const today = new Date();
-      updates.returnStartDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      updates.returnStartDate = getTodayStr();
     }
 
     await updateDoc(doc(db, "users", user.uid), updates);
@@ -258,9 +258,21 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">Departure Date</label>
-              <input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold" />
+              <label className="text-xs text-gray-500">
+                {status === "in-australia" ? "Arrival Date" : "Departure Date"}
+              </label>
+              {status === "post-return" ? (
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {profile.returnStartDate || "Set to today automatically when you mark as Returned."}
+                </p>
+              ) : (
+                <input
+                  type="date"
+                  value={departureDate}
+                  onChange={(e) => setDepartureDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold"
+                />
+              )}
             </div>
 
             <div>

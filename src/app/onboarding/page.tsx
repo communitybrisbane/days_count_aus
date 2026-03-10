@@ -7,16 +7,12 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { FOCUS_MODES, REGIONS } from "@/lib/constants";
+import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup } from "@/lib/groups";
 import ImageCropper from "@/components/ImageCropper";
 
 type Phase = "pre-departure" | "in-australia" | "post-return";
-
-function getTodayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 export default function OnboardingPage() {
   const { user, profile, loading, refreshProfile } = useAuth();
@@ -152,11 +148,9 @@ export default function OnboardingPage() {
                 <span className="text-xl text-gray-400">+</span>
               </div>
             )}
-            {mainMode && (
-              <span className="absolute -bottom-0.5 -right-0.5 text-base bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-gray-100">
-                {FOCUS_MODES.find((m) => m.id === mainMode)?.icon}
-              </span>
-            )}
+            <span className="absolute -bottom-0.5 -right-0.5 text-base bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-gray-100 text-gray-600 font-medium">
+              +
+            </span>
           </button>
           <div className="flex-1">
             <input

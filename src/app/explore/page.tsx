@@ -15,11 +15,11 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, REGIONS } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { IconBoomerang, FocusModeIcon } from "@/components/icons";
+import { IconEucalyptus, FocusModeIcon, IconSearch } from "@/components/icons";
 import type { Post } from "@/types";
 
 const PAGE_SIZE = 20;
@@ -31,8 +31,14 @@ export default function ExplorePage() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [filter, setFilter] = useState<string>("");
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
+  const snapContainerRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
   const loadingRef = useRef(false);
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tapCountRef = useRef(0);
 
   const fetchPosts = useCallback(
     async (reset = false) => {
@@ -62,7 +68,7 @@ export default function ExplorePage() {
 
         if (profile?.blockedUsers?.length) {
           newPosts = newPosts.filter(
-            (p) => !profile.blockedUsers.includes(p.userId)
+            (p) => !profile.blockedUsers!.includes(p.userId)
           );
         }
 
@@ -70,6 +76,11 @@ export default function ExplorePage() {
           const followedPosts = newPosts.filter((p) => following.includes(p.userId));
           const otherPosts = newPosts.filter((p) => !following.includes(p.userId));
           newPosts = [...followedPosts, ...otherPosts];
+        }
+
+        // Client-side filter by searched user IDs
+        if (searchUserIds !== null) {
+          newPosts = newPosts.filter((p) => searchUserIds.includes(p.userId));
         }
 
         if (reset) {
@@ -87,8 +98,45 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [filter, user, profile, following]
+    [filter, user, profile, following, searchUserIds]
   );
+
+  // Search handler — city or username only
+  const handleSearch = useCallback(async (q: string) => {
+    const trimmed = q.trim().toLowerCase();
+    if (!trimmed) {
+      setSearchUserIds(null);
+      return;
+    }
+
+    const matchedRegion = REGIONS.find((r) => r.toLowerCase().includes(trimmed));
+
+    try {
+      const usersRef = collection(db, "users");
+      const [nameSnap, regionSnap] = await Promise.all([
+        getDocs(query(usersRef, where("displayName", ">=", trimmed), where("displayName", "<=", trimmed + "\uf8ff"), limit(50))),
+        matchedRegion
+          ? getDocs(query(usersRef, where("region", "==", matchedRegion), limit(50)))
+          : Promise.resolve(null),
+      ]);
+
+      const userIds = new Set<string>();
+      nameSnap.docs.forEach((d) => userIds.add(d.id));
+      regionSnap?.docs.forEach((d) => userIds.add(d.id));
+
+      setSearchUserIds(userIds.size > 0 ? Array.from(userIds) : []);
+    } catch (e) {
+      console.error("Search failed:", e);
+    }
+  }, []);
+
+  const refreshPosts = useCallback(() => {
+    setPosts([]);
+    lastDocRef.current = null;
+    setHasMore(true);
+    fetchPosts(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [fetchPosts]);
 
   useEffect(() => {
     if (user) {
@@ -115,16 +163,40 @@ export default function ExplorePage() {
 
   const handleDelete = (postId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
+    setSelectedIndex(null);
+  };
+
+  // Scroll to selected post when modal opens
+  useEffect(() => {
+    if (selectedIndex !== null && snapContainerRef.current) {
+      const target = snapContainerRef.current.children[selectedIndex] as HTMLElement;
+      if (target) target.scrollIntoView({ block: "start" });
+    }
+  }, [selectedIndex]);
+
+  // Debounced search
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSearchInput = (value: string) => {
+    setSearchQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
+  };
+
+  const handleExploreClick = () => {
+    if (selectedIndex !== null) {
+      setSelectedIndex(null);
+    } else {
+      refreshPosts();
+    }
   };
 
   return (
     <div className="min-h-dvh pb-20">
       <div className="sticky top-0 bg-white z-10 border-b border-gray-100">
-        <h1 className="text-lg font-bold p-4 pb-2">Explore</h1>
-        {/* Filter */}
-        <div className="flex gap-1 px-4 pb-3 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        {/* Filter chips */}
+        <div className="flex gap-1 px-4 pt-3 pb-2 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <button
-            onClick={() => setFilter("")}
+            onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); }}
             className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
               !filter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
             }`}
@@ -134,7 +206,7 @@ export default function ExplorePage() {
           {FOCUS_MODES.map((m) => (
             <button
               key={m.id}
-              onClick={() => setFilter(m.id)}
+              onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
               className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
                 filter === m.id
                   ? "bg-aussie-gold text-white"
@@ -145,28 +217,102 @@ export default function ExplorePage() {
             </button>
           ))}
         </div>
+        {/* Search bar */}
+        <div className="px-4 pb-2">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1.5">
+            <IconSearch size={14} className="text-gray-400 shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchInput(e.target.value)}
+              placeholder="Search by city or username..."
+              className="flex-1 bg-transparent text-xs outline-none placeholder-gray-400"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(""); setSearchUserIds(null); }}
+                className="text-gray-400 text-sm leading-none shrink-0"
+              >
+                &times;
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div>
         {posts.length === 0 && !loadingPosts && (
           <div className="text-center py-20">
-            <div className="mb-4"><IconBoomerang size={40} className="text-gray-400 mx-auto" /></div>
-            <p className="text-gray-500">Post your first entry and start counting!</p>
+            <div className="mb-4">
+              <IconEucalyptus size={40} className="text-gray-400 mx-auto" />
+            </div>
+            <p className="text-gray-500">
+              {searchQuery ? "No posts found" : "Post your first entry and start counting!"}
+            </p>
           </div>
         )}
 
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onDelete={() => handleDelete(post.id)}
-          />
-        ))}
+        <div className="grid grid-cols-2 gap-px">
+          {posts.map((post, idx) => (
+            <div
+              key={post.id}
+              className="cursor-pointer"
+              onClick={() => {
+                tapCountRef.current += 1;
+                if (tapCountRef.current === 1) {
+                  tapTimerRef.current = setTimeout(() => {
+                    if (tapCountRef.current === 1) setSelectedIndex(idx);
+                    tapCountRef.current = 0;
+                  }, 300);
+                }
+              }}
+            >
+              <PostCard
+                post={post}
+                onDelete={() => handleDelete(post.id)}
+                compact
+                onDoubleTap={() => {
+                  if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+                  tapCountRef.current = 0;
+                }}
+              />
+            </div>
+          ))}
+        </div>
 
         {loadingPosts && <LoadingSpinner size="sm" />}
       </div>
 
-      <BottomNav />
+      {/* Post detail modal — Shorts-style snap scroll */}
+      {selectedIndex !== null && (
+        <div className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
+          <div className="relative w-[min(100%,430px)] flex flex-col pb-14">
+            {/* Snap scroll container */}
+            <div
+              ref={snapContainerRef}
+              className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="snap-start snap-always w-full h-[calc(100dvh-56px)] flex items-center"
+                >
+                  <div className="bg-white w-full max-h-full overflow-y-auto rounded-2xl scrollbar-hide" style={{ scrollbarWidth: "none" }}>
+                    <PostCard
+                      post={post}
+                      onDelete={() => handleDelete(post.id)}
+                      listRounded="none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <BottomNav onExploreClick={handleExploreClick} />
     </div>
   );
 }

@@ -44,6 +44,18 @@ export function IconBoomerang({ size, className, strokeWidth }: IconProps) {
   );
 }
 
+// Simple eucalyptus-style leaf icon
+export function IconEucalyptus({ size, className, strokeWidth }: IconProps) {
+  const d = p({ size, className, strokeWidth });
+  return (
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3c-3 2-5 5.5-5 9 0 3.5 2 6 5 9 3-3 5-5.5 5-9 0-3.5-2-7-5-9z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M12 7c-1.5 1-2.5 2.5-2.5 4.2 0 1.7 1 3.1 2.5 4.3 1.5-1.2 2.5-2.6 2.5-4.3C14.5 9.5 13.5 8 12 7z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M12 2v3" stroke="currentColor" strokeWidth={d.strokeWidth} />
+    </svg>
+  );
+}
+
 export function IconGroup({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
   return (
@@ -239,6 +251,17 @@ export function IconGrid({ size, className, strokeWidth }: IconProps) {
       <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+    </svg>
+  );
+}
+
+export function IconList({ size, className, strokeWidth }: IconProps) {
+  const d = p({ size, className, strokeWidth });
+  return (
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="4" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <rect x="3" y="10" width="18" height="4" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <rect x="3" y="17" width="18" height="4" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );
 }

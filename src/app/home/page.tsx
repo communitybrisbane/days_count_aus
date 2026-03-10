@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { getDayCount, formatDayCount, calculateLevel, levelProgress } from "@/lib/utils";
+import { getDayCount, formatDayCount, calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
 import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
 import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
@@ -15,42 +15,61 @@ import ConfirmModal from "@/components/ConfirmModal";
 import MilestoneAnimation from "@/components/MilestoneAnimation";
 import BannerCarousel from "@/components/BannerCarousel";
 import { MILESTONES } from "@/lib/constants";
-import { IconHeart, IconFire, IconDiary } from "@/components/icons";
+import { IconEdit } from "@/components/icons";
+
+interface ZoomSchedule {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
 
 interface AdminConfig {
   message: string;
-  eventName: string;
-  eventDate: string;
-  eventUrl: string;
-  /** ホームのヒーローバナー画像URL。Firebase Storage の URL を設定すると、ここで画像を差し替え可能。 */
   bannerImageUrl?: string;
+  zoomUrl?: string;
+  zoomLabel?: string;
+  zoomSchedules?: ZoomSchedule[];
+  zoomNextInfo?: string;
 }
 
-interface WeeklyStats {
-  postCount: number;
-  streak: number;
-}
+const STATUS_LABELS: Record<string, string> = {
+  "pre-departure": "Before departure",
+  "in-australia": "In Australia",
+  "post-return": "After return",
+};
 
 export default function HomePage() {
   const { user, profile, loading } = useAuthGuard();
   const { refreshProfile } = useAuth();
   const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
-  const [totalLikes, setTotalLikes] = useState(0);
-  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats>({ postCount: 0, streak: 0 });
+  const [weeklyPostCount, setWeeklyPostCount] = useState(0);
   const [showMilestone, setShowMilestone] = useState(false);
   const [milestoneDay, setMilestoneDay] = useState(0);
   const [phasePrompt, setPhasePrompt] = useState<{ message: string; newStatus: string } | null>(null);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [showGoalInput, setShowGoalInput] = useState(false);
+  const [goalDraft, setGoalDraft] = useState(3);
+  const [goalTextDraft, setGoalTextDraft] = useState("");
+
+  // createdAt: Firestore Timestamp → Date
+  const createdAtDate = useMemo(() => {
+    const ca = profile?.createdAt as { toDate?: () => Date } | undefined;
+    return ca?.toDate?.() ?? null;
+  }, [profile]);
 
   const dayCount = useMemo(() => {
     if (!profile) return { label: "D", number: 0 };
-    return getDayCount(profile.status, profile.departureDate, profile.returnStartDate);
-  }, [profile]);
+    return getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
+  }, [profile, createdAtDate]);
 
   const dayCountStr = formatDayCount(dayCount.label, dayCount.number);
   const level = profile ? calculateLevel(profile.totalXP) : 1;
   const progress = profile ? levelProgress(profile.totalXP) : 0;
 
+  const weeklyGoal = profile?.weeklyGoal || 0;
+
+  // Fetch admin config
   useEffect(() => {
     if (!user) return;
     fetchAdminConfig().then((data) => {
@@ -58,63 +77,81 @@ export default function HomePage() {
     }).catch((e) => console.error("Failed to fetch admin config:", e));
   }, [user]);
 
+  // Zoom schedule check (every 30s)
+  const checkZoomOpen = useCallback(() => {
+    if (!adminConfig?.zoomSchedules?.length) { setZoomOpen(false); return; }
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const isOpen = adminConfig.zoomSchedules.some(
+      (s) => s.dayOfWeek === now.getDay() && hhmm >= s.startTime && hhmm < s.endTime
+    );
+    setZoomOpen(isOpen);
+  }, [adminConfig]);
+
+  useEffect(() => {
+    checkZoomOpen();
+    const timer = setInterval(checkZoomOpen, 30_000);
+    return () => clearInterval(timer);
+  }, [checkZoomOpen]);
+
+  // Fetch weekly stats
   useEffect(() => {
     if (!user || !profile) return;
-    fetchTotalLikesAndWeekly(user.uid).then(({ totalLikes: likes, weeklyPostCount }) => {
-      setTotalLikes(likes);
-      setWeeklyStats({ postCount: weeklyPostCount, streak: profile.currentStreak || 0 });
+    fetchTotalLikesAndWeekly(user.uid).then(({ weeklyPostCount: count }) => {
+      setWeeklyPostCount(count);
     }).catch(console.error);
   }, [user, profile]);
 
+  // Milestone check
   useEffect(() => {
-    if (!profile) return;
-    if (dayCount.label === "D" && dayCount.number > 0) {
-      const milestone = MILESTONES.find((m) => m === dayCount.number);
-      if (milestone) {
-        const key = `milestone_${milestone}_shown`;
-        if (!localStorage.getItem(key)) {
-          setMilestoneDay(milestone);
-          setShowMilestone(true);
-          localStorage.setItem(key, "true");
-        }
-      }
-    }
+    if (!profile || dayCount.label !== "D" || dayCount.number <= 0) return;
+    const milestone = MILESTONES.find((m) => m === dayCount.number);
+    if (!milestone) return;
+    const key = `milestone_${milestone}_shown`;
+    if (localStorage.getItem(key)) return;
+    setMilestoneDay(milestone);
+    setShowMilestone(true);
+    localStorage.setItem(key, "true");
   }, [dayCount, profile]);
 
-  // FCM: check notification permission and request token
+  // FCM: check permission & register token
   useEffect(() => {
     if (!user) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
     if (Notification.permission === "default") {
-      // Show banner if not yet asked
-      if (!localStorage.getItem("notif_banner_dismissed")) {
-        setShowNotifBanner(true);
-      }
+      if (!localStorage.getItem("notif_banner_dismissed")) setShowNotifBanner(true);
     } else if (Notification.permission === "granted") {
-      // Already granted — ensure token is saved
-      requestFCMToken().then((token) => {
-        if (token) saveFCMToken(user.uid, token);
-      });
+      requestFCMToken().then((token) => { if (token) saveFCMToken(user.uid, token); });
     }
   }, [user]);
 
-  // FCM: listen for foreground messages
+  // FCM: foreground message listener
   useEffect(() => {
     if (!user) return;
     return onFCMMessage((payload: unknown) => {
       const p = payload as { notification?: { title?: string; body?: string } };
-      if (p.notification?.title) {
-        alert(`${p.notification.title}\n${p.notification.body || ""}`);
-      }
+      if (p.notification?.title) alert(`${p.notification.title}\n${p.notification.body || ""}`);
     });
   }, [user]);
+
+  // Phase auto-transition check
+  useEffect(() => {
+    if (!profile?.departureDate) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const sessionKey = `phase_prompt_dismissed_${profile.status}`;
+    if (sessionStorage.getItem(sessionKey)) return;
+
+    if (profile.status === "pre-departure" && today >= profile.departureDate) {
+      setPhasePrompt({ message: "Your departure date has passed. Start your working holiday?", newStatus: "in-australia" });
+    } else if (profile.status === "in-australia" && dayCount.number >= 365) {
+      setPhasePrompt({ message: "You've been in Australia for over 365 days. Switch to post-return?", newStatus: "post-return" });
+    }
+  }, [profile, dayCount]);
 
   const handleEnableNotifications = async () => {
     if (!user) return;
     const token = await requestFCMToken();
-    if (token) {
-      await saveFCMToken(user.uid, token);
-    }
+    if (token) await saveFCMToken(user.uid, token);
     setShowNotifBanner(false);
     localStorage.setItem("notif_banner_dismissed", "true");
   };
@@ -124,32 +161,11 @@ export default function HomePage() {
     localStorage.setItem("notif_banner_dismissed", "true");
   };
 
-  // Phase auto-transition check
-  useEffect(() => {
-    if (!profile || !profile.departureDate) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const sessionKey = `phase_prompt_dismissed_${profile.status}`;
-    if (sessionStorage.getItem(sessionKey)) return;
-
-    if (profile.status === "pre-departure" && today >= profile.departureDate) {
-      setPhasePrompt({
-        message: "Your departure date has passed. Start your working holiday?",
-        newStatus: "in-australia",
-      });
-    } else if (profile.status === "in-australia" && dayCount.number >= 365) {
-      setPhasePrompt({
-        message: "You've been in Australia for over 365 days. Switch to post-return?",
-        newStatus: "post-return",
-      });
-    }
-  }, [profile, dayCount]);
-
   const handlePhaseTransition = async () => {
     if (!user || !phasePrompt) return;
     const updates: Record<string, unknown> = { status: phasePrompt.newStatus };
     if (phasePrompt.newStatus === "post-return") {
-      const today = new Date();
-      updates.returnStartDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      updates.returnStartDate = getTodayStr();
     }
     await updateDoc(doc(db, "users", user.uid), updates);
     await refreshProfile();
@@ -157,23 +173,31 @@ export default function HomePage() {
   };
 
   const dismissPhasePrompt = () => {
-    if (profile) {
-      sessionStorage.setItem(`phase_prompt_dismissed_${profile.status}`, "true");
-    }
+    if (profile) sessionStorage.setItem(`phase_prompt_dismissed_${profile.status}`, "true");
     setPhasePrompt(null);
   };
 
-  if (loading || !profile) {
-    return <LoadingSpinner fullScreen />;
-  }
+  const handleSaveGoal = async () => {
+    if (!user) return;
+    const value = Math.max(1, Math.min(goalDraft, 30));
+    await updateDoc(doc(db, "users", user.uid), { weeklyGoal: value, goal: goalTextDraft.trim() });
+    await refreshProfile();
+    setShowGoalInput(false);
+  };
+
+  const openGoalInput = () => {
+    setGoalDraft(weeklyGoal || 3);
+    setGoalTextDraft(profile?.goal || "");
+    setShowGoalInput(true);
+  };
+
+  if (loading || !profile) return <LoadingSpinner fullScreen />;
+
+  const goalCleared = weeklyGoal > 0 && weeklyPostCount >= weeklyGoal;
 
   return (
     <div className="pb-16 flex flex-col min-h-dvh">
-      <MilestoneAnimation
-        dayNumber={milestoneDay}
-        show={showMilestone}
-        onClose={() => setShowMilestone(false)}
-      />
+      <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
 
       {phasePrompt && (
         <ConfirmModal
@@ -192,90 +216,177 @@ export default function HomePage() {
             <p className="text-sm font-bold text-gray-800">Enable notifications</p>
             <p className="text-xs text-gray-500">Get streak warnings before you lose your progress</p>
           </div>
-          <button
-            onClick={handleEnableNotifications}
-            className="px-3 py-1.5 bg-ocean-blue text-white text-xs font-bold rounded-lg shrink-0"
-          >
+          <button onClick={handleEnableNotifications} className="px-3 py-1.5 bg-ocean-blue text-white text-xs font-bold rounded-lg shrink-0">
             Enable
           </button>
           <button onClick={dismissNotifBanner} className="text-gray-400 text-lg leading-none">×</button>
         </div>
       )}
 
-      {/* Main Counter */}
-      <div className="bg-gradient-to-br from-aussie-gold to-amber-500 text-white pt-7 pb-5 px-6 rounded-b-3xl">
-        <p className="text-xs opacity-80 mb-0.5">
-          {profile.status === "pre-departure" ? "Before departure"
-            : profile.status === "in-australia" ? "In Australia"
-            : "After return"}
-        </p>
-        <h1 className="text-4xl font-black tracking-tight mb-1">{dayCountStr}</h1>
-        <p className="text-xs opacity-80">Hello, {profile.displayName}!</p>
+      {/* ===== 1. Gold Header & Life Bar ===== */}
+      <div className="bg-gradient-to-br from-aussie-gold to-amber-500 text-white pt-7 pb-6 px-6 rounded-b-3xl">
+        <p className="text-xs opacity-80 mb-1">{STATUS_LABELS[profile.status || "pre-departure"] ?? profile.status}</p>
+        <div className="flex items-end justify-between mb-0.5">
+          <h1 className="text-4xl font-black tracking-tight flex items-center gap-1.5">
+            {dayCountStr}
+            {(profile.currentStreak ?? 0) > 0 && <span className="text-2xl">🔥</span>}
+          </h1>
+          <p className="text-2xl font-black opacity-90 leading-none mb-0.5">Lv.{level}</p>
+        </div>
+        <p className="text-xs opacity-80 mb-3">Hello, {profile.displayName}!</p>
+
+        {/* XP Progress Bar */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-white/20 rounded-full h-2">
+            <div className="bg-white h-2 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+          </div>
+          <span className="text-[10px] opacity-70 shrink-0">{profile.totalXP - xpForLevel(level)} / {xpForLevel(level + 1) - xpForLevel(level)} EXP</span>
+        </div>
       </div>
 
-      {/* Level + Progress */}
+      {/* ===== 2. Weekly Goal Section ===== */}
       <div className="px-5 -mt-4">
-        <div className="bg-white rounded-2xl shadow-md px-4 py-2">
-          <div className="mb-1">
-            <span className="text-sm font-bold text-ocean-blue">Lv.{level}</span>
+        <div className={`rounded-2xl shadow-md px-4 py-3 relative overflow-hidden transition-all duration-500 ${
+          goalCleared
+            ? "bg-gradient-to-br from-amber-50 to-yellow-50 ring-2 ring-aussie-gold/60 shadow-lg shadow-aussie-gold/20"
+            : "bg-white"
+        }`}>
+          {/* Goal Achieved badge */}
+          {goalCleared && (
+            <div className="absolute top-2 right-2 bg-gradient-to-r from-aussie-gold to-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full animate-bounce shadow-md">
+              Goal Achieved!
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mb-1">
+            <p className={`text-[10px] ${goalCleared ? "text-aussie-gold font-bold" : "text-gray-400"}`}>My Weekly Goal</p>
+            <button onClick={openGoalInput} className={`p-0.5 ${goalCleared ? "text-aussie-gold" : "text-gray-400"}`}>
+              <IconEdit size={14} />
+            </button>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div
-              className="bg-ocean-blue h-1.5 rounded-full transition-all"
-              style={{ width: `${Math.min(progress, 100)}%` }}
+
+          {profile.goal ? (
+            <p className="text-sm font-bold text-gray-800 mb-2 leading-snug">{profile.goal}</p>
+          ) : (
+            <button onClick={openGoalInput} className="text-sm text-ocean-blue font-bold mb-2">Set your goal</button>
+          )}
+
+          {weeklyGoal > 0 ? (
+            <>
+              <div className="flex items-end gap-1 mb-1.5">
+                <span className={`text-2xl font-black ${goalCleared ? "text-aussie-gold" : "text-ocean-blue"}`}>
+                  {weeklyPostCount}
+                </span>
+                <span className="text-sm text-gray-400 mb-0.5">/ {weeklyGoal} posts</span>
+                {goalCleared && <span className="text-sm ml-1">🏆</span>}
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-700 ${goalCleared ? "bg-gradient-to-r from-aussie-gold to-amber-400" : "bg-ocean-blue"}`}
+                  style={{ width: `${Math.min((weeklyPostCount / weeklyGoal) * 100, 100)}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-400">Set a weekly posting goal to track your progress!</p>
+          )}
+        </div>
+      </div>
+
+      {/* Goal input modal */}
+      {showGoalInput && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-8" onClick={() => setShowGoalInput(false)}>
+          <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-bold text-gray-800 mb-3">My Weekly Goal</p>
+
+            {/* Goal text */}
+            <label className="text-xs text-gray-500">Goal</label>
+            <input
+              type="text"
+              maxLength={100}
+              value={goalTextDraft}
+              onChange={(e) => setGoalTextDraft(e.target.value)}
+              placeholder="e.g. Improve my English skills"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-0.5 mb-4 focus:outline-none focus:ring-2 focus:ring-aussie-gold"
             />
-          </div>
-        </div>
-      </div>
 
-      {/* Stats: 3 columns */}
-      <div className="px-5 mt-2 grid grid-cols-3 gap-2">
-        <div className="bg-gray-50 rounded-xl py-1.5 text-center">
-          <p className="text-base font-bold text-ocean-blue flex items-center justify-center gap-1"><IconDiary size={16} className="text-ocean-blue" /> {weeklyStats.postCount}</p>
-          <p className="text-[10px] text-gray-400">This Week</p>
-        </div>
-        <div className="bg-gray-50 rounded-xl py-1.5 text-center">
-          <p className="text-base font-bold text-pink-500 flex items-center justify-center gap-1"><IconHeart size={16} className="text-pink-500" /> {totalLikes}</p>
-          <p className="text-[10px] text-gray-400">Total Likes</p>
-        </div>
-        <div className="bg-gray-50 rounded-xl py-1.5 text-center">
-          <p className="text-base font-bold text-outback-clay flex items-center justify-center gap-1"><IconFire size={16} className="text-outback-clay" /> {profile.currentStreak}</p>
-          <p className="text-[10px] text-gray-400">Streak</p>
-        </div>
-      </div>
-
-      {/* Banner carousel（画像のみ。Firebase admin_config.bannerImageUrl で差し替え可能） */}
-      <div className="px-5 mt-2">
-        <BannerCarousel location="home" bannerImageUrl={adminConfig?.bannerImageUrl} />
-      </div>
-
-      {/* Admin message */}
-      {adminConfig?.message && (
-        <div className="px-5 mt-2">
-          <div className="bg-orange-50 rounded-xl px-4 py-2 border border-outback-clay/15">
-            <p className="text-[10px] font-bold text-outback-clay mb-0.5">From the team</p>
-            <p className="text-xs text-gray-700 leading-snug">{adminConfig.message}</p>
+            {/* Weekly post count */}
+            <label className="text-xs text-gray-500">Posts per week</label>
+            <div className="flex items-center justify-center gap-4 mt-1 mb-4">
+              <button
+                onClick={() => setGoalDraft((v) => Math.max(1, v - 1))}
+                className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold text-gray-600"
+              >
+                −
+              </button>
+              <span className="text-3xl font-black text-ocean-blue w-12 text-center">{goalDraft}</span>
+              <button
+                onClick={() => setGoalDraft((v) => Math.min(30, v + 1))}
+                className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold text-gray-600"
+              >
+                +
+              </button>
+            </div>
+            <button onClick={handleSaveGoal} className="w-full bg-ocean-blue text-white font-bold text-sm py-2.5 rounded-xl">
+              Save
+            </button>
           </div>
         </div>
       )}
 
-      {/* Event button */}
-      {adminConfig?.eventUrl && (
-        <div className="px-5 mt-2">
-          <a
-            href={adminConfig.eventUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between w-full bg-outback-clay text-white rounded-xl px-4 py-2.5"
-          >
-            <div>
-              <p className="font-bold text-sm">{adminConfig.eventName || "Next Event"}</p>
-              {adminConfig.eventDate && (
-                <p className="text-xs opacity-80 mt-0.5">{adminConfig.eventDate}</p>
-              )}
-            </div>
-            <span className="text-lg">→</span>
-          </a>
+      {/* ===== 3. Banner Carousel ===== */}
+      <div className="px-5 mt-3">
+        <BannerCarousel location="home" bannerImageUrl={adminConfig?.bannerImageUrl} />
+      </div>
+
+      {/* ===== 4. Unified Resource Card ===== */}
+      {(adminConfig?.message || adminConfig?.zoomUrl) && (
+        <div className="px-5 mt-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Admin message */}
+            {adminConfig.message && (
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-[10px] font-bold text-outback-clay mb-0.5">From the team</p>
+                <p className="text-xs text-gray-700 leading-snug">{adminConfig.message}</p>
+              </div>
+            )}
+
+            {/* Zoom section */}
+            {adminConfig.zoomUrl && (
+              <div className={`px-4 py-3 transition-all ${
+                zoomOpen ? "ring-2 ring-ocean-blue/50 shadow-md shadow-ocean-blue/10 rounded-b-2xl" : ""
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${zoomOpen ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
+                      <p className={`font-bold text-sm ${zoomOpen ? "text-ocean-blue" : "text-gray-600"}`}>
+                        {adminConfig.zoomLabel || "Zoom Meeting"}
+                      </p>
+                      {zoomOpen && (
+                        <span className="text-[10px] font-bold text-white bg-ocean-blue px-2 py-0.5 rounded-full animate-pulse">
+                          LIVE
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-xs mt-0.5 ml-[18px] ${zoomOpen ? "text-gray-600" : "text-gray-400"}`}>
+                      {zoomOpen ? "Meeting is in progress" : `Next: ${adminConfig.zoomNextInfo || "TBD"}`}
+                    </p>
+                  </div>
+                  {zoomOpen ? (
+                    <a
+                      href={adminConfig.zoomUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-ocean-blue text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md hover:bg-blue-600 transition-colors shrink-0"
+                    >
+                      Join
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

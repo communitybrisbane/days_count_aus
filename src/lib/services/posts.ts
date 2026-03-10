@@ -16,20 +16,20 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
+import { POST_EDIT_WINDOW_MS } from "@/lib/constants";
 import type { Post } from "@/types";
 
-export async function fetchUserPosts(uid: string): Promise<Post[]> {
-  const q = query(
-    collection(db, "posts"),
-    where("userId", "==", uid),
-    orderBy("createdAt", "desc")
-  );
+export async function fetchUserPosts(uid: string, isOwn = false): Promise<Post[]> {
+  const q = isOwn
+    ? query(collection(db, "posts"), where("userId", "==", uid), orderBy("createdAt", "desc"))
+    : query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
 }
 
 export async function fetchTotalLikesAndWeekly(uid: string) {
-  const q = query(collection(db, "posts"), where("userId", "==", uid));
+  // Query only active posts to comply with Firestore security rules
+  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"));
   const snap = await getDocs(q);
   let totalLikes = 0;
   snap.docs.forEach((d) => {
@@ -56,7 +56,7 @@ interface CreatePostInput {
 }
 
 export async function createPost(input: CreatePostInput): Promise<string> {
-  const fiveMinLater = new Date(Date.now() + 5 * 60 * 1000);
+  const editDeadline = new Date(Date.now() + POST_EDIT_WINDOW_MS);
 
   const postRef = await addDoc(collection(db, "posts"), {
     userId: input.userId,
@@ -70,7 +70,7 @@ export async function createPost(input: CreatePostInput): Promise<string> {
     status: "active",
     reportCount: 0,
     createdAt: serverTimestamp(),
-    editableUntil: Timestamp.fromDate(fiveMinLater),
+    editableUntil: Timestamp.fromDate(editDeadline),
   });
 
   if (input.imageBlob) {
@@ -84,7 +84,7 @@ export async function createPost(input: CreatePostInput): Promise<string> {
 }
 
 export async function isFirstPost(uid: string): Promise<boolean> {
-  const q = query(collection(db, "posts"), where("userId", "==", uid));
+  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"));
   const snap = await getDocs(q);
   return snap.size === 0;
 }

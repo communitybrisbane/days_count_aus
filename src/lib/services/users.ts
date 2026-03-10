@@ -10,6 +10,8 @@ import {
   writeBatch,
   addDoc,
   serverTimestamp,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 import { deleteUser, User } from "firebase/auth";
@@ -94,21 +96,11 @@ export async function submitReport(
 }
 
 export async function blockUser(myUid: string, targetUid: string): Promise<void> {
-  const userRef = doc(db, "users", myUid);
-  const snap = await getDoc(userRef);
-  if (!snap.exists()) return;
-  const blockedUsers: string[] = snap.data().blockedUsers || [];
-  if (!blockedUsers.includes(targetUid)) {
-    await updateDoc(userRef, { blockedUsers: [...blockedUsers, targetUid] });
-  }
+  await updateDoc(doc(db, "users", myUid), { blockedUsers: arrayUnion(targetUid) });
 }
 
 export async function unblockUser(myUid: string, targetUid: string): Promise<void> {
-  const userRef = doc(db, "users", myUid);
-  const snap = await getDoc(userRef);
-  if (!snap.exists()) return;
-  const blockedUsers: string[] = snap.data().blockedUsers || [];
-  await updateDoc(userRef, { blockedUsers: blockedUsers.filter((id) => id !== targetUid) });
+  await updateDoc(doc(db, "users", myUid), { blockedUsers: arrayRemove(targetUid) });
 }
 
 export async function saveFCMToken(uid: string, token: string): Promise<void> {

@@ -7,6 +7,7 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   collection,
   addDoc,
   query,
@@ -21,6 +22,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { calculateLevel } from "@/lib/utils";
 import { FOCUS_MODES } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -88,6 +90,8 @@ export default function GroupChatPage() {
     );
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Message)));
+    }, (err) => {
+      console.warn("Messages listener error:", err);
     });
     return unsub;
   }, [groupId]);
@@ -95,6 +99,15 @@ export default function GroupChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Mark as read when viewing messages
+  useEffect(() => {
+    if (user && messages.length > 0) {
+      setDoc(doc(db, "groups", groupId, "lastRead", user.uid), {
+        readAt: serverTimestamp(),
+      }).catch(() => {});
+    }
+  }, [user, groupId, messages.length]);
 
   useEffect(() => {
     if (!group) return;
@@ -115,8 +128,14 @@ export default function GroupChatPage() {
   const isFull = !isOfficial && (group?.memberCount || 0) >= 10;
   const modeInfo = FOCUS_MODES.find((m) => m.id === group?.mode);
 
+  const userLevel = profile ? calculateLevel(profile.totalXP) : 0;
+
   const handleJoinAttempt = () => {
     if (!user || !group || isFull || isOfficial) return;
+    if (userLevel < 5) {
+      alert("You need Lv.5 or higher to join a community.");
+      return;
+    }
     const currentGroupIds = profile?.groupIds || [];
     if (currentGroupIds.length >= 2) {
       alert("You can join up to 2 communities (+ official). Please leave one first.");
@@ -197,7 +216,11 @@ export default function GroupChatPage() {
       createdAt: serverTimestamp(),
       reactions: {},
     });
-    await updateDoc(doc(db, "groups", groupId), { lastMessageAt: serverTimestamp() });
+    await updateDoc(doc(db, "groups", groupId), {
+      lastMessageAt: serverTimestamp(),
+      lastMessageText: msg.length > 50 ? msg.slice(0, 50) + "…" : msg,
+      lastMessageBy: user.uid,
+    });
   };
 
   const handleReaction = async (msgId: string, hasReacted: boolean) => {
@@ -321,11 +344,13 @@ export default function GroupChatPage() {
               <span className="text-[10px] bg-aussie-gold text-white px-2 py-1 rounded-full">Official</span>
             ) : isMember ? (
               <button onClick={() => setShowLeaveModal(true)} className="text-xs text-red-400">Leave</button>
-            ) : !isFull && (
+            ) : !isFull && userLevel >= 5 ? (
               <button onClick={handleJoinAttempt} className="bg-aussie-gold text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
                 {group.password && <IconLock size={10} className="text-white" />}Join
               </button>
-            )}
+            ) : !isFull && userLevel < 5 ? (
+              <span className="text-[10px] text-gray-400">Lv.5+</span>
+            ) : null}
           </div>
         </div>
 

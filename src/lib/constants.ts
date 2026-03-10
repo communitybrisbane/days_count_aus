@@ -18,6 +18,10 @@ export const GRADIENTS = [
   "from-green-500 to-teal-400",
 ] as const;
 
+export const MAX_GROUP_MEMBERS = 10;
+export const DAILY_LIKE_LIMIT = 5;
+export const POST_EDIT_WINDOW_MS = 5 * 60 * 1000;
+
 export const REGIONS = [
   // Major cities
   "Sydney",
