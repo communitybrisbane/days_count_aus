@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, onAuthStateChanged } from "firebase/auth";
+import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { getFollowingIds } from "@/lib/follow";
@@ -79,17 +79,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
       if (firebaseUser) {
         try {
+          // Ensure auth token is fresh before Firestore requests
+          await firebaseUser.getIdToken(true);
           await Promise.all([
             fetchProfile(firebaseUser.uid),
             fetchFollowing(firebaseUser.uid),
           ]);
+          setUser(firebaseUser);
         } catch (e) {
-          console.error("Failed to fetch user data:", e);
+          console.error("Failed to fetch user data, signing out:", e);
+          // Stale session or permission error — clear auth state
+          await signOut(auth);
+          setUser(null);
+          setProfile(null);
+          setFollowing([]);
         }
       } else {
+        setUser(null);
         setProfile(null);
         setFollowing([]);
       }
