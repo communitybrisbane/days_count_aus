@@ -224,7 +224,7 @@ export default function HomePage() {
       )}
 
       {/* ===== 1. Gold Header & Life Bar ===== */}
-      <div className="bg-gradient-to-br from-aussie-gold to-amber-500 text-white pt-7 pb-6 px-6 rounded-b-3xl">
+      <div className="bg-gradient-to-br from-aussie-gold to-amber-500 text-white pt-4 pb-5 px-6 rounded-b-3xl">
         <p className="text-xs opacity-80 mb-1">{STATUS_LABELS[profile.status || "pre-departure"] ?? profile.status}</p>
         <div className="flex items-end justify-between mb-0.5">
           <h1 className="text-4xl font-black tracking-tight flex items-center gap-1.5">

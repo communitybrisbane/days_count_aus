@@ -253,16 +253,22 @@ export default function OnboardingPage() {
         {/* Row 5: Region */}
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">Region</p>
-          <select
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold bg-white"
-          >
-            <option value="">Select your region</option>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {REGIONS.map((r) => (
-              <option key={r} value={r}>{r}</option>
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRegion(region === r ? "" : r)}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm border transition-colors ${
+                  region === r
+                    ? "bg-aussie-gold text-white border-aussie-gold"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-aussie-gold"
+                }`}
+              >
+                {r}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         {/* Row 6: Goal */}

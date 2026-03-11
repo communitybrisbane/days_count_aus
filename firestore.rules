@@ -92,21 +92,23 @@ service cloud.firestore {
                         && request.resource.data.content.size() <= 500)
                      );
 
-      // Update by others: likeCount OR reportCount changes (public active posts only)
+      // Update by anyone: likeCount changes (public active posts)
+      allow update: if isAuth()
+                     && resource.data.visibility == 'public'
+                     && changed().hasOnly(['likeCount'])
+                     && (request.resource.data.likeCount == resource.data.likeCount + 1
+                         || request.resource.data.likeCount == resource.data.likeCount - 1);
+
+      // Update by others: reportCount changes (public active posts only)
       allow update: if isAuth()
                      && resource.data.userId != request.auth.uid
                      && resource.data.visibility == 'public'
                      && (
-                       // Case 1: likeCount increment/decrement by 1
-                       (changed().hasOnly(['likeCount'])
-                        && (request.resource.data.likeCount == resource.data.likeCount + 1
-                            || request.resource.data.likeCount == resource.data.likeCount - 1))
-                       ||
-                       // Case 2: increment reportCount only
+                       // Case 1: increment reportCount only
                        (changed().hasOnly(['reportCount'])
                         && request.resource.data.reportCount == resource.data.reportCount + 1)
                        ||
-                       // Case 3: increment reportCount + auto-hide when reaching threshold
+                       // Case 2: increment reportCount + auto-hide when reaching threshold
                        (changed().hasOnly(['reportCount', 'status'])
                         && request.resource.data.reportCount == resource.data.reportCount + 1
                         && request.resource.data.reportCount >= 3

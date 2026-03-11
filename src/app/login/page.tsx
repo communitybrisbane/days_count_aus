@@ -3,11 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { signInWithGoogle } from "@/lib/auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
 
 export default function LoginPage() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTokusho, setShowTokusho] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -43,7 +47,7 @@ export default function LoginPage() {
       </div>
 
       {/* Bottom CTA */}
-      <div className="w-full pb-12">
+      <div className="w-full pb-10">
         <button
           onClick={handleLogin}
           className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm active:scale-[0.98] transition-transform"
@@ -56,10 +60,21 @@ export default function LoginPage() {
           </svg>
           <span className="text-gray-800 font-semibold text-base">Sign in with Google</span>
         </button>
-        <p className="text-center text-xs text-gray-400 mt-4">
-          Turn your 365 days into a lifetime of growth.
-        </p>
+
+        {/* Legal links */}
+        <div className="mt-4 text-center">
+          <p className="text-[11px] text-gray-400 leading-relaxed">
+            By signing in, you agree to our{" "}
+            <button onClick={() => setShowTerms(true)} className="text-aussie-gold underline">Terms</button>,{" "}
+            <button onClick={() => setShowPrivacy(true)} className="text-aussie-gold underline">Privacy Policy</button>, and{" "}
+            <button onClick={() => setShowTokusho(true)} className="text-aussie-gold underline">Legal Notice</button>.
+          </p>
+        </div>
       </div>
+
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showTokusho && <LegalNoticeModal onClose={() => setShowTokusho(false)} />}
     </div>
   );
 }
