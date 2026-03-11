@@ -323,7 +323,7 @@ export default function PostPage() {
 
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => setContent(e.target.value.replace(/[^\x20-\x7E\n]/g, ""))}
             maxLength={400}
             rows={8}
             placeholder="What happened today?"

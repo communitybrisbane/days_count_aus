@@ -23,7 +23,6 @@ export const DAILY_LIKE_LIMIT = 5;
 export const POST_EDIT_WINDOW_MS = 5 * 60 * 1000;
 
 export const REGIONS = [
-  // Major cities
   "Sydney",
   "Melbourne",
   "Brisbane",
@@ -31,18 +30,9 @@ export const REGIONS = [
   "Adelaide",
   "Gold Coast",
   "Canberra",
-  // Regional / Sub cities
   "Cairns",
   "Darwin",
   "Hobart",
-  "Townsville",
-  "Sunshine Coast",
-  "Wollongong",
-  "Newcastle",
-  "Geelong",
-  "Byron Bay",
-  "Broome",
-  "Alice Springs",
-  "Tasmania",
+  "Japan",
   "Other",
 ] as const;

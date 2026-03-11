@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { collection, getDocs, getDoc, doc, query, orderBy, where } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, query, orderBy, where, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
@@ -28,11 +28,9 @@ export default function GroupsPage() {
 
 
   const fetchGroups = async () => {
-    const q = query(collection(db, "groups"), orderBy("lastMessageAt", "desc"));
+    const q = query(collection(db, "groups"), where("isClosed", "==", false), orderBy("lastMessageAt", "desc"), limit(50));
     const snap = await getDocs(q);
-    const data = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() } as Group))
-      .filter((g) => !g.isClosed);
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Group));
     setGroups(data);
     setLoadingGroups(false);
   };
@@ -96,7 +94,7 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="h-dvh overflow-hidden pb-14 bg-sand-beige">
+    <div className="h-dvh flex flex-col overflow-hidden pb-14 bg-sand-beige">
       {/* Header */}
       <div className="sticky top-0 bg-white z-10 border-b border-gray-100">
         <div className="px-4 pt-2 pb-1">
@@ -112,7 +110,7 @@ export default function GroupsPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
                 placeholder="Search by community name..."
                 className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
                 autoFocus
@@ -169,7 +167,7 @@ export default function GroupsPage() {
 
       {/* ===== Main content (non-search) ===== */}
       {!showSearch && (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           {loadingGroups ? (
             <div className="p-4"><LoadingSpinner size="sm" /></div>
           ) : (

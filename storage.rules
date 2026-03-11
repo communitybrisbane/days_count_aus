@@ -1,0 +1,49 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isVerified() {
+      return request.auth != null && request.appCheckToken != null;
+    }
+
+    // ─── Avatars: owner uploads, anyone reads ───
+    match /avatars/{fileName} {
+      allow read: if isVerified();
+      allow write: if isVerified()
+                    && request.auth.uid == fileName.split('\\.')[0]
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType == 'image/jpeg';
+    }
+
+    // ─── Post images: owner uploads, anyone reads ───
+    match /posts/{uid}/{fileName} {
+      allow read: if isVerified();
+      allow write: if isVerified()
+                    && request.auth.uid == uid
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType == 'image/jpeg';
+    }
+
+    // ─── Group icons: authenticated users upload, anyone reads ───
+    match /groups/{groupId}/{fileName} {
+      allow read: if isVerified();
+      allow write: if isVerified()
+                    && request.resource.size < 2 * 1024 * 1024
+                    && request.resource.contentType == 'image/jpeg';
+    }
+
+    // ─── Report evidence: authenticated upload, no public read ───
+    match /reports/{fileName} {
+      allow read: if false;
+      allow write: if isVerified()
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType == 'image/jpeg';
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -175,27 +175,32 @@ export const checkStreaks = onSchedule(
         reset++;
       } else if (
         elapsed >= FORTY_TWO_HOURS &&
-        data.fcmToken &&
         !data.streakWarningSent
       ) {
-        // Send 6-hour warning
-        try {
-          await admin.messaging().send({
-            token: data.fcmToken,
-            notification: {
-              title: "Streak warning!",
-              body: "Your streak expires in 6 hours. Post now to keep it!",
-            },
-            webpush: {
-              fcmOptions: { link: "/post" },
-            },
-          });
-          await userDoc.ref.update({ streakWarningSent: true });
-          warned++;
-        } catch (e) {
-          // Token might be invalid — clear it
-          console.error(`FCM send failed for ${userDoc.id}:`, e);
-          await userDoc.ref.update({ fcmToken: "" });
+        // Read fcmToken from private subcollection
+        const privSnap = await db.doc(`users/${userDoc.id}/private/config`).get();
+        const fcmToken = privSnap.exists ? privSnap.data()?.fcmToken : "";
+
+        if (fcmToken) {
+          // Send 6-hour warning
+          try {
+            await admin.messaging().send({
+              token: fcmToken,
+              notification: {
+                title: "Streak warning!",
+                body: "Your streak expires in 6 hours. Post now to keep it!",
+              },
+              webpush: {
+                fcmOptions: { link: "/post" },
+              },
+            });
+            await userDoc.ref.update({ streakWarningSent: true });
+            warned++;
+          } catch (e) {
+            // Token might be invalid — clear it
+            console.error(`FCM send failed for ${userDoc.id}:`, e);
+            await db.doc(`users/${userDoc.id}/private/config`).update({ fcmToken: "" });
+          }
         }
       }
     }

@@ -3,6 +3,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   getDocs,
   getDoc,
   addDoc,
@@ -21,15 +22,15 @@ import type { Post } from "@/types";
 
 export async function fetchUserPosts(uid: string, isOwn = false): Promise<Post[]> {
   const q = isOwn
-    ? query(collection(db, "posts"), where("userId", "==", uid), orderBy("createdAt", "desc"))
-    : query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), orderBy("createdAt", "desc"));
+    ? query(collection(db, "posts"), where("userId", "==", uid), orderBy("createdAt", "desc"), limit(100))
+    : query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), where("visibility", "==", "public"), orderBy("createdAt", "desc"), limit(100));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
 }
 
 export async function fetchTotalLikesAndWeekly(uid: string) {
-  // Query only active posts to comply with Firestore security rules
-  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"));
+  // Fetch recent posts (limit 200) for like count — covers most users
+  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), orderBy("createdAt", "desc"), limit(200));
   const snap = await getDocs(q);
   let totalLikes = 0;
   snap.docs.forEach((d) => {
@@ -84,9 +85,9 @@ export async function createPost(input: CreatePostInput): Promise<string> {
 }
 
 export async function isFirstPost(uid: string): Promise<boolean> {
-  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"));
+  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), limit(1));
   const snap = await getDocs(q);
-  return snap.size === 0;
+  return snap.empty;
 }
 
 export async function deletePost(postId: string): Promise<void> {

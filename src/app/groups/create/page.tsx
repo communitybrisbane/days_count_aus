@@ -10,6 +10,7 @@ import { FOCUS_MODES } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
+import { compressImage } from "@/lib/imageUtils";
 
 export default function CreateGroupPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -19,7 +20,6 @@ export default function CreateGroupPage() {
   const [groupNameError, setGroupNameError] = useState("");
   const [mode, setMode] = useState("");
   const [goal, setGoal] = useState("");
-  const [password, setPassword] = useState("");
   const [iconBlob, setIconBlob] = useState<Blob | null>(null);
   const [iconPreview, setIconPreview] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -76,32 +76,12 @@ export default function CreateGroupPage() {
     );
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Resize to 256x256 for group icon
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = 256;
-        canvas.height = 256;
-        const ctx = canvas.getContext("2d")!;
-        const minDim = Math.min(img.width, img.height);
-        const sx = (img.width - minDim) / 2;
-        const sy = (img.height - minDim) / 2;
-        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 256, 256);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            setIconBlob(blob);
-            setIconPreview(URL.createObjectURL(blob));
-          }
-        }, "image/jpeg", 0.85);
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+    const blob = await compressImage(file, { maxSize: 256, maxFileSize: 100 * 1024 });
+    setIconBlob(blob);
+    setIconPreview(URL.createObjectURL(blob));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,7 +110,6 @@ export default function CreateGroupPage() {
         mode,
         groupName: groupName.trim(),
         goal: goal.trim(),
-        password: password.trim(),
         creatorId: user.uid,
         memberIds: [user.uid],
         memberCount: 1,
@@ -258,21 +237,6 @@ export default function CreateGroupPage() {
             className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold resize-none"
           />
           <p className="text-xs text-gray-400 mt-1 text-right">{goal.length}/200</p>
-        </div>
-
-        {/* Password (optional) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Password <span className="text-xs text-gray-400 font-normal">(optional — for private groups)</span>
-          </label>
-          <input
-            type="text"
-            maxLength={20}
-            value={password}
-            onChange={(e) => setPassword(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
-            placeholder="Leave empty for open group"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
-          />
         </div>
 
         <button

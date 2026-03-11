@@ -305,7 +305,7 @@ export default function HomePage() {
               type="text"
               maxLength={100}
               value={goalTextDraft}
-              onChange={(e) => setGoalTextDraft(e.target.value)}
+              onChange={(e) => setGoalTextDraft(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
               placeholder="e.g. Improve my English skills"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-0.5 mb-4 focus:outline-none focus:ring-2 focus:ring-aussie-gold"
             />

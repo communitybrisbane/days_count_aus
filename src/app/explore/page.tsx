@@ -26,7 +26,7 @@ const PAGE_SIZE = 20;
 
 export default function ExplorePage() {
   useAuthGuard({ requireProfile: false });
-  const { user, profile, loading, following } = useAuth();
+  const { user, profile, privateData, loading, following } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -48,6 +48,7 @@ export default function ExplorePage() {
       try {
         const constraints: QueryConstraint[] = [];
         constraints.push(where("status", "==", "active"));
+        constraints.push(where("visibility", "==", "public"));
         if (filter) {
           constraints.push(where("mode", "==", filter));
         }
@@ -62,13 +63,9 @@ export default function ExplorePage() {
 
         let newPosts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
 
-        newPosts = newPosts.filter(
-          (p) => p.userId === user?.uid || p.visibility !== "private"
-        );
-
-        if (profile?.blockedUsers?.length) {
+        if (privateData?.blockedUsers?.length) {
           newPosts = newPosts.filter(
-            (p) => !profile.blockedUsers!.includes(p.userId)
+            (p) => !privateData.blockedUsers.includes(p.userId)
           );
         }
 
@@ -98,7 +95,7 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [filter, user, profile, following, searchUserIds]
+    [filter, user, profile, privateData, following, searchUserIds]
   );
 
   // Search handler — city or username only
@@ -224,7 +221,7 @@ export default function ExplorePage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => onSearchInput(e.target.value)}
+              onChange={(e) => onSearchInput(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
               placeholder="Search by city or username..."
               className="flex-1 bg-transparent text-xs outline-none placeholder-gray-400"
             />

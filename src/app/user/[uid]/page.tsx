@@ -16,7 +16,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import type { Post, UserProfile } from "@/types";
 
 export default function PublicProfilePage() {
-  const { user, profile: myProfile, following, refreshFollowing, refreshProfile } = useAuth();
+  const { user, profile: myProfile, privateData, following, refreshFollowing, refreshProfile } = useAuth();
   const router = useRouter();
   const params = useParams();
   const uid = params.uid as string;
@@ -39,7 +39,7 @@ export default function PublicProfilePage() {
           fetchUserPosts(uid, isOwn),
         ]);
         if (profile) setUserData(profile);
-        setPosts(isOwn ? allPosts : allPosts.filter((p) => p.visibility !== "private"));
+        setPosts(allPosts);
         try {
           const ids = await getFollowingIds(uid);
           setFollowingCount(ids.length);
@@ -123,7 +123,7 @@ export default function PublicProfilePage() {
                 >
                   {following.includes(uid) ? "Following" : "Follow"}
                 </button>
-                {myProfile?.blockedUsers?.includes(uid) ? (
+                {privateData?.blockedUsers?.includes(uid) ? (
                   <span className="text-[10px] text-red-400 px-2 py-1 border border-red-200 rounded-full">Blocked</span>
                 ) : (
                   <button

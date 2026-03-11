@@ -97,9 +97,13 @@ export default function OnboardingPage() {
         isPro: false,
         dailyLikeCount: 0,
         lastLikeDate: "",
-        blockedUsers: [],
         groupIds: [],
         createdAt: serverTimestamp(),
+      });
+      // Create private subcollection for sensitive data
+      await setDoc(doc(db, "users", user.uid, "private", "config"), {
+        blockedUsers: [],
+        fcmToken: "",
       });
       // Auto-join official group for selected mode
       await joinOfficialGroup(user.uid, mainMode);
@@ -157,8 +161,8 @@ export default function OnboardingPage() {
               type="text"
               maxLength={15}
               value={nickname}
-              onChange={(e) => setNickname(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-              placeholder="Nickname (a-z, 0-9)"
+              onChange={(e) => setNickname(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+              placeholder="Nickname (a-z, 0-9, _)"
               className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold ${
                 nicknameError ? "border-red-400" : "border-gray-200"
               }`}

@@ -6,17 +6,26 @@ import {
   collection,
   query,
   where,
+  limit,
   getDocs,
   writeBatch,
   addDoc,
   serverTimestamp,
   arrayUnion,
   arrayRemove,
+  increment,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
-import { deleteUser, User } from "firebase/auth";
+import {
+  deleteUser,
+  reauthenticateWithPopup,
+  reauthenticateWithRedirect,
+  GoogleAuthProvider,
+  User,
+} from "firebase/auth";
 import { db, storage } from "@/lib/firebase";
 import type { UserProfile } from "@/types";
+import { compressImage } from "@/lib/imageUtils";
 
 export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, "users", uid));
@@ -41,36 +50,76 @@ export async function uploadAvatar(uid: string, blob: Blob): Promise<string> {
 export async function deleteAccount(user: User): Promise<void> {
   const uid = user.uid;
 
-  // Delete all posts
-  const postsQ = query(collection(db, "posts"), where("userId", "==", uid));
+  // 1. Delete all user posts (batch limit 500)
+  const postsQ = query(collection(db, "posts"), where("userId", "==", uid), limit(500));
   const postsSnap = await getDocs(postsQ);
-  const batch = writeBatch(db);
-  postsSnap.docs.forEach((d) => batch.delete(d.ref));
-  await batch.commit();
+  if (postsSnap.docs.length > 0) {
+    const batch = writeBatch(db);
+    postsSnap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
 
-  // Delete post images
+  // 2. Delete post images from storage
   try {
     const storageRef = ref(storage, `posts/${uid}`);
     const files = await listAll(storageRef);
     await Promise.all(files.items.map((item) => deleteObject(item)));
   } catch {}
 
-  // Handle groups
-  const groupsSnap = await getDocs(collection(db, "groups"));
+  // 3. Delete avatar from storage
+  try {
+    await deleteObject(ref(storage, `avatars/${uid}.jpg`));
+  } catch {}
+
+  // 4. Leave all groups (leader → close, member → leave)
+  const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid));
+  const groupsSnap = await getDocs(memberGroupsQ);
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();
     if (data.creatorId === uid) {
       await updateDoc(groupDoc.ref, { isClosed: true });
-    } else if (data.memberIds?.includes(uid)) {
+    } else {
       await updateDoc(groupDoc.ref, {
-        memberIds: data.memberIds.filter((id: string) => id !== uid),
-        memberCount: (data.memberCount || 1) - 1,
+        memberIds: arrayRemove(uid),
+        memberCount: increment(-1),
       });
     }
   }
 
-  // Delete user doc & Firebase Auth account
+  // 5. Delete following subcollection
+  try {
+    const followingSnap = await getDocs(collection(db, "users", uid, "following"));
+    if (followingSnap.docs.length > 0) {
+      const batch2 = writeBatch(db);
+      followingSnap.docs.forEach((d) => batch2.delete(d.ref));
+      await batch2.commit();
+    }
+  } catch {}
+
+  // 6. Delete private subcollection (fcmToken, blockedUsers)
+  try {
+    await deleteDoc(doc(db, "users", uid, "private", "config"));
+  } catch {}
+
+  // 7. Delete user document
   await deleteDoc(doc(db, "users", uid));
+
+  // 8. Re-authenticate then delete Firebase Auth account (must be last)
+  const provider = new GoogleAuthProvider();
+  try {
+    await reauthenticateWithPopup(user, provider);
+  } catch (e: unknown) {
+    const err = e as { code?: string };
+    if (
+      err.code === "auth/popup-blocked" ||
+      err.code === "auth/popup-closed-by-user" ||
+      err.code === "auth/cancelled-popup-request"
+    ) {
+      await reauthenticateWithRedirect(user, provider);
+      return; // redirect will reload the page
+    }
+    throw e;
+  }
   await deleteUser(user);
 }
 
@@ -80,8 +129,9 @@ export async function submitReport(
   reason: string,
   imageFile: File
 ): Promise<void> {
+  const compressed = await compressImage(imageFile, { maxSize: 1024 });
   const imgRef = ref(storage, `reports/${reporterId}_${Date.now()}.jpg`);
-  await uploadBytes(imgRef, imageFile);
+  await uploadBytes(imgRef, compressed);
   const imageUrl = await getDownloadURL(imgRef);
 
   await addDoc(collection(db, "reports"), {
@@ -96,15 +146,18 @@ export async function submitReport(
 }
 
 export async function blockUser(myUid: string, targetUid: string): Promise<void> {
-  await updateDoc(doc(db, "users", myUid), { blockedUsers: arrayUnion(targetUid) });
+  const privRef = doc(db, "users", myUid, "private", "config");
+  await updateDoc(privRef, { blockedUsers: arrayUnion(targetUid) });
 }
 
 export async function unblockUser(myUid: string, targetUid: string): Promise<void> {
-  await updateDoc(doc(db, "users", myUid), { blockedUsers: arrayRemove(targetUid) });
+  const privRef = doc(db, "users", myUid, "private", "config");
+  await updateDoc(privRef, { blockedUsers: arrayRemove(targetUid) });
 }
 
 export async function saveFCMToken(uid: string, token: string): Promise<void> {
-  await updateDoc(doc(db, "users", uid), { fcmToken: token });
+  const privRef = doc(db, "users", uid, "private", "config");
+  await updateDoc(privRef, { fcmToken: token });
 }
 
 export async function fetchAdminConfig() {

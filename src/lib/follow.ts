@@ -4,6 +4,8 @@ import {
   setDoc,
   deleteDoc,
   getDocs,
+  query,
+  limit,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -20,8 +22,9 @@ export async function unfollowUser(myUid: string, targetUid: string) {
   await deleteDoc(doc(db, "users", myUid, "following", targetUid));
 }
 
-/** Get all UIDs the user is following */
+/** Get UIDs the user is following (max 200) */
 export async function getFollowingIds(uid: string): Promise<string[]> {
-  const snap = await getDocs(collection(db, "users", uid, "following"));
+  const q = query(collection(db, "users", uid, "following"), limit(200));
+  const snap = await getDocs(q);
   return snap.docs.map((d) => d.id);
 }

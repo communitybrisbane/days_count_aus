@@ -27,7 +27,6 @@ export interface Group {
   isOfficial?: boolean;
   iconUrl?: string;
   goal?: string;
-  password?: string;
   lastMessageAt?: Timestamp;
   lastMessageText?: string;
   lastMessageBy?: string;
@@ -49,8 +48,13 @@ export interface UserProfile {
   dailyLikeCount?: number;
   lastLikeDate?: string;
   weeklyGoal?: number;
-  blockedUsers?: string[];
   groupIds?: string[];
   lastPostAt?: string;
   createdAt?: Timestamp;
+}
+
+/** Private user data (stored in users/{uid}/private/config) */
+export interface UserPrivate {
+  blockedUsers: string[];
+  fcmToken: string;
 }

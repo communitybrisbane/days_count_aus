@@ -43,7 +43,8 @@ export default function MyPage() {
     if (followingProfiles.length > 0 || following.length === 0) return;
     setLoadingFollowing(true);
     const profiles: any[] = [];
-    for (const uid of following) {
+    const displayIds = following.slice(0, 50);
+    for (const uid of displayIds) {
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) profiles.push({ uid, ...snap.data() });
     }

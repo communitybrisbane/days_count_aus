@@ -5,11 +5,12 @@ import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { getFollowingIds } from "@/lib/follow";
-import type { UserProfile } from "@/types";
+import type { UserProfile, UserPrivate } from "@/types";
 
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
+  privateData: UserPrivate | null;
   loading: boolean;
   following: string[];
   refreshProfile: () => Promise<void>;
@@ -19,6 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
+  privateData: null,
   loading: true,
   following: [],
   refreshProfile: async () => {},
@@ -44,12 +46,20 @@ async function fetchProfileWithRetry(uid: string, retries = 3): Promise<UserProf
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [privateData, setPrivateData] = useState<UserPrivate | null>(null);
   const [following, setFollowing] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (uid: string) => {
     const data = await fetchProfileWithRetry(uid);
     setProfile(data);
+    // Fetch private data (blockedUsers, fcmToken)
+    try {
+      const privSnap = await getDoc(doc(db, "users", uid, "private", "config"));
+      setPrivateData(privSnap.exists() ? (privSnap.data() as UserPrivate) : { blockedUsers: [], fcmToken: "" });
+    } catch {
+      setPrivateData({ blockedUsers: [], fcmToken: "" });
+    }
   };
 
   const fetchFollowing = async (uid: string) => {
@@ -101,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null);
         setProfile(null);
+        setPrivateData(null);
         setFollowing([]);
       }
       setLoading(false);
@@ -109,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, following, refreshProfile, refreshFollowing }}>
+    <AuthContext.Provider value={{ user, profile, privateData, loading, following, refreshProfile, refreshFollowing }}>
       {children}
     </AuthContext.Provider>
   );

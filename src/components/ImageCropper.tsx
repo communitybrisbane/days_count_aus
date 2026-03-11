@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Cropper, { Area } from "react-easy-crop";
+import { compressCroppedImage } from "@/lib/imageUtils";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -9,48 +10,6 @@ interface ImageCropperProps {
   onCancel: () => void;
   cropShape?: "rect" | "round";
   outputSize?: number;
-}
-
-async function getCroppedImg(
-  imageSrc: string,
-  pixelCrop: Area,
-  outputSize: number,
-  round: boolean
-): Promise<Blob> {
-  const image = new Image();
-  image.crossOrigin = "anonymous";
-  await new Promise<void>((resolve) => {
-    image.onload = () => resolve();
-    image.src = imageSrc;
-  });
-
-  const canvas = document.createElement("canvas");
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-  const ctx = canvas.getContext("2d")!;
-
-  if (round) {
-    ctx.beginPath();
-    ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-  }
-
-  ctx.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    outputSize,
-    outputSize
-  );
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.85);
-  });
 }
 
 export default function ImageCropper({
@@ -70,7 +29,7 @@ export default function ImageCropper({
 
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
-    const blob = await getCroppedImg(imageSrc, croppedAreaPixels, outputSize, cropShape === "round");
+    const blob = await compressCroppedImage(imageSrc, croppedAreaPixels, outputSize, cropShape === "round");
     onCropComplete(blob);
   };
 
