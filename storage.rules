@@ -4,7 +4,7 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     function isVerified() {
-      return request.auth != null && request.appCheckToken != null;
+      return request.auth != null;
     }
 
     // ─── Avatars: owner uploads, anyone reads ───
