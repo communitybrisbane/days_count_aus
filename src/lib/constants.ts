@@ -18,6 +18,13 @@ export const GRADIENTS = [
   "from-green-500 to-teal-400",
 ] as const;
 
+/** Weekly XP rewards — escalating per day (index 0 = 1st post, index 6 = 7th) */
+export const WEEKLY_XP = [5, 7, 10, 15, 25, 35, 50] as const;
+export const WEEKLY_XP_TOTAL = WEEKLY_XP.reduce((a, b) => a + b, 0); // 147
+/** Consecutive week bonus: +5 XP per post per streak week (max 10 weeks) */
+export const WEEK_STREAK_BONUS = 5;
+export const WEEK_STREAK_MAX = 10;
+
 export const MAX_GROUP_MEMBERS = 10;
 export const DAILY_LIKE_LIMIT = 5;
 export const POST_EDIT_WINDOW_MS = 5 * 60 * 1000;

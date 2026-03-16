@@ -132,17 +132,22 @@ export default function GroupsPage() {
               >
                 All
               </button>
-              {FOCUS_MODES.map((m) => (
+              {FOCUS_MODES.map((m) => {
+                const isWH = m.id === "enjoying" || m.id === "challenging";
+                return (
                 <button
                   key={m.id}
                   onClick={() => setModeFilter(m.id)}
                   className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                    modeFilter === m.id ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
+                    modeFilter === m.id
+                      ? isWH ? "bg-aussie-gold text-white" : "bg-ocean-blue text-white"
+                      : "bg-gray-100 text-gray-500"
                   }`}
                 >
                   <FocusModeIcon modeId={m.id} size={14} className="inline-block align-middle" /> {m.description}
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
 

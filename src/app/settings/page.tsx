@@ -14,10 +14,13 @@ import { uploadAvatar, deleteAccount, submitReport } from "@/lib/services/users"
 import ImageCropper from "@/components/ImageCropper";
 import ConfirmModal from "@/components/ConfirmModal";
 import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
+  const { showWarn, sanitize } = useAsciiInput();
 
   const [nickname, setNickname] = useState(profile?.displayName || "");
   const [region, setRegion] = useState(profile?.region || "");
@@ -25,6 +28,7 @@ export default function SettingsPage() {
   const [mainMode, setMainMode] = useState(profile?.mainMode || "");
   const [departureDate, setDepartureDate] = useState(profile?.departureDate || "");
   const [status, setStatus] = useState<"pre-departure" | "in-australia" | "post-return">(profile?.status || "pre-departure");
+  const [showRegion, setShowRegion] = useState(profile?.showRegion !== false);
   const [saving, setSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
   const [activeSection, setActiveSection] = useState<"profile" | "report" | null>(null);
@@ -83,6 +87,7 @@ export default function SettingsPage() {
       await updateDoc(doc(db, "users", user.uid), {
         displayName: nickname.trim(),
         region: region.trim(),
+        showRegion,
         goal: goal.trim(),
         mainMode,
         departureDate,
@@ -189,6 +194,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-dvh flex flex-col">
+      <AsciiWarn show={showWarn} />
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
@@ -235,7 +241,7 @@ export default function SettingsPage() {
               <label className="text-xs text-gray-500">Nickname</label>
               <input
                 type="text" maxLength={15} value={nickname}
-                onChange={(e) => setNickname(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+                onChange={(e) => setNickname(sanitize(e.target.value, /[^a-zA-Z0-9_]/g))}
                 className={`w-full border rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold ${nicknameError ? "border-red-400" : "border-gray-300"}`}
               />
               {nicknameError && <p className="text-xs text-red-400 mt-0.5">{nicknameError}</p>}
@@ -259,22 +265,39 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs text-gray-500">Show region on posts</span>
+                <button
+                  type="button"
+                  onClick={() => setShowRegion(!showRegion)}
+                  className={`relative w-10 h-5.5 rounded-full transition-colors ${showRegion ? "bg-aussie-gold" : "bg-gray-300"}`}
+                >
+                  <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${showRegion ? "left-5" : "left-0.5"}`} />
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="text-xs text-gray-500">Goal</label>
-              <input type="text" maxLength={100} value={goal} onChange={(e) => setGoal(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+              <input type="text" maxLength={100} value={goal} onChange={(e) => setGoal(sanitize(e.target.value))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold" />
             </div>
 
             <div>
               <label className="text-xs text-gray-500">Main Mode</label>
               <div className="flex gap-1.5 mt-1 flex-wrap">
-                {FOCUS_MODES.map((m) => (
+                {FOCUS_MODES.map((m) => {
+                  const isWH = m.id === "enjoying" || m.id === "challenging";
+                  return (
                   <button key={m.id} onClick={() => setMainMode(m.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs border ${mainMode === m.id ? "border-aussie-gold bg-amber-50 font-bold" : "border-gray-200"}`}
+                    className={`px-3 py-1.5 rounded-full text-xs border ${
+                      mainMode === m.id
+                        ? isWH ? "border-aussie-gold bg-amber-50 font-bold" : "border-ocean-blue bg-blue-50 font-bold"
+                        : "border-gray-200"
+                    }`}
                   >{m.description}</button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -328,9 +351,9 @@ export default function SettingsPage() {
         </button>
         {activeSection === "report" && (
           <div className="px-4 py-3 space-y-2 bg-gray-50 border-b border-gray-100">
-            <input type="text" placeholder="Target user ID" value={reportTarget} onChange={(e) => setReportTarget(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+            <input type="text" placeholder="Target user ID" value={reportTarget} onChange={(e) => setReportTarget(sanitize(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none" />
-            <input type="text" placeholder="Reason for report" value={reportReason} onChange={(e) => setReportReason(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+            <input type="text" placeholder="Reason for report" value={reportReason} onChange={(e) => setReportReason(sanitize(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none" />
             <div>
               <button onClick={() => reportFileRef.current?.click()}

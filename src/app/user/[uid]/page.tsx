@@ -14,6 +14,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import { FocusModeIcon, IconHeart, IconFire, IconUsers, IconBan, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Post, UserProfile } from "@/types";
+import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
 export default function PublicProfilePage() {
   const { user, profile: myProfile, privateData, following, refreshFollowing, refreshProfile } = useAuth();
@@ -28,6 +29,7 @@ export default function PublicProfilePage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const swipe = useSwipeDismiss(() => setSelectedIndex(null));
 
   const isOwn = user?.uid === uid;
 
@@ -164,17 +166,22 @@ export default function PublicProfilePage() {
         >
           All
         </button>
-        {FOCUS_MODES.map((m) => (
+        {FOCUS_MODES.map((m) => {
+          const isWH = m.id === "enjoying" || m.id === "challenging";
+          return (
           <button
             key={m.id}
             onClick={() => setModeFilter(m.id)}
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
-              modeFilter === m.id ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-gray-100"
+              modeFilter === m.id
+                ? isWH ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-ocean-blue/15 ring-2 ring-ocean-blue"
+                : "bg-gray-100"
             }`}
           >
             <FocusModeIcon modeId={m.id} size={33} />
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* 投稿グリッド */}
@@ -213,9 +220,9 @@ export default function PublicProfilePage() {
       {/* Post detail modal */}
       {selectedIndex !== null && (
         <>
-          <div className="fixed inset-0 bg-black z-40" />
+          <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40" />
           <div className="fixed inset-0 z-40 flex justify-center">
-            <div className="relative w-full max-w-[430px] flex flex-col pb-14">
+            <div ref={swipe.ref} className="relative w-full max-w-[430px] flex flex-col pb-14" {...swipe.handlers}>
               <div
                 ref={scrollRef}
                 className="flex-1 w-full overflow-y-auto bg-white"

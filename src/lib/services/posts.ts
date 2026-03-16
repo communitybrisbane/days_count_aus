@@ -37,13 +37,38 @@ export async function fetchTotalLikesAndWeekly(uid: string) {
     totalLikes += d.data().likeCount || 0;
   });
 
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  // Weekly reset: Tuesday 00:00 local time
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, ...
+  const daysSinceTuesday = (day + 5) % 7; // Tue=0, Wed=1, ..., Mon=6
+  const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
   const weeklyPostCount = snap.docs.filter((d) => {
     const ca = d.data().createdAt;
-    return ca?.toDate && ca.toDate() >= weekAgo;
+    return ca?.toDate && ca.toDate() >= tuesdayStart;
   }).length;
 
   return { totalLikes, weeklyPostCount };
+}
+
+/** Get weekly post count for XP calculation (Tuesday reset) */
+export async function getWeeklyPostCount(uid: string): Promise<number> {
+  const now = new Date();
+  const day = now.getDay();
+  const daysSinceTuesday = (day + 5) % 7;
+  const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
+
+  const q = query(
+    collection(db, "posts"),
+    where("userId", "==", uid),
+    where("status", "==", "active"),
+    orderBy("createdAt", "desc"),
+    limit(10)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.filter((d) => {
+    const ca = d.data().createdAt;
+    return ca?.toDate && ca.toDate() >= tuesdayStart;
+  }).length;
 }
 
 interface CreatePostInput {

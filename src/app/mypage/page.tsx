@@ -13,8 +13,9 @@ import Avatar from "@/components/Avatar";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { IconSettings, IconHeart, IconFire, IconLock, IconUsers, FocusModeIcon } from "@/components/icons";
+import { IconSettings, IconHeart, IconLock, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
+import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
 export default function MyPage() {
   const { user, profile, loading } = useAuthGuard();
@@ -25,10 +26,11 @@ export default function MyPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
   const [showFollowing, setShowFollowing] = useState(false);
-  const [followingProfiles, setFollowingProfiles] = useState<{ uid: string; displayName: string; photoURL: string; mainMode?: string; region?: string }[]>([]);
+  const [followingProfiles, setFollowingProfiles] = useState<{ uid: string; displayName: string; photoURL: string; mainMode?: string; region?: string; showRegion?: boolean }[]>([]);
   const [loadingFollowing, setLoadingFollowing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
+  const swipePost = useSwipeDismiss(() => setSelectedIndex(null));
+  const swipeFollowing = useSwipeDismiss(() => setShowFollowing(false));
 
   useEffect(() => {
     if (!user) return;
@@ -131,53 +133,68 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
   return (
     <div className="h-dvh pb-16 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any }}>
-      {/* プロフィール — 空間をふんだんに使う */}
-      <div className="px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
-        <div className="flex items-center gap-5">
+      {/* プロフィール — Instagram風中央レイアウト */}
+      <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        {/* 設定アイコン — 右上 */}
+        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-gray-400 w-10 h-10 flex items-center justify-center" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+          <IconSettings size={24} />
+        </button>
+
+        <div className="flex flex-col items-center pt-10">
+          {/* アバター */}
           <Avatar
             photoURL={profile.photoURL}
             displayName={profile.displayName}
             uid={user!.uid}
-            size={120}
+            size={96}
           />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold truncate">{profile.displayName}</h2>
-              {profile.mainMode && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
-                  <FocusModeIcon modeId={profile.mainMode} size={12} />
-                  {FOCUS_MODES.find((m) => m.id === profile.mainMode)?.description}
-                </span>
-              )}
-              <button onClick={() => router.push("/settings")} className="text-gray-400 w-10 h-10 flex items-center justify-center shrink-0 ml-auto -mr-2">
-                <IconSettings size={24} />
-              </button>
-            </div>
 
-            <div className="flex gap-6 mt-5 text-center">
-              <div>
-                <p className="font-bold flex items-center justify-center gap-1"><IconHeart size={16} className="text-pink-500" /> {posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
-                <p className="text-xs text-gray-400">Likes</p>
-              </div>
-              <div>
-                <p className="font-bold flex items-center justify-center gap-1"><IconFire size={16} className="text-outback-clay" /> {profile.currentStreak}</p>
-                <p className="text-xs text-gray-400">Streak</p>
-              </div>
-              <button onClick={handleOpenFollowing}>
-                <p className="font-bold flex items-center justify-center gap-1"><IconUsers size={16} className="text-ocean-blue" /> {following.length}</p>
-                <p className="text-xs text-gray-400">Following</p>
-              </button>
-            </div>
+          {/* 名前 */}
+          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center">{profile.displayName}</h2>
 
-            {isSunday && (
-              <button
-                onClick={handleCopyAIData}
-                className="text-xs bg-ocean-blue text-white px-3 py-1.5 rounded-full mt-3"
-              >
-                Copy AI Review Data
-              </button>
+          {/* モード・地域 — 横並び */}
+          <div className="flex items-center justify-center gap-1.5 mt-2">
+            {profile.mainMode && (
+              <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                <FocusModeIcon modeId={profile.mainMode} size={12} />
+                {FOCUS_MODES.find((m) => m.id === profile.mainMode)?.description}
+              </span>
+            )}
+            {profile.region && profile.showRegion !== false && (
+              <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                {profile.region}
+              </span>
             )}
           </div>
+          {/* ゴール */}
+          {profile.goal && (
+            <p className="text-lg font-bold text-gray-700 mt-2 text-center max-w-[85%] leading-snug">{profile.goal}</p>
+          )}
+
+          {/* Likes / Streak / Following */}
+          <div className="flex gap-8 mt-4 text-center">
+            <div>
+              <p className="font-bold text-base">{posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
+              <p className="text-[11px] text-gray-400">Likes</p>
+            </div>
+            <div>
+              <p className="font-bold text-base">{profile.currentStreak ?? 0}</p>
+              <p className="text-[11px] text-gray-400">Streak</p>
+            </div>
+            <button onClick={handleOpenFollowing}>
+              <p className="font-bold text-base">{following.length}</p>
+              <p className="text-[11px] text-gray-400">Following</p>
+            </button>
+          </div>
+
+          {isSunday && (
+            <button
+              onClick={handleCopyAIData}
+              className="text-xs bg-ocean-blue text-white px-3 py-1.5 rounded-full mt-3"
+            >
+              Copy AI Review Data
+            </button>
+          )}
         </div>
       </div>
 
@@ -191,17 +208,22 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
         >
           All
         </button>
-        {FOCUS_MODES.map((m) => (
+        {FOCUS_MODES.map((m) => {
+          const isWH = m.id === "enjoying" || m.id === "challenging";
+          return (
           <button
             key={m.id}
             onClick={() => setModeFilter(m.id)}
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
-              modeFilter === m.id ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-gray-100"
+              modeFilter === m.id
+                ? isWH ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-ocean-blue/15 ring-2 ring-ocean-blue"
+                : "bg-gray-100"
             }`}
           >
             <FocusModeIcon modeId={m.id} size={33} />
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* 投稿グリッド */}
@@ -246,9 +268,9 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
       {/* Post detail modal — full screen vertical scroll */}
       {selectedIndex !== null && (
         <>
-          <div className="fixed inset-0 bg-black z-40" />
+          <div ref={swipePost.bgRef} className="fixed inset-0 bg-black z-40" />
           <div className="fixed inset-0 z-40 flex justify-center">
-            <div className="relative w-full max-w-[430px] flex flex-col pb-14">
+            <div ref={swipePost.ref} className="relative w-full max-w-[430px] flex flex-col pb-14" {...swipePost.handlers}>
 
               {/* Scrollable posts — 白背景でカード間の隙間をなくし、listRoundedでなめらかに接続 */}
               <div
@@ -288,8 +310,8 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
       {/* Following list modal — full screen */}
       {showFollowing && (
         <>
-          <div className="fixed inset-0 z-50 flex justify-center bg-black/40">
-          <div className="w-full max-w-[430px] bg-white flex flex-col min-h-dvh">
+          <div ref={swipeFollowing.bgRef} className="fixed inset-0 z-50 flex justify-center bg-black/40">
+          <div ref={swipeFollowing.ref} className="w-full max-w-[430px] bg-white flex flex-col min-h-dvh" {...swipeFollowing.handlers}>
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <button onClick={() => setShowFollowing(false)} className="text-gray-400">←</button>
               <h3 className="font-bold text-sm">Following ({following.length})</h3>
@@ -319,7 +341,7 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
                       <p className="text-sm font-bold truncate">{fp.displayName}</p>
                       <p className="text-xs text-gray-400">
                         {fp.mainMode && FOCUS_MODES.find((m) => m.id === fp.mainMode)?.description}
-                        {fp.region && ` · ${fp.region}`}
+                        {fp.region && fp.showRegion !== false && ` · ${fp.region}`}
                       </p>
                     </div>
                   </button>

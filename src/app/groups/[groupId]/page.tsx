@@ -32,6 +32,8 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { FocusModeIcon, IconHeart, IconCamera, IconEdit } from "@/components/icons";
 import type { Group } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 interface Message {
   id: string;
@@ -46,6 +48,7 @@ export default function GroupChatPage() {
   const groupId = params.groupId as string;
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
+  const { showWarn, sanitize } = useAsciiInput();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -267,6 +270,7 @@ export default function GroupChatPage() {
 
   return (
     <div className="flex flex-col min-h-dvh">
+      <AsciiWarn show={showWarn} />
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-3">
@@ -388,7 +392,7 @@ export default function GroupChatPage() {
               <label className="block text-xs font-medium text-gray-500 mb-1">Goal / Rules</label>
               <textarea
                 value={editGoal}
-                onChange={(e) => setEditGoal(e.target.value.replace(/[^\x20-\x7E\n]/g, ""))}
+                onChange={(e) => setEditGoal(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
                 maxLength={200}
                 rows={3}
                 placeholder="Write your community's goals or rules"
@@ -498,7 +502,7 @@ export default function GroupChatPage() {
           <input
             type="text"
             value={text}
-            onChange={(e) => setText(e.target.value.replace(/[^\x20-\x7E]/g, "").slice(0, 100))}
+            onChange={(e) => setText(sanitize(e.target.value).slice(0, 100))}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Message (100 chars max)"
             maxLength={100}

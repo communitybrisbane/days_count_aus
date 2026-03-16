@@ -40,7 +40,7 @@ const roundedClass = (listRounded?: "top" | "bottom" | "none") => {
 
 export default function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
   const { user, profile, following, refreshFollowing, refreshProfile } = useAuth();
-  const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string } | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean } | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isEditable, setIsEditable] = useState(false);
@@ -79,6 +79,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           photoURL: data.photoURL,
           uid: data.uid,
           region: data.region || "",
+          showRegion: data.showRegion !== false,
         });
       }
     }
@@ -218,7 +219,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             </div>
           )}
           {/* Location badge — top right */}
-          {authorProfile?.region && (
+          {authorProfile?.region && authorProfile.showRegion !== false && (
             <div className="absolute top-1.5 right-1.5 bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded-full">
               {authorProfile.region}
             </div>
@@ -286,7 +287,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {authorProfile?.region && (
+          {authorProfile?.region && authorProfile.showRegion !== false && (
             <span className="text-[10px] bg-ocean-blue/10 text-ocean-blue px-2 py-0.5 rounded-full font-medium">
               {authorProfile.region}
             </span>

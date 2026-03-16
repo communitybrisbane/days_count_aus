@@ -49,6 +49,9 @@ export interface UserProfile {
   lastLikeDate?: string;
   weeklyGoal?: number;
   groupIds?: string[];
+  showRegion?: boolean;
+  weekStreak?: number;
+  lastCompletedWeekStart?: string;
   lastPostAt?: string;
   createdAt?: Timestamp;
 }

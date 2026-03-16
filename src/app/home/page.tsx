@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { getDayCount, formatDayCount, calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
+import { getDayCount, calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
 import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
 import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
@@ -16,20 +16,29 @@ import MilestoneAnimation from "@/components/MilestoneAnimation";
 import BannerCarousel from "@/components/BannerCarousel";
 import { MILESTONES } from "@/lib/constants";
 import { IconEdit } from "@/components/icons";
+import WeeklyChallenge from "@/components/WeeklyChallenge";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
 
-interface ZoomSchedule {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
+interface Announcement {
+  title: string;
+  body?: string;
+  type: "info" | "warning" | "event";
+  linkUrl?: string;
+  linkLabel?: string;
+  active: boolean;
+}
+
+interface LiveSession {
+  label: string;
+  url: string;
+  description?: string;
 }
 
 interface AdminConfig {
-  message: string;
+  announcements?: Announcement[];
+  liveSession?: LiveSession;
   bannerImageUrl?: string;
-  zoomUrl?: string;
-  zoomLabel?: string;
-  zoomSchedules?: ZoomSchedule[];
-  zoomNextInfo?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -41,15 +50,14 @@ const STATUS_LABELS: Record<string, string> = {
 export default function HomePage() {
   const { user, profile, loading } = useAuthGuard();
   const { refreshProfile } = useAuth();
+  const { showWarn, sanitize } = useAsciiInput();
   const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
   const [weeklyPostCount, setWeeklyPostCount] = useState(0);
   const [showMilestone, setShowMilestone] = useState(false);
   const [milestoneDay, setMilestoneDay] = useState(0);
   const [phasePrompt, setPhasePrompt] = useState<{ message: string; newStatus: string } | null>(null);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
-  const [zoomOpen, setZoomOpen] = useState(false);
   const [showGoalInput, setShowGoalInput] = useState(false);
-  const [goalDraft, setGoalDraft] = useState(3);
   const [goalTextDraft, setGoalTextDraft] = useState("");
 
   // createdAt: Firestore Timestamp → Date
@@ -63,11 +71,10 @@ export default function HomePage() {
     return getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
   }, [profile, createdAtDate]);
 
-  const dayCountStr = formatDayCount(dayCount.label, dayCount.number);
   const level = profile ? calculateLevel(profile.totalXP) : 1;
   const progress = profile ? levelProgress(profile.totalXP) : 0;
 
-  const weeklyGoal = profile?.weeklyGoal || 0;
+  const weeklyGoal = 7;
 
   // Fetch admin config
   useEffect(() => {
@@ -76,23 +83,6 @@ export default function HomePage() {
       if (data) setAdminConfig(data as AdminConfig);
     }).catch((e) => console.error("Failed to fetch admin config:", e));
   }, [user]);
-
-  // Zoom schedule check (every 30s)
-  const checkZoomOpen = useCallback(() => {
-    if (!adminConfig?.zoomSchedules?.length) { setZoomOpen(false); return; }
-    const now = new Date();
-    const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const isOpen = adminConfig.zoomSchedules.some(
-      (s) => s.dayOfWeek === now.getDay() && hhmm >= s.startTime && hhmm < s.endTime
-    );
-    setZoomOpen(isOpen);
-  }, [adminConfig]);
-
-  useEffect(() => {
-    checkZoomOpen();
-    const timer = setInterval(checkZoomOpen, 30_000);
-    return () => clearInterval(timer);
-  }, [checkZoomOpen]);
 
   // Fetch weekly stats
   useEffect(() => {
@@ -179,14 +169,12 @@ export default function HomePage() {
 
   const handleSaveGoal = async () => {
     if (!user) return;
-    const value = Math.max(1, Math.min(goalDraft, 30));
-    await updateDoc(doc(db, "users", user.uid), { weeklyGoal: value, goal: goalTextDraft.trim() });
+    await updateDoc(doc(db, "users", user.uid), { goal: goalTextDraft.trim() });
     await refreshProfile();
     setShowGoalInput(false);
   };
 
   const openGoalInput = () => {
-    setGoalDraft(weeklyGoal || 3);
     setGoalTextDraft(profile?.goal || "");
     setShowGoalInput(true);
   };
@@ -197,6 +185,7 @@ export default function HomePage() {
 
   return (
     <div className="pb-18 flex flex-col min-h-dvh">
+      <AsciiWarn show={showWarn} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
 
       {phasePrompt && (
@@ -223,110 +212,96 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ===== 1. Gold Header & Life Bar ===== */}
-      <div className="bg-gradient-to-br from-aussie-gold to-amber-500 text-white pb-5 px-6 rounded-b-3xl" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
-        <p className="text-xs opacity-80 mb-1">{STATUS_LABELS[profile.status || "pre-departure"] ?? profile.status}</p>
-        <div className="flex items-end justify-between mb-0.5">
-          <h1 className="text-4xl font-black tracking-tight flex items-center gap-1.5">
-            {dayCountStr}
-            {(profile.currentStreak ?? 0) > 0 && <span className="text-2xl">🔥</span>}
-          </h1>
-          <p className="text-2xl font-black opacity-90 leading-none mb-0.5">Lv.{level}</p>
-        </div>
-        <p className="text-xs opacity-80 mb-3">Hello, {profile.displayName}!</p>
+      {/* ===== 1. Hero Header — Day Count Only ===== */}
+      <div className="bg-gradient-to-br from-aussie-gold via-amber-500 to-orange-400 text-white pb-10 px-6 rounded-b-[2rem] relative overflow-hidden" style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top, 0px))" }}>
+        {/* Subtle background texture */}
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
-        {/* XP Progress Bar */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-white/20 rounded-full h-2">
-            <div className="bg-white h-2 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+        <div className="relative">
+          <p className="text-white/70 text-xs font-medium tracking-widest uppercase mb-4">
+            {STATUS_LABELS[profile.status || "pre-departure"] ?? profile.status}
+          </p>
+
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-[3.25rem] font-black tracking-tight leading-none">
+              {dayCount.label} {dayCount.number < 0 ? "−" : "+"} {Math.abs(dayCount.number)}
+            </span>
           </div>
-          <span className="text-[10px] opacity-70 shrink-0">{profile.totalXP - xpForLevel(level)} / {xpForLevel(level + 1) - xpForLevel(level)} EXP</span>
+
+          <p className="text-white/60 text-sm mt-1">
+            Hello, {profile.displayName}
+          </p>
         </div>
       </div>
 
-      {/* ===== 2. Weekly Goal Section ===== */}
-      <div className="px-5 -mt-4">
-        <div className={`rounded-2xl shadow-md px-4 py-3 relative overflow-hidden transition-all duration-500 ${
+      {/* ===== 2. Weekly Goal — Main Card (7 days fixed) ===== */}
+      <div className="px-5 -mt-6 relative z-10">
+        <div className={`rounded-2xl shadow-lg overflow-hidden transition-all duration-500 ${
           goalCleared
-            ? "bg-gradient-to-br from-amber-50 to-yellow-50 ring-2 ring-aussie-gold/60 shadow-lg shadow-aussie-gold/20"
-            : "bg-white"
+            ? "ring-2 ring-aussie-gold/40 shadow-aussie-gold/15"
+            : "shadow-gray-200/80"
         }`}>
-          {/* Goal Achieved badge */}
-          {goalCleared && (
-            <div className="absolute top-2 right-2 bg-gradient-to-r from-aussie-gold to-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full animate-bounce shadow-md">
-              Goal Achieved!
+          <div className={`px-5 pt-5 pb-5 ${goalCleared ? "bg-gradient-to-br from-amber-50/80 to-yellow-50/60" : "bg-white"}`}>
+            {/* Goal text + edit button top-right */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="min-w-0 flex-1">
+                {profile.goal ? (
+                  <p className="text-base font-bold text-gray-800 leading-snug">{profile.goal}</p>
+                ) : (
+                  <p className="text-base text-gray-400 italic">No goal set</p>
+                )}
+                {goalCleared && (
+                  <span className="inline-block mt-1 text-[10px] font-black text-white bg-gradient-to-r from-aussie-gold to-amber-500 px-2.5 py-0.5 rounded-full shadow-sm">
+                    Complete!
+                  </span>
+                )}
+              </div>
+              <button onClick={openGoalInput} className="shrink-0 ml-3 p-1.5 active:bg-gray-100 rounded-lg transition-colors">
+                <IconEdit size={18} className="text-gray-400" />
+              </button>
             </div>
-          )}
 
-          <div className="flex items-center justify-between mb-1">
-            <p className={`text-[10px] ${goalCleared ? "text-aussie-gold font-bold" : "text-gray-400"}`}>My Weekly Goal</p>
-            <button onClick={openGoalInput} className={`p-0.5 ${goalCleared ? "text-aussie-gold" : "text-gray-400"}`}>
-              <IconEdit size={14} />
-            </button>
+            <WeeklyChallenge
+              weekStreak={profile.weekStreak ?? 0}
+              weeklyPostCount={weeklyPostCount}
+              goalCleared={goalCleared}
+            />
           </div>
-
-          {profile.goal ? (
-            <p className="text-sm font-bold text-gray-800 mb-2 leading-snug">{profile.goal}</p>
-          ) : (
-            <button onClick={openGoalInput} className="text-sm text-ocean-blue font-bold mb-2">Set your goal</button>
-          )}
-
-          {weeklyGoal > 0 ? (
-            <>
-              <div className="flex items-end gap-1 mb-1.5">
-                <span className={`text-2xl font-black ${goalCleared ? "text-aussie-gold" : "text-ocean-blue"}`}>
-                  {weeklyPostCount}
-                </span>
-                <span className="text-sm text-gray-400 mb-0.5">/ {weeklyGoal} posts</span>
-                {goalCleared && <span className="text-sm ml-1">🏆</span>}
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-all duration-700 ${goalCleared ? "bg-gradient-to-r from-aussie-gold to-amber-400" : "bg-ocean-blue"}`}
-                  style={{ width: `${Math.min((weeklyPostCount / weeklyGoal) * 100, 100)}%` }}
-                />
-              </div>
-            </>
-          ) : (
-            <p className="text-xs text-gray-400">Set a weekly posting goal to track your progress!</p>
-          )}
         </div>
       </div>
 
-      {/* Goal input modal */}
+      {/* ===== 3. XP / Level — Compact Row ===== */}
+      <div className="px-5 mt-3">
+        <div className="bg-white rounded-xl px-4 py-3 shadow-sm flex items-center gap-3">
+          <span className="text-lg font-black text-gray-800">Lv.{level}</span>
+          <div className="flex-1">
+            <div className="w-full bg-gray-100 rounded-full h-1.5">
+              <div
+                className="bg-gradient-to-r from-aussie-gold to-amber-400 h-1.5 rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+            </div>
+          </div>
+          <span className="text-[11px] text-gray-400 shrink-0 tabular-nums">
+            {xpForLevel(level + 1) - profile.totalXP} XP to next
+          </span>
+        </div>
+      </div>
+
+      {/* Goal text modal */}
       {showGoalInput && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-8" onClick={() => setShowGoalInput(false)}>
           <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-bold text-gray-800 mb-3">My Weekly Goal</p>
-
-            {/* Goal text */}
-            <label className="text-xs text-gray-500">Goal</label>
+            <p className="text-sm font-bold text-gray-800 mb-3">My Goal</p>
+            <label className="text-xs text-gray-500">What are you working towards?</label>
             <input
               type="text"
               maxLength={100}
               value={goalTextDraft}
-              onChange={(e) => setGoalTextDraft(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+              onChange={(e) => setGoalTextDraft(sanitize(e.target.value))}
               placeholder="e.g. Improve my English skills"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-0.5 mb-4 focus:outline-none focus:ring-2 focus:ring-aussie-gold"
             />
-
-            {/* Weekly post count */}
-            <label className="text-xs text-gray-500">Posts per week</label>
-            <div className="flex items-center justify-center gap-4 mt-1 mb-4">
-              <button
-                onClick={() => setGoalDraft((v) => Math.max(1, v - 1))}
-                className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold text-gray-600"
-              >
-                −
-              </button>
-              <span className="text-3xl font-black text-ocean-blue w-12 text-center">{goalDraft}</span>
-              <button
-                onClick={() => setGoalDraft((v) => Math.min(30, v + 1))}
-                className="w-10 h-10 rounded-full bg-gray-100 text-lg font-bold text-gray-600"
-              >
-                +
-              </button>
-            </div>
             <button onClick={handleSaveGoal} className="w-full bg-ocean-blue text-white font-bold text-sm py-2.5 rounded-xl">
               Save
             </button>
@@ -339,54 +314,82 @@ export default function HomePage() {
         <BannerCarousel location="home" bannerImageUrl={adminConfig?.bannerImageUrl} />
       </div>
 
-      {/* ===== 4. Unified Resource Card ===== */}
-      {(adminConfig?.message || adminConfig?.zoomUrl) && (
+      {/* ===== 4. Live Session ===== */}
+      {adminConfig?.liveSession && (
         <div className="px-5 mt-3">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Admin message */}
-            {adminConfig.message && (
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-[10px] font-bold text-outback-clay mb-0.5">From the team</p>
-                <p className="text-xs text-gray-700 leading-snug">{adminConfig.message}</p>
+          <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${
+            adminConfig.liveSession.url
+              ? "border-ocean-blue/30 ring-2 ring-ocean-blue/20 shadow-ocean-blue/10"
+              : "border-gray-100"
+          }`}>
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${adminConfig.liveSession.url ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
+                  <p className={`font-bold text-sm truncate ${adminConfig.liveSession.url ? "text-ocean-blue" : "text-gray-600"}`}>
+                    {adminConfig.liveSession.label || "Live Session"}
+                  </p>
+                  {adminConfig.liveSession.url && (
+                    <span className="text-[10px] font-bold text-white bg-ocean-blue px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                      LIVE
+                    </span>
+                  )}
+                </div>
+                <p className={`text-xs mt-0.5 ml-[18px] ${adminConfig.liveSession.url ? "text-gray-600" : "text-gray-400"}`}>
+                  {adminConfig.liveSession.url ? "Session in progress — join now!" : adminConfig.liveSession.description || "Next session TBD"}
+                </p>
               </div>
-            )}
+              {adminConfig.liveSession.url ? (
+                <a
+                  href={adminConfig.liveSession.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-ocean-blue text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md shrink-0 ml-3 active:scale-[0.97]"
+                >
+                  Join
+                </a>
+              ) : (
+                <span className="text-xs font-bold text-gray-300 bg-gray-100 px-4 py-2 rounded-xl shrink-0 ml-3">
+                  OFF
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-            {/* Zoom section */}
-            {adminConfig.zoomUrl && (
-              <div className={`px-4 py-3 transition-all ${
-                zoomOpen ? "ring-2 ring-ocean-blue/50 shadow-md shadow-ocean-blue/10 rounded-b-2xl" : ""
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${zoomOpen ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-                      <p className={`font-bold text-sm ${zoomOpen ? "text-ocean-blue" : "text-gray-600"}`}>
-                        {adminConfig.zoomLabel || "Zoom Meeting"}
-                      </p>
-                      {zoomOpen && (
-                        <span className="text-[10px] font-bold text-white bg-ocean-blue px-2 py-0.5 rounded-full animate-pulse">
-                          LIVE
-                        </span>
-                      )}
-                    </div>
-                    <p className={`text-xs mt-0.5 ml-[18px] ${zoomOpen ? "text-gray-600" : "text-gray-400"}`}>
-                      {zoomOpen ? "Meeting is in progress" : `Next: ${adminConfig.zoomNextInfo || "TBD"}`}
-                    </p>
+      {/* ===== 5. Announcements ===== */}
+      {adminConfig?.announcements && adminConfig.announcements.filter((a) => a.active).length > 0 && (
+        <div className="px-5 mt-3 space-y-2">
+          {adminConfig.announcements.filter((a) => a.active).map((ann, i) => {
+            const colors = {
+              info: { bg: "bg-blue-50", border: "border-blue-100", title: "text-blue-700", dot: "bg-blue-400" },
+              warning: { bg: "bg-red-50", border: "border-red-100", title: "text-red-600", dot: "bg-red-400" },
+              event: { bg: "bg-amber-50", border: "border-amber-200", title: "text-amber-700", dot: "bg-amber-400" },
+            };
+            const c = colors[ann.type] || colors.info;
+            return (
+              <div key={i} className={`${c.bg} border ${c.border} rounded-xl px-4 py-3`}>
+                <div className="flex items-start gap-2">
+                  <span className={`w-2 h-2 rounded-full ${c.dot} mt-1 shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${c.title}`}>{ann.title}</p>
+                    {ann.body && <p className="text-xs text-gray-600 mt-0.5 leading-snug">{ann.body}</p>}
+                    {ann.linkUrl && (
+                      <a
+                        href={ann.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-block text-xs font-bold ${c.title} mt-1.5 underline underline-offset-2`}
+                      >
+                        {ann.linkLabel || "View details"}
+                      </a>
+                    )}
                   </div>
-                  {zoomOpen ? (
-                    <a
-                      href={adminConfig.zoomUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-ocean-blue text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md hover:bg-blue-600 transition-colors shrink-0"
-                    >
-                      Join
-                    </a>
-                  ) : null}
                 </div>
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       )}
 

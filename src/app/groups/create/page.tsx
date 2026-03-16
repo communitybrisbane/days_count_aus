@@ -11,10 +11,13 @@ import { calculateLevel } from "@/lib/utils";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
 import { compressImage } from "@/lib/imageUtils";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 export default function CreateGroupPage() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
+  const { showWarn, sanitize } = useAsciiInput();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [groupName, setGroupName] = useState("");
   const [groupNameError, setGroupNameError] = useState("");
@@ -144,6 +147,7 @@ export default function CreateGroupPage() {
 
   return (
     <div className="min-h-dvh p-6">
+      <AsciiWarn show={showWarn} />
       <h1 className="text-2xl font-bold mb-6">Create Community</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -189,7 +193,7 @@ export default function CreateGroupPage() {
             type="text"
             maxLength={30}
             value={groupName}
-            onChange={(e) => setGroupName(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+            onChange={(e) => setGroupName(sanitize(e.target.value))}
             className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-aussie-gold ${
               groupNameError ? "border-red-400" : "border-gray-300"
             }`}
@@ -207,19 +211,24 @@ export default function CreateGroupPage() {
             Focus Mode <span className="text-red-400">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {FOCUS_MODES.map((m) => (
+            {FOCUS_MODES.map((m) => {
+              const isWH = m.id === "enjoying" || m.id === "challenging";
+              return (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => setMode(m.id)}
                 className={`flex flex-col items-center p-3 rounded-xl border-2 ${
-                  mode === m.id ? "border-aussie-gold bg-amber-50" : "border-gray-200"
+                  mode === m.id
+                    ? isWH ? "border-aussie-gold bg-amber-50" : "border-ocean-blue bg-blue-50"
+                    : "border-gray-200"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={24} />
                 <span className="text-xs text-gray-600">{m.description}</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -230,7 +239,7 @@ export default function CreateGroupPage() {
           </label>
           <textarea
             value={goal}
-            onChange={(e) => setGoal(e.target.value.replace(/[^\x20-\x7E\n]/g, ""))}
+            onChange={(e) => setGoal(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
             maxLength={200}
             rows={3}
             placeholder="What's the group's goal or rules?"

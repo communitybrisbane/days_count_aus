@@ -4,20 +4,23 @@ import { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GRADIENTS } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX } from "@/lib/constants";
 import { getDayCount, calculateLevel } from "@/lib/utils";
-import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord } from "@/lib/services/posts";
+import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount } from "@/lib/services/posts";
 import ImageCropper from "@/components/ImageCropper";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconHeart, FocusModeIcon } from "@/components/icons";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
 import Avatar from "@/components/Avatar";
 
 export default function PostPage() {
   const { user, profile, loading } = useAuthGuard();
   const { refreshProfile } = useAuth();
+  const { showWarn, sanitize } = useAsciiInput();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,9 +91,14 @@ export default function PostPage() {
         imageBlob,
       });
 
-      let xpGain = 50;
-      if (firstPost) xpGain += 100;
+      // Weekly XP: base + streak bonus
+      const weeklyCount = await getWeeklyPostCount(user.uid);
+      const streakWeeks = Math.min(profile.weekStreak || 0, WEEK_STREAK_MAX);
+      const baseXp = weeklyCount < 7 ? WEEKLY_XP[weeklyCount] : 0;
+      const streakBonus = weeklyCount < 7 ? streakWeeks * WEEK_STREAK_BONUS : 0;
+      const xpGain = baseXp + streakBonus;
 
+      // Streak tracking
       const now = new Date();
       const todayStr = now.toISOString().slice(0, 10);
       let newStreak = 1;
@@ -109,18 +117,23 @@ export default function PostPage() {
         }
       }
 
-      if (newStreak > 0 && newStreak % 7 === 0) {
-        xpGain += 100;
-      }
+      // First post bonus (one-time)
+      const totalXpGain = xpGain + (firstPost ? 100 : 0);
 
       const prevLevel = calculateLevel(profile.totalXP);
-      await updateUserXPAndStreak(user.uid, xpGain, newStreak);
+      await updateUserXPAndStreak(user.uid, totalXpGain, newStreak);
+
+      // If this was the 7th post of the week → update weekStreak
+      if (weeklyCount === 6) {
+        const { updateWeekStreak } = await import("@/lib/services/users");
+        await updateWeekStreak(user.uid, profile.weekStreak, profile.lastCompletedWeekStart);
+      }
       await refreshProfile();
 
-      setXpGained(xpGain);
+      setXpGained(totalXpGain);
       setShowXP(true);
 
-      const newLevel = calculateLevel(profile.totalXP + xpGain);
+      const newLevel = calculateLevel(profile.totalXP + totalXpGain);
       if (newLevel > prevLevel) {
         setTimeout(() => {
           setShowXP(false);
@@ -150,6 +163,7 @@ export default function PostPage() {
 
   return (
     <div className="min-h-dvh pb-20 flex flex-col">
+      <AsciiWarn show={showWarn} />
       <XPToast xp={xpGained} show={showXP} />
       <LevelUpAnimation
         level={levelUpTo}
@@ -185,10 +199,9 @@ export default function PostPage() {
       <div className="flex-1 relative overflow-hidden min-h-0 flex flex-col">
         {/* ===== STEP 1: Photo + Mode + Visibility（一画面に収める） ===== */}
         <div
-          className={`absolute inset-0 px-5 pt-2 flex flex-col min-h-0 transition-all duration-300 ease-out ${
+          className={`absolute inset-0 px-5 pt-3 pb-2 flex flex-col transition-all duration-300 ease-out ${
             step === 1 ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
           }`}
-          style={{ scrollbarWidth: "none", overflow: "hidden" }}
         >
           <input
             ref={fileInputRef}
@@ -199,16 +212,30 @@ export default function PostPage() {
           />
 
           {/* Mode selection */}
-          <p className="text-xs font-bold text-gray-500 mb-1">Focus Mode</p>
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            {FOCUS_MODES.map((m) => (
+          <p className="text-xs font-bold text-gray-500 mb-1.5">Focus Mode</p>
+          {/* WH modes */}
+          <div className="flex gap-1.5 mb-1.5">
+            {FOCUS_MODES.filter((m) => m.id === "enjoying" || m.id === "challenging").map((m) => (
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full border-2 whitespace-nowrap transition-all active:scale-[0.97] ${
-                  mode === m.id
-                    ? "border-aussie-gold bg-amber-50"
-                    : "border-gray-100 bg-gray-50"
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full border-2 transition-all active:scale-[0.97] ${
+                  mode === m.id ? "border-aussie-gold bg-amber-50" : "border-gray-100 bg-gray-50"
+                }`}
+              >
+                <FocusModeIcon modeId={m.id} size={16} />
+                <span className="text-xs font-medium text-gray-700">{m.label}</span>
+              </button>
+            ))}
+          </div>
+          {/* Other modes */}
+          <div className="flex gap-1.5">
+            {FOCUS_MODES.filter((m) => m.id !== "enjoying" && m.id !== "challenging").map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setMode(m.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full border-2 transition-all active:scale-[0.97] ${
+                  mode === m.id ? "border-ocean-blue bg-blue-50" : "border-gray-100 bg-gray-50"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={16} />
@@ -218,11 +245,11 @@ export default function PostPage() {
           </div>
 
           {/* Visibility toggle */}
-          <p className="text-xs font-bold text-gray-500 mt-3 mb-1">Visibility</p>
+          <p className="text-xs font-bold text-gray-500 mt-4 mb-1.5">Visibility</p>
           <div className="flex gap-1.5">
             <button
               onClick={() => setVisibility("public")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 transition-all active:scale-[0.98] ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 transition-all active:scale-[0.98] ${
                 visibility === "public"
                   ? "border-aussie-gold bg-amber-50"
                   : "border-gray-100 bg-gray-50"
@@ -233,7 +260,7 @@ export default function PostPage() {
             </button>
             <button
               onClick={() => setVisibility("private")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 transition-all active:scale-[0.98] ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 transition-all active:scale-[0.98] ${
                 visibility === "private"
                   ? "border-aussie-gold bg-amber-50"
                   : "border-gray-100 bg-gray-50"
@@ -244,10 +271,10 @@ export default function PostPage() {
             </button>
           </div>
 
-          {/* Preview card — 正方形を大きくしてフッター上の余白を減らす */}
-          <div className="mt-3 mb-2 flex-shrink-0 flex flex-col items-center">
-            <div className="w-full max-w-[300px] rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white">
-              <div className="flex items-center gap-2 p-2">
+          {/* Preview card — fills remaining space */}
+          <div className="mt-4 flex-1 min-h-0 flex flex-col items-center">
+            <div className="w-full rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white flex flex-col flex-1 min-h-0">
+              <div className="flex items-center gap-2 p-2.5">
                 <Avatar
                   photoURL={profile.photoURL}
                   displayName={profile.displayName}
@@ -261,7 +288,7 @@ export default function PostPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {profile.region && (
+                  {profile.region && profile.showRegion !== false && (
                     <span className="text-[9px] bg-ocean-blue/10 text-ocean-blue px-1.5 py-0.5 rounded-full font-medium">
                       {profile.region}
                     </span>
@@ -272,22 +299,21 @@ export default function PostPage() {
                 </div>
               </div>
 
-              <div className="relative cursor-pointer flex justify-center" onClick={() => fileInputRef.current?.click()}>
-                <div className="w-full aspect-square">
-                  {imagePreview ? (
-                    <div className="relative group w-full h-full">
-                      <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
-                        <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change</span>
-                      </div>
+              <div className="relative cursor-pointer flex-1 min-h-0" onClick={() => fileInputRef.current?.click()}>
+                {imagePreview ? (
+                  <div className="relative group w-full h-full">
+                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
+                      <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change</span>
                     </div>
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${gradient} opacity-50 flex flex-col items-center justify-center gap-2`}>
-                      <IconCamera size={20} className="text-black" />
-                      <p className="text-black text-xs font-bold">Tap to add photo (optional)</p>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full relative flex flex-col items-center justify-center gap-2">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20`} />
+                    <IconCamera size={20} className="text-black relative z-10" />
+                    <p className="text-black text-xs font-bold relative z-10">Tap to add photo (optional)</p>
+                  </div>
+                )}
                 {visibility === "private" && (
                   <div className="absolute top-1 left-1 bg-black/50 text-white rounded-full p-1">
                     <IconLock size={10} />
@@ -295,7 +321,7 @@ export default function PostPage() {
                 )}
               </div>
 
-              <div className="px-2 py-1.5 flex items-center justify-between">
+              <div className="px-2.5 py-2 flex items-center justify-between">
                 <p className="text-[10px] text-gray-400 italic truncate flex-1">Your diary text will appear here...</p>
                 <span className="text-[10px] text-gray-300 flex items-center gap-0.5 shrink-0"><IconHeart size={12} /> 0</span>
               </div>
@@ -306,9 +332,9 @@ export default function PostPage() {
           <button
             disabled={!mode}
             onClick={() => setStep(2)}
-            className="w-full py-2.5 text-sm font-bold text-white bg-aussie-gold rounded-xl disabled:opacity-40 active:scale-[0.98] mb-2"
+            className="w-full py-3 text-sm font-bold text-white bg-aussie-gold rounded-xl disabled:opacity-40 active:scale-[0.98] mt-3 shrink-0"
           >
-            Next — Write diary →
+            Next
           </button>
         </div>
 
@@ -323,7 +349,7 @@ export default function PostPage() {
 
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value.replace(/[^\x20-\x7E\n]/g, ""))}
+            onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
             maxLength={400}
             rows={8}
             placeholder="What happened today?"

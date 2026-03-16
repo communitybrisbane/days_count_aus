@@ -11,12 +11,15 @@ import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup } from "@/lib/groups";
 import ImageCropper from "@/components/ImageCropper";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 type Phase = "pre-departure" | "in-australia" | "post-return";
 
 export default function OnboardingPage() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const router = useRouter();
+  const { showWarn, sanitize } = useAsciiInput();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nickname, setNickname] = useState("");
@@ -129,6 +132,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-dvh bg-white px-6 py-6 flex flex-col">
+      <AsciiWarn show={showWarn} />
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
@@ -161,7 +165,7 @@ export default function OnboardingPage() {
               type="text"
               maxLength={15}
               value={nickname}
-              onChange={(e) => setNickname(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+              onChange={(e) => setNickname(sanitize(e.target.value, /[^a-zA-Z0-9_]/g))}
               placeholder="Nickname (a-z, 0-9, _)"
               className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold ${
                 nicknameError ? "border-red-400" : "border-gray-200"
@@ -233,20 +237,23 @@ export default function OnboardingPage() {
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">Focus</p>
           <div className="flex gap-1.5 flex-wrap">
-            {FOCUS_MODES.map((mode) => (
+            {FOCUS_MODES.map((mode) => {
+              const isWH = mode.id === "enjoying" || mode.id === "challenging";
+              return (
               <button
                 key={mode.id}
                 type="button"
                 onClick={() => setMainMode(mode.id)}
                 className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                   mainMode === mode.id
-                    ? "border-aussie-gold bg-amber-50 font-bold"
+                    ? isWH ? "border-aussie-gold bg-amber-50 font-bold" : "border-ocean-blue bg-blue-50 font-bold"
                     : "border-gray-200 bg-white"
                 }`}
               >
                 {mode.description}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -278,7 +285,7 @@ export default function OnboardingPage() {
             type="text"
             maxLength={100}
             value={goal}
-            onChange={(e) => setGoal(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+            onChange={(e) => setGoal(sanitize(e.target.value))}
             placeholder="Your goal for this journey"
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
           />

@@ -164,3 +164,33 @@ export async function fetchAdminConfig() {
   const snap = await getDoc(doc(db, "admin_config", "main"));
   return snap.exists() ? snap.data() : null;
 }
+
+/** Update week streak when 7th post of the week is made */
+export async function updateWeekStreak(
+  uid: string,
+  currentWeekStreak?: number,
+  lastCompletedWeekStart?: string
+): Promise<void> {
+  const now = new Date();
+  const day = now.getDay();
+  const daysSinceTuesday = (day + 5) % 7;
+  const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday);
+  const currentTuesday = tuesdayStart.toISOString().slice(0, 10);
+
+  // Check if last completed week was the previous Tuesday (consecutive)
+  const prevTuesday = new Date(tuesdayStart);
+  prevTuesday.setDate(prevTuesday.getDate() - 7);
+  const prevTuesdayStr = prevTuesday.toISOString().slice(0, 10);
+
+  let newWeekStreak: number;
+  if (lastCompletedWeekStart === prevTuesdayStr) {
+    newWeekStreak = (currentWeekStreak || 0) + 1;
+  } else {
+    newWeekStreak = 1;
+  }
+
+  await updateDoc(doc(db, "users", uid), {
+    weekStreak: newWeekStreak,
+    lastCompletedWeekStart: currentTuesday,
+  });
+}

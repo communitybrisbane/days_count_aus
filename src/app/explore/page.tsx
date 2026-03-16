@@ -15,18 +15,22 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, REGIONS } from "@/lib/constants";
+import { FOCUS_MODES } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
 import { IconEucalyptus, FocusModeIcon, IconSearch } from "@/components/icons";
 import type { Post } from "@/types";
+import AsciiWarn from "@/components/AsciiWarn";
+import { useAsciiInput } from "@/hooks/useAsciiInput";
+import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
 const PAGE_SIZE = 20;
 
 export default function ExplorePage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, privateData, loading, following } = useAuth();
+  const { showWarn, sanitize } = useAsciiInput();
   const [posts, setPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -39,6 +43,7 @@ export default function ExplorePage() {
   const loadingRef = useRef(false);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapCountRef = useRef(0);
+  const swipe = useSwipeDismiss(() => setSelectedIndex(null));
 
   const fetchPosts = useCallback(
     async (reset = false) => {
@@ -98,7 +103,7 @@ export default function ExplorePage() {
     [filter, user, profile, privateData, following, searchUserIds]
   );
 
-  // Search handler — city or username only
+  // Search handler — username (partial) or city/region
   const handleSearch = useCallback(async (q: string) => {
     const trimmed = q.trim().toLowerCase();
     if (!trimmed) {
@@ -106,20 +111,20 @@ export default function ExplorePage() {
       return;
     }
 
-    const matchedRegion = REGIONS.find((r) => r.toLowerCase().includes(trimmed));
-
     try {
       const usersRef = collection(db, "users");
-      const [nameSnap, regionSnap] = await Promise.all([
-        getDocs(query(usersRef, where("displayName", ">=", trimmed), where("displayName", "<=", trimmed + "\uf8ff"), limit(50))),
-        matchedRegion
-          ? getDocs(query(usersRef, where("region", "==", matchedRegion), limit(50)))
-          : Promise.resolve(null),
-      ]);
+      const snap = await getDocs(query(usersRef, limit(500)));
 
       const userIds = new Set<string>();
-      nameSnap.docs.forEach((d) => userIds.add(d.id));
-      regionSnap?.docs.forEach((d) => userIds.add(d.id));
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        const name = (data.displayName || "").toLowerCase();
+        const regionVisible = data.showRegion !== false;
+        const region = regionVisible ? (data.region || "").toLowerCase() : "";
+        if (name.includes(trimmed) || region.includes(trimmed)) {
+          userIds.add(d.id);
+        }
+      });
 
       setSearchUserIds(userIds.size > 0 ? Array.from(userIds) : []);
     } catch (e) {
@@ -189,33 +194,49 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-dvh pb-20">
+      <AsciiWarn show={showWarn} />
       <div
         className="sticky top-0 bg-white z-10 border-b border-gray-100"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         {/* Filter chips */}
-        <div className="flex gap-1.5 px-4 pt-3 pb-2 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <button
-            onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); }}
-            className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-              !filter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
-            }`}
-          >
-            All
-          </button>
-          {FOCUS_MODES.map((m) => (
+        <div className="px-4 pt-3 pb-2 space-y-1.5">
+          {/* Row 1: All + WH modes */}
+          <div className="flex gap-1.5">
             <button
-              key={m.id}
-              onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
-              className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                filter === m.id
-                  ? "bg-aussie-gold text-white"
-                  : "bg-gray-100 text-gray-500"
+              onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); }}
+              className={`flex-1 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
+                !filter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
               }`}
             >
-              <FocusModeIcon modeId={m.id} size={14} className="inline-block align-middle" /> {m.description}
+              All
             </button>
-          ))}
+            {FOCUS_MODES.filter((m) => m.id === "enjoying" || m.id === "challenging").map((m) => (
+              <button
+                key={m.id}
+                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  filter === m.id ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+              </button>
+            ))}
+          </div>
+          {/* Row 2: Other modes */}
+          <div className="flex gap-1.5">
+            {FOCUS_MODES.filter((m) => m.id !== "enjoying" && m.id !== "challenging").map((m) => (
+              <button
+                key={m.id}
+                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  filter === m.id ? "bg-ocean-blue text-white" : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+              </button>
+            ))}
+          </div>
         </div>
         {/* Search bar */}
         <div className="px-4 pb-2">
@@ -224,7 +245,7 @@ export default function ExplorePage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => onSearchInput(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
+              onChange={(e) => onSearchInput(sanitize(e.target.value))}
               placeholder="Search by city or username..."
               className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
             />
@@ -285,8 +306,8 @@ export default function ExplorePage() {
 
       {/* Post detail modal — Shorts-style snap scroll */}
       {selectedIndex !== null && (
-        <div className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
-          <div className="relative w-[min(100%,430px)] flex flex-col pb-14">
+        <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
+          <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col pb-14" {...swipe.handlers}>
             {/* Snap scroll container */}
             <div
               ref={snapContainerRef}
