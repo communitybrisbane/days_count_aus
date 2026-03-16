@@ -268,26 +268,26 @@ export default function GroupChatPage() {
   return (
     <div className="flex flex-col min-h-dvh">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 p-4 z-10">
+      <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/groups")} className="text-gray-400">
+          <button onClick={() => router.push("/groups")} className="w-10 h-10 flex items-center justify-center text-gray-400 text-xl -ml-2">
             ←
           </button>
           {/* Group icon — leader can tap to change */}
           <div className="relative shrink-0">
             {group.iconUrl ? (
-              <img src={group.iconUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+              <img src={group.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                <FocusModeIcon modeId={group.mode || "challenging"} size={20} className="text-gray-500" />
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <FocusModeIcon modeId={group.mode || "challenging"} size={22} className="text-gray-500" />
               </div>
             )}
             {isLeader && (
               <button
                 onClick={() => iconInputRef.current?.click()}
-                className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-aussie-gold flex items-center justify-center"
+                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aussie-gold flex items-center justify-center"
               >
-                <IconCamera size={9} className="text-white" />
+                <IconCamera size={11} className="text-white" />
               </button>
             )}
             <input ref={iconInputRef} type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
@@ -313,20 +313,20 @@ export default function GroupChatPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             {isLeader && (
-              <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="text-gray-400">
-                <IconEdit size={18} />
+              <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="w-10 h-10 flex items-center justify-center text-gray-400">
+                <IconEdit size={20} />
               </button>
             )}
             {isOfficial ? (
-              <span className="text-[10px] bg-aussie-gold text-white px-2 py-1 rounded-full">Official</span>
+              <span className="text-xs bg-aussie-gold text-white px-2.5 py-1 rounded-full">Official</span>
             ) : isMember ? (
-              <button onClick={() => setShowLeaveModal(true)} className="text-xs text-red-400">Leave</button>
+              <button onClick={() => setShowLeaveModal(true)} className="text-sm text-red-400 px-2 py-1">Leave</button>
             ) : !isFull && userLevel >= 5 ? (
-              <button onClick={handleJoinAttempt} className="bg-aussie-gold text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+              <button onClick={handleJoinAttempt} className="bg-aussie-gold text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1">
                 Join
               </button>
             ) : !isFull && userLevel < 5 ? (
-              <span className="text-[10px] text-gray-400">Lv.5+</span>
+              <span className="text-xs text-gray-400">Lv.5+</span>
             ) : null}
           </div>
         </div>

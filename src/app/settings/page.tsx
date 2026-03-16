@@ -200,10 +200,10 @@ export default function SettingsPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <button onClick={() => router.back()} className="text-gray-400">←</button>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-gray-400 text-xl -ml-2">←</button>
         <h1 className="text-lg font-bold">Settings</h1>
-        <div className="w-8" />
+        <div className="w-10" />
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>

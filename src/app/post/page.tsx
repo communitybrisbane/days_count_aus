@@ -165,7 +165,7 @@ export default function PostPage() {
       )}
 
       {/* Progress bar */}
-      <div className="px-5 pt-2 pb-1">
+      <div className="px-5 pb-1" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-1.5">
           {[1, 2].map((s) => (
             <div

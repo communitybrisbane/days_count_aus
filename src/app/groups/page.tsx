@@ -94,10 +94,10 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden pb-14 bg-sand-beige">
+    <div className="h-dvh flex flex-col overflow-hidden pb-16 bg-sand-beige">
       {/* Header */}
-      <div className="sticky top-0 bg-white z-10 border-b border-gray-100">
-        <div className="px-4 pt-2 pb-1">
+      <div className="sticky top-0 bg-white z-10 border-b border-gray-100" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="px-4 pt-3 pb-2">
           <h1 className="text-lg font-bold">Community</h1>
         </div>
       </div>
@@ -123,10 +123,10 @@ export default function GroupsPage() {
               </button>
             </div>
             {/* Mode filter */}
-            <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               <button
                 onClick={() => setModeFilter("")}
-                className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
+                className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
                   !modeFilter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
                 }`}
               >
@@ -136,11 +136,11 @@ export default function GroupsPage() {
                 <button
                   key={m.id}
                   onClick={() => setModeFilter(m.id)}
-                  className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
+                  className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
                     modeFilter === m.id ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
                   }`}
                 >
-                  <FocusModeIcon modeId={m.id} size={12} className="inline-block align-middle" /> {m.description}
+                  <FocusModeIcon modeId={m.id} size={14} className="inline-block align-middle" /> {m.description}
                 </button>
               ))}
             </div>

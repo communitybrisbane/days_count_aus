@@ -129,10 +129,10 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
   };
 
   return (
-    <div className="h-dvh pb-14 flex flex-col overflow-hidden">
+    <div className="h-dvh pb-16 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any }}>
       {/* プロフィール — 空間をふんだんに使う */}
-      <div className="px-5 pt-6 pb-4">
+      <div className="px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-5">
           <Avatar
             photoURL={profile.photoURL}
@@ -149,8 +149,8 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
                   {FOCUS_MODES.find((m) => m.id === profile.mainMode)?.description}
                 </span>
               )}
-              <button onClick={() => router.push("/settings")} className="text-gray-400 p-1 shrink-0 ml-auto">
-                <IconSettings size={20} />
+              <button onClick={() => router.push("/settings")} className="text-gray-400 w-10 h-10 flex items-center justify-center shrink-0 ml-auto -mr-2">
+                <IconSettings size={24} />
               </button>
             </div>
 

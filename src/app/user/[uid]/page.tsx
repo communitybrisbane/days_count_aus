@@ -77,10 +77,10 @@ export default function PublicProfilePage() {
   };
 
   return (
-    <div className="h-dvh pb-14 flex flex-col overflow-hidden">
+    <div className="h-dvh pb-16 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any }}>
       {/* プロフィール — myタブと同じ構成 */}
-      <div className="px-5 pt-6 pb-4">
+      <div className="px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-5">
           <Avatar
             photoURL={userData.photoURL}

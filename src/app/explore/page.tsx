@@ -189,12 +189,15 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-dvh pb-20">
-      <div className="sticky top-0 bg-white z-10 border-b border-gray-100">
+      <div
+        className="sticky top-0 bg-white z-10 border-b border-gray-100"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         {/* Filter chips */}
-        <div className="flex gap-1 px-4 pt-3 pb-2 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div className="flex gap-1.5 px-4 pt-3 pb-2 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
           <button
             onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); }}
-            className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
+            className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
               !filter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
             }`}
           >
@@ -204,31 +207,31 @@ export default function ExplorePage() {
             <button
               key={m.id}
               onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
-              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${
+              className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
                 filter === m.id
                   ? "bg-aussie-gold text-white"
                   : "bg-gray-100 text-gray-500"
               }`}
             >
-              <FocusModeIcon modeId={m.id} size={12} className="inline-block align-middle" /> {m.description}
+              <FocusModeIcon modeId={m.id} size={14} className="inline-block align-middle" /> {m.description}
             </button>
           ))}
         </div>
         {/* Search bar */}
         <div className="px-4 pb-2">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1.5">
-            <IconSearch size={14} className="text-gray-400 shrink-0" />
+          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
+            <IconSearch size={16} className="text-gray-400 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchInput(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
               placeholder="Search by city or username..."
-              className="flex-1 bg-transparent text-xs outline-none placeholder-gray-400"
+              className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
             />
             {searchQuery && (
               <button
                 onClick={() => { setSearchQuery(""); setSearchUserIds(null); }}
-                className="text-gray-400 text-sm leading-none shrink-0"
+                className="text-gray-400 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
               >
                 &times;
               </button>
