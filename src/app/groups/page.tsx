@@ -8,12 +8,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { FOCUS_MODES } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
+import { fetchAdminConfig } from "@/lib/services/users";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import GroupCard from "@/components/GroupCard";
 import { IconSearch, IconUsers, IconLock, FocusModeIcon } from "@/components/icons";
 import BannerCarousel from "@/components/BannerCarousel";
 import type { Group } from "@/types";
+
+interface LiveSession {
+  label: string;
+  url: string;
+  description?: string;
+}
 
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
@@ -25,6 +32,7 @@ export default function GroupsPage() {
   const [modeFilter, setModeFilter] = useState("");
 
   const [leaderNames, setLeaderNames] = useState<Record<string, string>>({});
+  const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
 
 
   const fetchGroups = async () => {
@@ -36,7 +44,12 @@ export default function GroupsPage() {
   };
 
   useEffect(() => {
-    if (user) fetchGroups();
+    if (user) {
+      fetchGroups();
+      fetchAdminConfig().then((data) => {
+        if (data?.liveSession) setLiveSession(data.liveSession as LiveSession);
+      }).catch(console.error);
+    }
   }, [user]);
 
   const handleJoined = async () => {
@@ -177,6 +190,50 @@ export default function GroupsPage() {
             <div className="p-4"><LoadingSpinner size="sm" /></div>
           ) : (
             <>
+              {/* Live Session */}
+              {liveSession && (
+                <div className="px-4 pt-2">
+                  <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${
+                    liveSession.url
+                      ? "border-ocean-blue/30 ring-2 ring-ocean-blue/20 shadow-ocean-blue/10"
+                      : "border-gray-100"
+                  }`}>
+                    <div className="px-4 py-3 flex items-center justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${liveSession.url ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
+                          <p className={`font-bold text-sm truncate ${liveSession.url ? "text-ocean-blue" : "text-gray-600"}`}>
+                            {liveSession.label || "Live Session"}
+                          </p>
+                          {liveSession.url && (
+                            <span className="text-[10px] font-bold text-white bg-ocean-blue px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                              LIVE
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ml-[18px] ${liveSession.url ? "text-gray-600" : "text-gray-400"}`}>
+                          {liveSession.url ? "Session in progress — join now!" : liveSession.description || "Next session TBD"}
+                        </p>
+                      </div>
+                      {liveSession.url ? (
+                        <a
+                          href={liveSession.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-ocean-blue text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md shrink-0 ml-3 active:scale-[0.97]"
+                        >
+                          Join
+                        </a>
+                      ) : (
+                        <span className="text-sm font-bold text-gray-300 px-4 py-2 rounded-xl border border-gray-200 shrink-0 ml-3">
+                          Join
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* All joined groups — sorted by lastMessageAt */}
               <div className="flex flex-col px-4 py-1 gap-1.5">
                 {myJoinedGroups.map((group) => (

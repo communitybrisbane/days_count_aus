@@ -15,6 +15,8 @@ interface AuthContextType {
   following: string[];
   refreshProfile: () => Promise<void>;
   refreshFollowing: () => Promise<void>;
+  optimisticFollow: (targetUid: string) => void;
+  optimisticUnfollow: (targetUid: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +27,8 @@ const AuthContext = createContext<AuthContextType>({
   following: [],
   refreshProfile: async () => {},
   refreshFollowing: async () => {},
+  optimisticFollow: () => {},
+  optimisticUnfollow: () => {},
 });
 
 async function fetchProfileWithRetry(uid: string, retries = 3): Promise<UserProfile | null> {
@@ -83,6 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const optimisticFollow = (targetUid: string) => {
+    setFollowing((prev) => prev.includes(targetUid) ? prev : [...prev, targetUid]);
+  };
+
+  const optimisticUnfollow = (targetUid: string) => {
+    setFollowing((prev) => prev.filter((id) => id !== targetUid));
+  };
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -120,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, profile, privateData, loading, following, refreshProfile, refreshFollowing }}>
+    <AuthContext.Provider value={{ user, profile, privateData, loading, following, refreshProfile, refreshFollowing, optimisticFollow, optimisticUnfollow }}>
       {children}
     </AuthContext.Provider>
   );

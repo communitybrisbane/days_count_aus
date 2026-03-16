@@ -83,7 +83,7 @@ export default function EditPostPage() {
                 className={`flex-1 flex flex-col items-center p-2 rounded-xl border-2 ${
                   mode === m.id
                     ? isWH ? "border-aussie-gold bg-amber-50" : "border-ocean-blue bg-blue-50"
-                    : "border-gray-200"
+                    : isWH ? "border-aussie-gold/20 bg-amber-50/30" : "border-ocean-blue/20 bg-blue-50/30"
                 }`}
               >
                 <span className="text-xl">{m.icon}</span>

@@ -5,11 +5,16 @@ import Link from "next/link";
 import {
   doc,
   getDoc,
+  getDocs,
   setDoc,
   deleteDoc,
   updateDoc,
   increment,
   Timestamp,
+  collection,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,7 +44,7 @@ const roundedClass = (listRounded?: "top" | "bottom" | "none") => {
 };
 
 export default function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
-  const { user, profile, following, refreshFollowing, refreshProfile } = useAuth();
+  const { user, profile, following, refreshFollowing, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
   const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean } | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
@@ -49,16 +54,29 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   const [xpGained, setXpGained] = useState(0);
 
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
+  const [heartPos, setHeartPos] = useState<{ x: number; y: number } | null>(null);
+  const [showLikeToast, setShowLikeToast] = useState(false);
+  const [showLikers, setShowLikers] = useState(false);
+  const [likers, setLikers] = useState<{ uid: string; displayName: string; photoURL: string }[]>([]);
+  const [loadingLikers, setLoadingLikers] = useState(false);
   const lastTapRef = useRef(0);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const likingRef = useRef(false);
 
   const handleDoubleTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       e.preventDefault();
       e.stopPropagation();
+      const rect = imageRef.current?.getBoundingClientRect();
+      if (rect) {
+        const clientX = "touches" in e ? e.changedTouches?.[0]?.clientX ?? rect.left + rect.width / 2 : (e as React.MouseEvent).clientX;
+        const clientY = "touches" in e ? e.changedTouches?.[0]?.clientY ?? rect.top + rect.height / 2 : (e as React.MouseEvent).clientY;
+        setHeartPos({ x: clientX - rect.left, y: clientY - rect.top });
+      }
       if (!liked) handleLike();
       setShowDoubleTapHeart(true);
-      setTimeout(() => setShowDoubleTapHeart(false), 800);
+      setTimeout(() => setShowDoubleTapHeart(false), 900);
       onDoubleTap?.();
     }
     lastTapRef.current = now;
@@ -103,48 +121,77 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   }, [post.editableUntil, user]);
 
   const handleLike = async () => {
-    if (!user || !profile) return;
+    if (!user || !profile || likingRef.current) return;
+    likingRef.current = true;
 
     const likeRef = doc(db, "posts", post.id, "likes", user.uid);
     const isOwnPost = post.userId === user.uid;
+    const today = new Date().toISOString().slice(0, 10);
+    const dailyCount = profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) : 0;
+    const hasXPQuota = dailyCount < DAILY_LIKE_LIMIT;
 
     if (liked) {
-      await deleteDoc(likeRef);
-      await updateDoc(doc(db, "posts", post.id), { likeCount: increment(-1) });
-      // Reverse XP (no XP change for own post likes)
-      if (!isOwnPost) {
-        await updateDoc(doc(db, "users", post.userId), { totalXP: increment(-10) });
-        await updateDoc(doc(db, "users", user.uid), { totalXP: increment(-5) });
-      }
-      setLikeCount((c) => c - 1);
+      // Optimistic update
       setLiked(false);
+      setLikeCount((c) => c - 1);
+      try {
+        await deleteDoc(likeRef);
+        await updateDoc(doc(db, "posts", post.id), { likeCount: increment(-1) });
+      } catch {
+        // Revert on failure
+        setLiked(true);
+        setLikeCount((c) => c + 1);
+      }
     } else {
-      // Check daily like limit
-      const today = new Date().toISOString().slice(0, 10);
-      if (profile.lastLikeDate === today && (profile.dailyLikeCount ?? 0) >= DAILY_LIKE_LIMIT) {
-        alert(`You've reached today's like limit (${DAILY_LIKE_LIMIT})`);
-        return;
-      }
-
-      await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
-      await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
-      // XP: no XP for liking own post
-      if (!isOwnPost) {
-        await updateDoc(doc(db, "users", post.userId), { totalXP: increment(10) });
-        await updateDoc(doc(db, "users", user.uid), {
-          totalXP: increment(5),
-          dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
-          lastLikeDate: today,
-        });
-      }
-      setLikeCount((c) => c + 1);
+      // Optimistic update
       setLiked(true);
-      if (!isOwnPost) {
-        setXpGained(5);
-        setShowXP(true);
-        setTimeout(() => setShowXP(false), 1500);
+      setLikeCount((c) => c + 1);
+      try {
+        await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
+        await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
+        if (!isOwnPost && hasXPQuota) {
+          await updateDoc(doc(db, "users", post.userId), { totalXP: increment(10) });
+          await updateDoc(doc(db, "users", user.uid), {
+            totalXP: increment(5),
+            dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
+            lastLikeDate: today,
+          });
+          setXpGained(5);
+          setShowXP(true);
+          setTimeout(() => setShowXP(false), 1500);
+        } else if (!isOwnPost && !hasXPQuota) {
+          setShowLikeToast(true);
+          setTimeout(() => setShowLikeToast(false), 2000);
+        }
+      } catch {
+        // Revert on failure
+        setLiked(false);
+        setLikeCount((c) => c - 1);
       }
     }
+    likingRef.current = false;
+  };
+
+  const handleOpenLikers = async () => {
+    setShowLikers(true);
+    if (likers.length > 0) return;
+    setLoadingLikers(true);
+    try {
+      const q = query(collection(db, "posts", post.id, "likes"), orderBy("createdAt", "desc"), limit(50));
+      const snap = await getDocs(q);
+      const profiles: { uid: string; displayName: string; photoURL: string }[] = [];
+      for (const likeDoc of snap.docs) {
+        const userSnap = await getDoc(doc(db, "users", likeDoc.id));
+        if (userSnap.exists()) {
+          const d = userSnap.data();
+          profiles.push({ uid: likeDoc.id, displayName: d.displayName || "Unknown", photoURL: d.photoURL || "" });
+        }
+      }
+      setLikers(profiles);
+    } catch (e) {
+      console.error("Failed to load likers:", e);
+    }
+    setLoadingLikers(false);
   };
 
   const handleDelete = async () => {
@@ -191,13 +238,67 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
     ? post.createdAt.toDate().toLocaleDateString("en-AU")
     : "";
 
+  // Heart animation component
+  const HeartAnimation = ({ size, withParticles }: { size: number; withParticles: boolean }) => (
+    <div
+      className="absolute pointer-events-none z-10"
+      style={{ left: heartPos?.x ?? "50%", top: heartPos?.y ?? "50%", transform: "translate(-50%, -50%)" }}
+    >
+      <div className="animate-like-burst">
+        <IconHeart size={size} filled className="text-red-500 drop-shadow-lg" />
+      </div>
+      {withParticles && [...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute animate-like-particle"
+          style={{ animationDelay: `${i * 0.05}s`, transform: `rotate(${i * 60}deg) translateY(-20px)` }}
+        >
+          <IconHeart size={Math.round(size / 4)} filled className="text-red-400/80" />
+        </div>
+      ))}
+    </div>
+  );
+
+  // Likers modal
+  const LikersModal = () => (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowLikers(false)} />
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[60dvh] flex flex-col animate-slide-up">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <h3 className="font-bold text-sm">Likes ({likeCount})</h3>
+          <button onClick={() => setShowLikers(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+        </div>
+        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+          {loadingLikers ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aussie-gold" />
+            </div>
+          ) : likers.length === 0 ? (
+            <p className="text-center text-gray-400 py-8 text-sm">No likes yet</p>
+          ) : (
+            likers.map((liker) => (
+              <Link
+                key={liker.uid}
+                href={`/user/${liker.uid}`}
+                onClick={() => setShowLikers(false)}
+                className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 active:bg-gray-50"
+              >
+                <Avatar photoURL={liker.photoURL} displayName={liker.displayName} uid={liker.uid} size={40} />
+                <p className="text-sm font-bold truncate">{liker.displayName}</p>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+
   // ─── Compact (Gallery) mode ───
   if (compact) {
     return (
       <div className="overflow-hidden bg-white relative group">
         <XPToast xp={xpGained} show={showXP} />
-        {/* Image / gradient */}
-        <div className="relative" onClick={handleDoubleTap}>
+        <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
           {post.imageUrl ? (
             <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" />
           ) : (
@@ -207,24 +308,17 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
               </p>
             </div>
           )}
-          {/* Double-tap heart animation */}
-          {showDoubleTapHeart && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <IconHeart size={48} filled className="text-red-500 animate-ping" />
-            </div>
-          )}
+          {showDoubleTapHeart && <HeartAnimation size={48} withParticles />}
           {post.visibility === "private" && (
             <div className="absolute top-1.5 left-1.5 bg-black/50 text-white rounded-full px-2 py-1">
               <IconLock size={14} />
             </div>
           )}
-          {/* Location badge — top right */}
           {authorProfile?.region && authorProfile.showRegion !== false && (
             <div className="absolute top-1.5 right-1.5 bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded-full">
               {authorProfile.region}
             </div>
           )}
-          {/* Like button — bottom left */}
           <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black/40 to-transparent" />
           <button
             onClick={(e) => { e.stopPropagation(); handleLike(); }}
@@ -244,6 +338,11 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   return (
     <div className={`bg-white shadow-sm overflow-hidden ${roundedClass(listRounded)} ${borderClass} relative`}>
       <XPToast xp={xpGained} show={showXP} />
+      {showLikeToast && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-gray-800/80 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm animate-fade-in-out">
+          XP limit reached — like still counted!
+        </div>
+      )}
       {/* Author header */}
       <div className="flex items-center gap-3 p-3">
         {authorProfile && (
@@ -266,11 +365,20 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
                 onClick={async (e) => {
                   e.stopPropagation();
                   if (following.includes(post.userId)) {
-                    await unfollowUser(user.uid, post.userId);
+                    optimisticUnfollow(post.userId);
+                    try {
+                      await unfollowUser(user.uid, post.userId);
+                    } catch {
+                      optimisticFollow(post.userId);
+                    }
                   } else {
-                    await followUser(user.uid, post.userId);
+                    optimisticFollow(post.userId);
+                    try {
+                      await followUser(user.uid, post.userId);
+                    } catch {
+                      optimisticUnfollow(post.userId);
+                    }
                   }
-                  await refreshFollowing();
                 }}
                 className={`text-[11px] px-2 py-0.5 rounded-full border shrink-0 ${
                   following.includes(post.userId)
@@ -301,28 +409,17 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       </div>
 
       {/* Image or gradient card */}
-      <div className="relative" onClick={handleDoubleTap}>
+      <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
         {post.imageUrl ? (
-          <img
-            src={post.imageUrl}
-            alt="Post"
-            className="w-full aspect-square object-cover"
-          />
+          <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" />
         ) : (
-          <div
-            className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}
-          >
+          <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
             <p className="text-white text-center font-medium text-sm leading-relaxed">
               {post.content}
             </p>
           </div>
         )}
-        {/* Double-tap heart animation */}
-        {showDoubleTapHeart && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-            <IconHeart size={64} filled className="text-red-500 animate-ping" />
-          </div>
-        )}
+        {showDoubleTapHeart && <HeartAnimation size={64} withParticles />}
         {post.visibility === "private" && (
           <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-2 py-0.5 flex items-center gap-1 text-xs">
             <IconLock size={12} />
@@ -342,15 +439,22 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       {/* Actions */}
       {showActions && (
         <div className="flex items-center justify-between px-3 pb-3">
-          <button
-            onClick={handleLike}
-            className="flex items-center gap-1 text-sm"
-          >
-            <span className={liked ? "text-red-500" : "text-gray-400"}>
-              <IconHeart size={18} filled={liked} />
-            </span>
-            <span className="text-gray-500">{likeCount}</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleLike}
+              className="flex items-center gap-1 text-sm"
+            >
+              <span className={liked ? "text-red-500" : "text-gray-400"}>
+                <IconHeart size={18} filled={liked} />
+              </span>
+            </button>
+            <button
+              onClick={handleOpenLikers}
+              className="text-gray-500 text-sm"
+            >
+              {likeCount}
+            </button>
+          </div>
 
           <div className="relative">
             <button
@@ -403,6 +507,9 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           </div>
         </div>
       )}
+
+      {/* Likers modal */}
+      {showLikers && <LikersModal />}
     </div>
   );
 }

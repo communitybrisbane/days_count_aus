@@ -29,15 +29,8 @@ interface Announcement {
   active: boolean;
 }
 
-interface LiveSession {
-  label: string;
-  url: string;
-  description?: string;
-}
-
 interface AdminConfig {
   announcements?: Announcement[];
-  liveSession?: LiveSession;
   bannerImageUrl?: string;
 }
 
@@ -314,51 +307,7 @@ export default function HomePage() {
         <BannerCarousel location="home" bannerImageUrl={adminConfig?.bannerImageUrl} />
       </div>
 
-      {/* ===== 4. Live Session ===== */}
-      {adminConfig?.liveSession && (
-        <div className="px-5 mt-3">
-          <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${
-            adminConfig.liveSession.url
-              ? "border-ocean-blue/30 ring-2 ring-ocean-blue/20 shadow-ocean-blue/10"
-              : "border-gray-100"
-          }`}>
-            <div className="px-4 py-3 flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${adminConfig.liveSession.url ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-                  <p className={`font-bold text-sm truncate ${adminConfig.liveSession.url ? "text-ocean-blue" : "text-gray-600"}`}>
-                    {adminConfig.liveSession.label || "Live Session"}
-                  </p>
-                  {adminConfig.liveSession.url && (
-                    <span className="text-[10px] font-bold text-white bg-ocean-blue px-2 py-0.5 rounded-full animate-pulse shrink-0">
-                      LIVE
-                    </span>
-                  )}
-                </div>
-                <p className={`text-xs mt-0.5 ml-[18px] ${adminConfig.liveSession.url ? "text-gray-600" : "text-gray-400"}`}>
-                  {adminConfig.liveSession.url ? "Session in progress — join now!" : adminConfig.liveSession.description || "Next session TBD"}
-                </p>
-              </div>
-              {adminConfig.liveSession.url ? (
-                <a
-                  href={adminConfig.liveSession.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-ocean-blue text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md shrink-0 ml-3 active:scale-[0.97]"
-                >
-                  Join
-                </a>
-              ) : (
-                <span className="text-xs font-bold text-gray-300 bg-gray-100 px-4 py-2 rounded-xl shrink-0 ml-3">
-                  OFF
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== 5. Announcements ===== */}
+      {/* ===== 4. Announcements ===== */}
       {adminConfig?.announcements && adminConfig.announcements.filter((a) => a.active).length > 0 && (
         <div className="px-5 mt-3 space-y-2">
           {adminConfig.announcements.filter((a) => a.active).map((ann, i) => {

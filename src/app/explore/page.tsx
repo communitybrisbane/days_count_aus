@@ -24,6 +24,7 @@ import type { Post } from "@/types";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
+import { rankPosts, markSeen } from "@/lib/feedScore";
 
 const PAGE_SIZE = 20;
 
@@ -74,16 +75,23 @@ export default function ExplorePage() {
           );
         }
 
-        if (following.length > 0) {
-          const followedPosts = newPosts.filter((p) => following.includes(p.userId));
-          const otherPosts = newPosts.filter((p) => !following.includes(p.userId));
-          newPosts = [...followedPosts, ...otherPosts];
-        }
-
         // Client-side filter by searched user IDs
         if (searchUserIds !== null) {
           newPosts = newPosts.filter((p) => searchUserIds.includes(p.userId));
         }
+
+        // Score-based ranking (skip when searching — just show matches)
+        if (searchUserIds === null) {
+          newPosts = rankPosts(
+            newPosts,
+            following,
+            profile?.mainMode || "",
+            profile?.region || "",
+          );
+        }
+
+        // Mark posts as seen
+        markSeen(newPosts.map((p) => p.id));
 
         if (reset) {
           setPosts(newPosts);
@@ -216,7 +224,7 @@ export default function ExplorePage() {
                 key={m.id}
                 onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filter === m.id ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
+                  filter === m.id ? "bg-aussie-gold text-white" : "bg-amber-50 text-amber-700"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={14} /> {m.label}
@@ -230,7 +238,7 @@ export default function ExplorePage() {
                 key={m.id}
                 onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filter === m.id ? "bg-ocean-blue text-white" : "bg-gray-100 text-gray-500"
+                  filter === m.id ? "bg-ocean-blue text-white" : "bg-blue-50 text-blue-700"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={14} /> {m.label}

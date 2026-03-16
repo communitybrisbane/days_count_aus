@@ -220,7 +220,7 @@ export default function PostPage() {
                 key={m.id}
                 onClick={() => setMode(m.id)}
                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full border-2 transition-all active:scale-[0.97] ${
-                  mode === m.id ? "border-aussie-gold bg-amber-50" : "border-gray-100 bg-gray-50"
+                  mode === m.id ? "border-aussie-gold bg-amber-50" : "border-aussie-gold/20 bg-amber-50/30"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={16} />
@@ -235,7 +235,7 @@ export default function PostPage() {
                 key={m.id}
                 onClick={() => setMode(m.id)}
                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-full border-2 transition-all active:scale-[0.97] ${
-                  mode === m.id ? "border-ocean-blue bg-blue-50" : "border-gray-100 bg-gray-50"
+                  mode === m.id ? "border-ocean-blue bg-blue-50" : "border-ocean-blue/20 bg-blue-50/30"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={16} />

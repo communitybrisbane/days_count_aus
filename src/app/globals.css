@@ -35,3 +35,37 @@ body {
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* Like heart burst animation */
+@keyframes like-burst {
+  0% { transform: scale(0); opacity: 0; }
+  15% { transform: scale(1.4); opacity: 1; }
+  30% { transform: scale(0.9); }
+  45% { transform: scale(1.1); }
+  60% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+.animate-like-burst {
+  animation: like-burst 0.9s cubic-bezier(0.17, 0.89, 0.32, 1.28) forwards;
+}
+
+/* Particle hearts that scatter outward */
+@keyframes like-particle {
+  0% { opacity: 1; transform: rotate(var(--tw-rotate, 0)) translateY(0) scale(1); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--tw-rotate, 0)) translateY(-50px) scale(0.3); }
+}
+.animate-like-particle {
+  animation: like-particle 0.8s ease-out forwards;
+}
+
+/* Fade in/out toast */
+@keyframes fade-in-out {
+  0% { opacity: 0; transform: translate(-50%, -4px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -4px); }
+}
+.animate-fade-in-out {
+  animation: fade-in-out 2s ease-in-out forwards;
+}

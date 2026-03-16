@@ -29,8 +29,8 @@ export async function fetchUserPosts(uid: string, isOwn = false): Promise<Post[]
 }
 
 export async function fetchTotalLikesAndWeekly(uid: string) {
-  // Fetch recent posts (limit 200) for like count — covers most users
-  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), orderBy("createdAt", "desc"), limit(200));
+  // Fetch recent posts (limit 100) for like count
+  const q = query(collection(db, "posts"), where("userId", "==", uid), where("status", "==", "active"), orderBy("createdAt", "desc"), limit(100));
   const snap = await getDocs(q);
   let totalLikes = 0;
   snap.docs.forEach((d) => {

@@ -217,7 +217,7 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
               modeFilter === m.id
                 ? isWH ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-ocean-blue/15 ring-2 ring-ocean-blue"
-                : "bg-gray-100"
+                : isWH ? "bg-amber-50" : "bg-blue-50"
             }`}
           >
             <FocusModeIcon modeId={m.id} size={33} />

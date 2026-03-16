@@ -4,20 +4,20 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserPosts } from "@/lib/services/posts";
-import { fetchUserProfile, blockUser } from "@/lib/services/users";
+import { fetchUserProfile, blockUser, unblockUser } from "@/lib/services/users";
 import { FOCUS_MODES, GRADIENTS } from "@/lib/constants";
 import { followUser, unfollowUser, getFollowingIds } from "@/lib/follow";
 import Avatar from "@/components/Avatar";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { FocusModeIcon, IconHeart, IconFire, IconUsers, IconBan, IconLock } from "@/components/icons";
+import { FocusModeIcon, IconBan, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Post, UserProfile } from "@/types";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
 export default function PublicProfilePage() {
-  const { user, profile: myProfile, privateData, following, refreshFollowing, refreshProfile } = useAuth();
+  const { user, profile: myProfile, privateData, following, refreshFollowing, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
   const router = useRouter();
   const params = useParams();
   const uid = params.uid as string;
@@ -81,78 +81,111 @@ export default function PublicProfilePage() {
   return (
     <div className="h-dvh pb-16 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any }}>
-      {/* プロフィール — myタブと同じ構成 */}
-      <div className="px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
-        <div className="flex items-center gap-5">
+      {/* プロフィール — Instagram風中央レイアウト（myタブと統一） */}
+      <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        {/* 戻るボタン — 右上 */}
+        <button onClick={() => router.back()} className="absolute top-0 right-3 text-gray-400 w-10 h-10 flex items-center justify-center" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+          ×
+        </button>
+
+        <div className="flex flex-col items-center pt-10">
+          {/* アバター */}
           <Avatar
             photoURL={userData.photoURL}
             displayName={userData.displayName}
             uid={userData.uid}
-            size={120}
+            size={96}
           />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold truncate">{userData.displayName}</h2>
-              {userData.mainMode && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
-                  <FocusModeIcon modeId={userData.mainMode} size={12} />
-                  {FOCUS_MODES.find((m) => m.id === userData.mainMode)?.description}
-                </span>
-              )}
-              {/* 戻るボタン（設定ボタンの位置） */}
-              <button onClick={() => router.back()} className="text-gray-400 p-1 shrink-0 ml-auto">
-                ×
-              </button>
-            </div>
 
-            {/* Follow / Block — 名前の下 */}
-            {!isOwn && user && (
-              <div className="flex items-center gap-2 mt-1">
-                <button
-                  onClick={async () => {
-                    if (following.includes(uid)) {
-                      await unfollowUser(user.uid, uid);
-                    } else {
-                      await followUser(user.uid, uid);
-                    }
-                    await refreshFollowing();
-                  }}
-                  className={`px-4 py-1 rounded-full text-xs font-bold ${
-                    following.includes(uid)
-                      ? "border border-gray-300 text-gray-500"
-                      : "bg-ocean-blue text-white"
-                  }`}
-                >
-                  {following.includes(uid) ? "Following" : "Follow"}
-                </button>
-                {privateData?.blockedUsers?.includes(uid) ? (
-                  <span className="text-[10px] text-red-400 px-2 py-1 border border-red-200 rounded-full">Blocked</span>
-                ) : (
-                  <button
-                    onClick={() => setShowBlockModal(true)}
-                    className="p-1 rounded-full border border-gray-200 text-gray-400 active:bg-gray-100"
-                  >
-                    <IconBan size={14} />
-                  </button>
-                )}
-              </div>
+          {/* 名前 */}
+          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center">{userData.displayName}</h2>
+
+          {/* モード・地域 — 横並び */}
+          <div className="flex items-center justify-center gap-1.5 mt-2">
+            {userData.mainMode && (
+              <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                <FocusModeIcon modeId={userData.mainMode} size={12} />
+                {FOCUS_MODES.find((m) => m.id === userData.mainMode)?.description}
+              </span>
             )}
+            {userData.region && userData.showRegion !== false && (
+              <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                {userData.region}
+              </span>
+            )}
+          </div>
 
-            <div className="flex gap-6 mt-5 text-center">
-              <div>
-                <p className="font-bold flex items-center justify-center gap-1"><IconHeart size={16} className="text-pink-500" /> {totalLikes}</p>
-                <p className="text-xs text-gray-400">Likes</p>
-              </div>
-              <div>
-                <p className="font-bold flex items-center justify-center gap-1"><IconFire size={16} className="text-outback-clay" /> {streak}</p>
-                <p className="text-xs text-gray-400">Streak</p>
-              </div>
-              <div>
-                <p className="font-bold flex items-center justify-center gap-1"><IconUsers size={16} className="text-ocean-blue" /> {followingCount}</p>
-                <p className="text-xs text-gray-400">Following</p>
-              </div>
+          {/* ゴール */}
+          {userData.goal && (
+            <p className="text-lg font-bold text-gray-700 mt-2 text-center max-w-[85%] leading-snug">{userData.goal}</p>
+          )}
+
+          {/* Likes / Streak / Following */}
+          <div className="flex gap-8 mt-4 text-center">
+            <div>
+              <p className="font-bold text-base">{totalLikes}</p>
+              <p className="text-[11px] text-gray-400">Likes</p>
+            </div>
+            <div>
+              <p className="font-bold text-base">{streak}</p>
+              <p className="text-[11px] text-gray-400">Streak</p>
+            </div>
+            <div>
+              <p className="font-bold text-base">{followingCount}</p>
+              <p className="text-[11px] text-gray-400">Following</p>
             </div>
           </div>
+
+          {/* Follow / Block */}
+          {!isOwn && user && (
+            <div className="flex items-center gap-2 mt-4">
+              <button
+                onClick={async () => {
+                  if (following.includes(uid)) {
+                    optimisticUnfollow(uid);
+                    try {
+                      await unfollowUser(user.uid, uid);
+                    } catch {
+                      optimisticFollow(uid);
+                    }
+                  } else {
+                    optimisticFollow(uid);
+                    try {
+                      await followUser(user.uid, uid);
+                    } catch {
+                      optimisticUnfollow(uid);
+                    }
+                  }
+                }}
+                className={`px-6 py-1.5 rounded-full text-sm font-bold ${
+                  following.includes(uid)
+                    ? "border border-gray-300 text-gray-500"
+                    : "bg-ocean-blue text-white"
+                }`}
+              >
+                {following.includes(uid) ? "Following" : "Follow"}
+              </button>
+              {privateData?.blockedUsers?.includes(uid) ? (
+                <button
+                  onClick={async () => {
+                    if (!confirm("Unblock this user?")) return;
+                    await unblockUser(user.uid, uid);
+                    await refreshProfile();
+                  }}
+                  className="text-[10px] text-red-400 px-2 py-1 border border-red-200 rounded-full active:bg-red-50"
+                >
+                  Blocked
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowBlockModal(true)}
+                  className="p-1.5 rounded-full border border-gray-200 text-gray-400 active:bg-gray-100"
+                >
+                  <IconBan size={14} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -175,7 +208,7 @@ export default function PublicProfilePage() {
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
               modeFilter === m.id
                 ? isWH ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-ocean-blue/15 ring-2 ring-ocean-blue"
-                : "bg-gray-100"
+                : isWH ? "bg-amber-50" : "bg-blue-50"
             }`}
           >
             <FocusModeIcon modeId={m.id} size={33} />

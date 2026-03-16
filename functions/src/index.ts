@@ -145,6 +145,53 @@ export const checkReportThreshold = onDocumentCreated(
   }
 );
 
+// ─── Cloud Function: Like notification ───
+export const onLikeCreated = onDocumentCreated(
+  "posts/{postId}/likes/{likerId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const { postId, likerId } = event.params;
+
+    // Get post to find author
+    const postSnap = await db.doc(`posts/${postId}`).get();
+    if (!postSnap.exists) return;
+    const postData = postSnap.data()!;
+    const authorId = postData.userId as string;
+
+    // Don't notify if user liked their own post
+    if (authorId === likerId) return;
+
+    // Get liker's display name
+    const likerSnap = await db.doc(`users/${likerId}`).get();
+    const likerName = likerSnap.exists ? (likerSnap.data()!.displayName || "Someone") : "Someone";
+
+    // Get author's FCM token
+    const privSnap = await db.doc(`users/${authorId}/private/config`).get();
+    const fcmToken = privSnap.exists ? privSnap.data()?.fcmToken : "";
+
+    if (!fcmToken) return;
+
+    try {
+      await admin.messaging().send({
+        token: fcmToken,
+        notification: {
+          title: `${likerName} liked your post`,
+          body: postData.content ? postData.content.slice(0, 60) : "Tap to view",
+        },
+        webpush: {
+          fcmOptions: { link: "/mypage" },
+        },
+      });
+    } catch (e) {
+      console.error(`FCM like notification failed for ${authorId}:`, e);
+      // Clear invalid token
+      await db.doc(`users/${authorId}/private/config`).update({ fcmToken: "" });
+    }
+  }
+);
+
 // ─── Scheduled: Streak warning (6h before 48h expiry) & reset ───
 export const checkStreaks = onSchedule(
   { schedule: "every 1 hours", timeZone: "Australia/Sydney" },
