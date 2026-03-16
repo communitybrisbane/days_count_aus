@@ -95,7 +95,7 @@ export default function SettingsPage() {
       await refreshProfile();
       router.back();
     } catch (e) {
-      console.error(e);
+      console.error("Failed to save profile:", e);
     } finally {
       setSaving(false);
     }
@@ -135,7 +135,7 @@ export default function SettingsPage() {
       await uploadAvatar(user.uid, blob);
       await refreshProfile();
     } catch (e) {
-      console.error(e);
+      console.error("Failed to upload avatar:", e);
     }
   };
 
@@ -182,7 +182,7 @@ export default function SettingsPage() {
       setReportImagePreview("");
       setActiveSection(null);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to submit report:", e);
     }
   };
 

@@ -8,7 +8,7 @@ import { FOCUS_MODES, MAX_GROUP_MEMBERS } from "@/lib/constants";
 import { FocusModeIcon } from "@/components/icons";
 import type { Group } from "@/types";
 
-function formatTime(timestamp: any): string {
+function formatTime(timestamp: { toDate?: () => Date } | undefined): string {
   const date = timestamp?.toDate?.();
   if (!date) return "";
   const now = new Date();

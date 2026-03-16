@@ -21,7 +21,8 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY) {
   // Debug token for localhost development
   if (process.env.NODE_ENV === "development") {
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
   initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY),

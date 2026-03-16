@@ -197,7 +197,9 @@ export async function getBannedWords(): Promise<string[]> {
       cachedBannedWords = snap.data().bannedWords as string[];
       return cachedBannedWords;
     }
-  } catch {}
+  } catch {
+    // Firestore fetch failed — use client-side defaults
+  }
   cachedBannedWords = CLIENT_BANNED_WORDS;
   return cachedBannedWords;
 }

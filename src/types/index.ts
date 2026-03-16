@@ -61,3 +61,34 @@ export interface UserPrivate {
   blockedUsers: string[];
   fcmToken: string;
 }
+
+/** Live Session config (from admin_config/main.liveSession) */
+export interface LiveSession {
+  label: string;
+  url: string;
+  description?: string;
+}
+
+/** Announcement (from admin_config/main.announcements) */
+export interface Announcement {
+  title: string;
+  body?: string;
+  type: "info" | "warning" | "event";
+  linkUrl?: string;
+  linkLabel?: string;
+  active: boolean;
+}
+
+/** Admin config (admin_config/main) */
+export interface AdminConfig {
+  announcements?: Announcement[];
+  bannerImageUrl?: string;
+  liveSession?: LiveSession;
+  ai_prompt_template?: string;
+}
+
+/** Scrollbar-hiding style for inline use */
+export const NO_SCROLLBAR_STYLE: React.CSSProperties = {
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
+};

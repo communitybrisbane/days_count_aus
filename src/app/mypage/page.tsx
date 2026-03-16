@@ -15,6 +15,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
 import { IconSettings, IconHeart, IconLock, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
+import { NO_SCROLLBAR_STYLE } from "@/types";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
 export default function MyPage() {
@@ -44,11 +45,14 @@ export default function MyPage() {
     setShowFollowing(true);
     if (followingProfiles.length > 0 || following.length === 0) return;
     setLoadingFollowing(true);
-    const profiles: any[] = [];
+    const profiles: typeof followingProfiles = [];
     const displayIds = following.slice(0, 50);
     for (const uid of displayIds) {
       const snap = await getDoc(doc(db, "users", uid));
-      if (snap.exists()) profiles.push({ uid, ...snap.data() });
+      if (snap.exists()) {
+        const d = snap.data();
+        profiles.push({ uid, displayName: d.displayName || "", photoURL: d.photoURL || "", mainMode: d.mainMode, region: d.region, showRegion: d.showRegion });
+      }
     }
     setFollowingProfiles(profiles);
     setLoadingFollowing(false);
@@ -65,7 +69,7 @@ export default function MyPage() {
         aiPrompt = configSnap.data().ai_prompt_template || "";
       }
     } catch (e) {
-      console.error(e);
+      console.error("Failed to fetch AI prompt template:", e);
     }
 
     // Last 7 days posts
@@ -124,7 +128,7 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
 
   const filteredPosts = modeFilter ? posts.filter((p) => p.mode === modeFilter) : posts;
 
-  const getPostThumb = (post: any) => {
+  const getPostThumb = (post: Post) => {
     if (post.imageUrl) return { type: "image" as const, url: post.imageUrl };
     const gradientIdx = post.mode ? FOCUS_MODES.findIndex((m) => m.id === post.mode) : 0;
     return { type: "gradient" as const, gradient: GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0] };
@@ -132,7 +136,7 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
 
   return (
     <div className="h-dvh pb-16 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any }}>
+      <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト */}
       <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
         {/* 設定アイコン — 右上 */}

@@ -20,7 +20,7 @@
 | 分析 | Firebase Analytics |
 | セキュリティ | Firebase App Check（reCAPTCHA Enterprise） |
 | 画像処理 | react-easy-crop + Canvas API（EXIF自動除去 + 圧縮） |
-| 通知 | アプリ内通知（FCM Web Push はトークン登録のみ実装、通知発火は未実装） |
+| 通知 | FCM Web Push（トークン登録 + Cloud Functions v2 による通知発火） |
 | デプロイ | Vercel |
 | PWA | manifest.json + アイコン（next-pwa未使用、手動設定） |
 | ビルドツール | Turbopack（Next.js 16 デフォルト） |
@@ -105,8 +105,8 @@
 |---|---|---|
 | ログ投稿（1日1回） | +50 | 1日1回 |
 | 初投稿ウェルカムボーナス | +100 | 初回のみ（投稿50XPと合算で計150XP） |
-| いいねをもらう（受信） | +10 | 無制限（自分の投稿への自己いいねではXP付与なし） |
-| いいねを送る（送信） | +5 | 1日最大5回（計25XP）（自分の投稿へのいいねではXP付与なし） |
+| いいねをもらう（受信） | +10 | 無制限（自己いいねではXP付与なし） |
+| いいねを送る（送信） | +5 | **XP付与は1日5回まで**（計25XP）。いいね自体は**無制限**に可能。自己いいねではXP付与なし |
 | 7日継続ボーナス | +100 | ストリークが7の倍数に達するたび（7, 14, 21...） |
 
 ### レベル計算式
@@ -126,9 +126,12 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 - 判定は `lastPostAt`（ISO 8601文字列）の日付部分で比較。
 
 ### いいねのXPルール
-- **他人の投稿にいいね**: 送信者 +5XP、受信者 +10XP。
+- **他人の投稿にいいね**: 送信者 +5XP（1日5回まで）、受信者 +10XP。
 - **自分の投稿にいいね**: いいねカウント増減のみ。XP付与なし。
-- **いいね取り消し**: XPも逆算して戻す。
+- **いいね取り消し**: XPは戻さない（いいね/取り消しによるXPファーミング防止）。
+- **XP上限超過時**: トースト通知「XP limit reached — like still counted!」。いいね自体はブロックしない。
+- **いいねアニメーション**: タップ位置にハートバースト + 6個のパーティクル散布（CSS keyframes）。
+- **いいねしたユーザー一覧**: いいね数タップで `posts/{postId}/likes` から最大50件取得しボトムシート表示。
 
 ---
 
@@ -168,12 +171,14 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 
 **ルート**: `/home`
 
-- **メインカウンター**: 画面上部にAussie Gold → amber-500グラデーション背景、白文字で `D + 124` 等を `text-6xl font-black` で表示。
-- **フェーズラベル**: カウンター上部に「渡航まで」「ワーホリ中」「帰国後」テキスト表示。
-- **プログレスカード**: 白背景のカード（`shadow-md rounded-2xl`）にLv表示、XP値、次レベルまでの進捗バー（Ocean Blue）、ストリーク（🔥）表示。カウンター下に重ねて配置。
-- **週間レポートカード**: 今週のサマリー（投稿数、獲得XP、ストリーク）を3カラムグリッドで表示。
-- **運営エリア**: Firestoreの `admin_config/main` から取得した運営メッセージ + バナー画像（BannerCarousel）+ **JOIN ZOOMボタン**（スケジュール情報付き）。`admin_config` が存在しない場合は非表示。
-- **マイルストーン演出**: D+30, 100, 200, 365 到達時にFramer Motionフルスクリーンアニメーション。`localStorage` で表示済みフラグ管理（1回のみ表示）。
+- **ヒーローヘッダー**: 画面上部にAussie Gold → amber-500 → orange-400グラデーション背景、白文字で `D + 124` 等を大型表示。フェーズラベル + 挨拶テキスト。
+- **週間ゴールカード**: ヘッダーに重なるカード。ユーザー設定のゴール表示 + 編集ボタン + WeeklyChallenge コンポーネント（週間投稿進捗バー、冠位十二階ランクカラー、weekStreak表示）。7投稿達成時は「Complete!」バッジ + ゴールド演出。
+- **XP/Lvバー**: コンパクトな1行表示（Lv + プログレスバー + 次Lvまでの残XP）。
+- **バナーカルーセル**: BannerCarousel（`location="home"`）+ adminConfig のバナー画像。
+- **お知らせ**: `admin_config/main.announcements` 配列から `active: true` のものを表示（info/warning/event 3タイプ、リンク付き対応）。
+- **通知バナー**: 初回訪問時にプッシュ通知許可バナー表示（dismissで `localStorage` に記録）。
+- **フェーズ自動遷移**: 渡航予定日超過 or D+365超過時に ConfirmModal で切り替え提案。
+- **マイルストーン演出**: D+30, 100, 200, 365 到達時にフルスクリーンアニメーション。`localStorage` で表示済みフラグ管理（1回のみ表示）。
 
 ---
 
@@ -181,20 +186,30 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 
 **ルート**: `/explore`
 
-- **全ユーザーの公開（public）かつアクティブ（active）な投稿** を新着順に表示。
-- **フォロー優先表示**: フォロー中ユーザーの投稿を優先的に表示。
+- **全ユーザーの公開（public）かつアクティブ（active）な投稿** をスコアベースランキングで表示。
+- **フィードアルゴリズム** (`feedScore.ts`): クライアント側でスコア計算（Firestore追加読み取りなし）。
+  - フォロー中: +50pt
+  - 同じメインモード: +20pt
+  - いいね数（0〜10pt、対数スケール）
+  - 新しさ（0〜10pt、24時間以内が最大）
+  - 新規ユーザー発見ボーナス: +5pt
+  - 既読ペナルティ: -30pt
+  - 検索モード時はスコアリングをスキップ（マッチ結果をそのまま表示）。
+- **既読追跡**: `localStorage` に投稿IDを保存（最大500件、3日間TTL）。`markSeen()` で記録。
 - **無限スクロール**: Firestoreの `limit(20)` + `startAfter(lastVisibleDoc)` で20件ずつ追加読み込み。スクロール位置がページ下端500pxに達したら次ページ取得。
-- **フィルタ**: 上部に固定ヘッダーで「All」+ 5つのフォーカスモードアイコンを横スクロール可能なpill型ボタンで表示。選択中はAussie Gold背景。
-- **検索**: ユーザー名・地域での検索機能。
-- **いいね**: 投稿カードのハートボタンで送信。ダブルタップでもいいね可能（ハートアニメーション付き）。
+- **フィルタ**: 上部に固定ヘッダーで2行レイアウト。Row1: All + WH系モード、Row2: その他モード。**WH系（enjoying/challenging）は amber系カラー、その他は blue系カラー**（選択/非選択とも色分け）。
+- **検索**: ユーザー名・地域でのデバウンス検索（400ms）。500ユーザーまでスキャン。
+- **いいね**: 投稿カードのハートボタンで送信。ダブルタップでもいいね可能。**タップ位置にハートバースト + パーティクルアニメーション**。**楽観的UI更新**（即座に反映、失敗時ロールバック）。
 - **自分の投稿にもいいね可能**（ただしXP付与なし）。
-- **いいね取り消し可能**（XPも逆算して戻す）。
-- **いいね制限**: 1日5回まで。超過時はalertで通知。
-- **フォロー/アンフォロー**: 投稿カード内のFollowボタンからトグル。
+- **いいね取り消し可能**（XPは戻さない — ファーミング防止）。
+- **いいねは無制限**。XP付与のみ1日5回制限。超過時はトースト通知。
+- **いいねしたユーザー一覧**: いいね数タップでボトムシート表示（最大50件）。
+- **フォロー/アンフォロー**: 投稿カード内のFollowボタンからトグル。**楽観的UI更新**（即座に反映、失敗時ロールバック）。
 - **ユーザー遷移**: 投稿者アイコンタップ → `/user/[uid]` 公開版マイページを閲覧可能。
 - **ブロックユーザー非表示**: `privateData.blockedUsers` に含まれるユーザーの投稿はクライアント側でフィルタリング。
 - **投稿メニュー（···）**: 自分の投稿→編集/削除、他人の投稿→ブロック/通報。
-- **Empty State**: 投稿ゼロ時「🪃 最初の1枚を投稿して、カウントを始めよう！」表示。
+- **投稿詳細モーダル**: Shorts風スナップスクロール。**右スワイプで閉じる**（GPU加速アニメーション）。
+- **Empty State**: 投稿ゼロ時ユーカリアイコン + 誘導テキスト表示。
 
 ---
 
@@ -235,6 +250,12 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 
 **ルート**: `/groups`, `/groups/create`, `/groups/[groupId]`
 
+#### Live Session（ライブセッション）
+- `admin_config/main.liveSession` から取得。`label`, `url`, `description` フィールド。
+- `url` が設定されている場合: 緑のパルスドット + 「LIVE」バッジ + 青い「Join」ボタン（外部リンク）。
+- `url` が未設定の場合: グレーのドット + 「Next session TBD」 + 無効化された「Join」ボタン。
+- グループ一覧の最上部に表示。
+
 #### 公式グループ（Official Groups）
 - 各フォーカスモードごとに1つの公式グループが存在（`isOfficial: true`）。
 - ユーザーのメインモード変更時に自動参加/退出。
@@ -267,16 +288,13 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 
 **ルート**: `/mypage`
 
-- **プロフィール表示**: 正円プロフィール画像（80px）、ニックネーム、Lv、進捗バー、XP/ストリーク/投稿数の3カラム統計。
-- **地域・目標**: 設定済みの場合のみ表示。
-- **設定ボタン**: `/settings` へ遷移。
-- **AI振り返りボタン**: 日曜日のみ表示。
-- **フォロー中リスト**: フォロー中のユーザー一覧。
-- **アーカイブ切り替えタブ**:
-  - **Timeline**: 全投稿を時系列表示（自分の投稿は visibility に関わらず全件表示）
-  - **Fun（遊び）🎉**: `enjoying` + `social-media` の投稿を抽出
-  - **Growth（成長）🌱**: `skills` + `challenging` + `english` の投稿を抽出
-- タブはAussie Goldの下線でアクティブ状態を表示。
+- **Instagram風中央レイアウト**: アバター（96px）→ 名前 → モード+地域タグ → ゴール → 統計（Likes/Streak/Following）を縦に中央配置。
+- **設定ボタン**: 右上に歯車アイコン → `/settings` へ遷移。
+- **AI振り返りボタン**: 日曜日のみ表示（「Copy AI Review Data」）。
+- **フォロー中リスト**: Followingタップでフルスクリーンモーダル表示（最大50件）。**右スワイプで閉じる**。
+- **モードフィルター**: 5つのモードアイコン + All ボタン。**WH系は amber系、その他は blue系**で色分け（選択/非選択とも）。
+- **投稿グリッド**: 4列グリッドでサムネイル表示。タップで投稿詳細モーダル。Private投稿には鍵アイコン。
+- **投稿詳細モーダル**: 全投稿を縦スクロール表示。**右スワイプで閉じる**（GPU加速アニメーション）。
 
 ---
 
@@ -351,9 +369,11 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 ### 6.11 フォロー機能
 
 - **フォロー/アンフォロー**: EXPLORE の投稿カード内 Follow ボタン、または公開プロフィール画面からトグル。
+- **楽観的UI更新**: フォロー/アンフォロー操作は即座にUI反映。Firestore書き込みはバックグラウンド。失敗時はロールバック。`AuthContext` に `optimisticFollow` / `optimisticUnfollow` メソッド。
 - **データ構造**: `users/{uid}/following/{targetUid}` サブコレクション。
 - **キャッシュ**: 最大200件のフォローIDをAuthContextでキャッシュ。
-- **フォロー優先表示**: EXPLOREでフォロー中ユーザーの投稿を優先表示。
+- **フォロー優先表示**: EXPLOREでフォロー中ユーザーの投稿をスコアベースで優先表示（+50pt）。
+- **フォロワー非表示**: 意図的にフォロワー数/一覧は表示しない（SNS依存防止デザイン）。
 - **アカウント削除時**: following サブコレクションも一括削除。
 
 ---
@@ -362,10 +382,12 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 
 **ルート**: `/user/[uid]`
 
-- ユーザーのアバター（80px）、ニックネーム、Lv、地域、目標を表示。
-- そのユーザーの **公開 (public) かつアクティブ (active)** な投稿一覧を新着順で表示。
-- フォロー/アンフォローボタン。
-- ブロックボタン。
+- **Instagram風中央レイアウト**: アバター（96px）→ 名前 → モード+地域タグ → ゴール → 統計（Likes/Streak/Following）を縦に中央配置。MyPageと同一デザイン。
+- そのユーザーの **公開 (public) かつアクティブ (active)** な投稿を4列グリッドで表示。モードフィルター付き。
+- **フォロー/アンフォロー**: 楽観的UI更新（即座に反映、失敗時ロールバック）。
+- **ブロック/アンブロック**: ブロックボタンタップでブロック、「Blocked」バッジタップで解除（confirm付き）。
+- **投稿詳細モーダル**: タップで全投稿縦スクロール表示。**右スワイプで閉じる**。
+- **閉じるボタン**: 右上に × ボタン。
 
 ---
 
@@ -402,6 +424,11 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 | GROUPS | `/groups` | 🐨 コアラ（SVG） | フォーカスグループチャット |
 | MY PAGE | `/mypage` | ユーザーのプロフィール写真（正円24px） | アクティブ時はゴールドの `ring-2` 枠線 |
 
+### モードカラー規則
+- **WH系（enjoying / challenging）**: 選択時 `bg-aussie-gold text-white`、非選択時 `bg-amber-50 text-amber-700`
+- **その他（english / skills / social-media）**: 選択時 `bg-ocean-blue text-white`、非選択時 `bg-blue-50 text-blue-700`
+- すべてのモード選択UI（Explore、Post、Edit、Groups Create、MyPage、User Profile）で統一適用。
+
 ### 共通UIパターン
 - ローディング: `animate-spin` の円 + `border-b-2 border-aussie-gold`（LoadingSpinnerコンポーネント、fullScreen対応）
 - カード: `rounded-2xl shadow-sm border border-gray-100`
@@ -411,6 +438,8 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 - 確認ダイアログ: `ConfirmModal` コンポーネント（汎用）
 - XPトースト: `XPToast` コンポーネント（1.2秒表示後自動消去）
 - レベルアップ演出: `LevelUpAnimation` コンポーネント（フルスクリーンオーバーレイ）
+- **右スワイプで閉じる**: フルスクリーンモーダル（Explore詳細、MyPage投稿/フォロー一覧、User Profile投稿）。`useSwipeDismiss` フック。GPU加速（`will-change: transform` + `translateZ(0)`）。水平移動が垂直の1.5倍以上で発動。しきい値80px。
+- **いいねアニメーション**: `@keyframes like-burst`（スプリングスケール）+ `@keyframes like-particle`（放射散布）+ `@keyframes fade-in-out`（トースト）。`globals.css` で定義。
 
 ### Empty State
 - 投稿ゼロ時: **「🪃 最初の1枚を投稿して、カウントを始めよう！」** の誘導表示。
@@ -439,6 +468,7 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 | dailyLikeCount | number | 当日のいいね送信数 |
 | lastLikeDate | string | 最終いいね送信日 `YYYY-MM-DD` |
 | weeklyGoal | number | 週間投稿目標（表示用） |
+| weekStreak | number | 週間チャレンジ連続達成数（冠位十二階ランク表示用） |
 | groupIds | array | 所属グループIDの配列 |
 | createdAt | timestamp | アカウント作成日時 |
 
@@ -546,7 +576,9 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 | zoomUrl | string | ZoomミーティングURL |
 | zoomLabel | string | Zoomボタンラベル |
 | zoomSchedules | array | `{ dayOfWeek, startTime, endTime }` 形式のスケジュール配列 |
-| zoomNextInfo | string | 次回セッション情報テキスト |
+| zoomNextInfo | string | 次回セッション情報テキスト（deprecated） |
+| liveSession | map | `{ label, url, description }` — Community タブのライブセッション表示用 |
+| announcements | array | `{ title, body?, type, linkUrl?, linkLabel?, active }` — HOME画面のお知らせ |
 | ai_prompt_template | string | AI振り返り用プロンプトテンプレート |
 
 ### `banners` コレクション（読み取り専用）
@@ -703,7 +735,8 @@ src/
 │   └── user/[uid]/page.tsx     # 公開プロフィール
 ├── components/
 │   ├── Avatar.tsx              # アバター（写真 or イニシャル）
-│   ├── PostCard.tsx            # 投稿カード（いいね・フォロー・通報・ブロック）
+│   ├── PostCard.tsx            # 投稿カード（いいね・フォロー・通報・ブロック・いいね一覧モーダル）
+│   ├── WeeklyChallenge.tsx     # 週間チャレンジ進捗（冠位十二階ランクカラー）
 │   ├── ImageCropper.tsx        # 画像クロップUI
 │   ├── MilestoneAnimation.tsx  # マイルストーン演出
 │   ├── LevelUpAnimation.tsx    # レベルアップ演出
@@ -712,6 +745,7 @@ src/
 │   ├── ConfirmModal.tsx        # 汎用確認ダイアログ
 │   ├── LegalModals.tsx         # 利用規約・プライバシーポリシーモーダル
 │   ├── BannerCarousel.tsx      # 運営バナーカルーセル
+│   ├── AsciiWarn.tsx           # ASCII入力警告バナー
 │   ├── GroupCard.tsx           # グループカード
 │   ├── icons/index.tsx         # SVGアイコンコンポーネント群
 │   └── layout/
@@ -719,13 +753,16 @@ src/
 ├── contexts/
 │   └── AuthContext.tsx         # 認証コンテキスト（user, profile, privateData, following）
 ├── hooks/
-│   └── useAuthGuard.ts         # 認証ガードフック
+│   ├── useAuthGuard.ts         # 認証ガードフック
+│   ├── useSwipeDismiss.ts      # 右スワイプで閉じるジェスチャー（GPU加速）
+│   └── useAsciiInput.ts        # ASCII文字のみ入力制限 + 警告表示
 ├── lib/
 │   ├── firebase.ts             # Firebase初期化（Auth, Firestore, Storage, Analytics, App Check）
 │   ├── auth.ts                 # Google認証ヘルパー（popup → redirect fallback）
 │   ├── utils.ts                # ユーティリティ（レベル計算、日数カウント、色生成）
 │   ├── constants.ts            # 定数（フォーカスモード、マイルストーン、グラデーション、地域、制限値）
 │   ├── validators.ts           # バリデーション（ニックネーム・グループ名重複チェック）
+│   ├── feedScore.ts            # フィードスコアリングアルゴリズム + 既読追跡
 │   ├── follow.ts               # フォロー/アンフォロー操作
 │   ├── groups.ts               # 公式グループ参加/退出
 │   ├── fcm.ts                  # FCMトークン登録・メッセージリスナー
@@ -746,18 +783,26 @@ public/
 
 ---
 
-## 15. 未実装・将来対応項目
+## 15. Cloud Functions
+
+| 関数名 | トリガー | 機能 |
+|---|---|---|
+| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいね通知。投稿者にFCMプッシュ通知「{likerName} liked your post」を送信。自己いいねはスキップ。無効トークンは自動クリーニング。 |
+
+---
+
+## 16. 未実装・将来対応項目
 
 | 項目 | ステータス | 備考 |
 |---|---|---|
-| FCM Web Push通知（発火） | 未実装 | トークン登録のみ実装済み。Cloud Functions + Service Worker 必要 |
-| ストリーク警告通知 | 未実装 | FCM発火実装後に対応 |
+| いいね通知（Cloud Function） | 実装済み（未デプロイ） | `onLikeCreated` — `firebase deploy --only functions` が必要 |
+| ストリーク警告通知 | 未実装 | Cloud Functions でのスケジュール実行が必要 |
+| グループメッセージ通知 | 未実装 | — |
+| フォロー通知 | 未実装 | — |
 | プライバシーポリシー・利用規約の内容精査 | 未完了 | LegalModals は実装済み、本文は仮 |
 | Stripeサブスクリプション | 未実装 | `isPro` フィールドのみ用意済み |
 | App Check の Cloud Firestore 強制適用 | 未有効化 | reCAPTCHA Enterprise 設定を整えてから |
-| 渡航予定日の自動フェーズ遷移確認ダイアログ | 未実装 | HOME画面での日付チェック必要 |
 | 全体的なUIデザイン改善 | 継続 | — |
-| 通知機能の強化（いいね通知、グループ通知等） | 未実装 | — |
 
 ---
 
@@ -768,3 +813,4 @@ public/
 | v2 Final | — | 最終確定仕様書 |
 | v3 | 2025-03-10 | Phase 1〜9 実装完了。実装詳細・ルート・ファイル構成・未実装項目を追記。 |
 | v3 改訂 | 2026-03-12 | 現在の実装に完全準拠して全面書き直し。主な差分: レベル計算式を `sqrt(TotalXP/4)+1` に修正、投稿テキストを統合 `content` フィールド（400文字）に変更、投稿に `visibility`（public/private）と `status`（active/hidden/pending）を追加、フォロー機能・公式グループ・投稿モデレーション（自動非表示）・禁止語句フィルター・ブロックUI を追記、グループ作成条件を Lv.5 に修正、自己いいね（XP付与なし）を明記、ダブルタップいいね・2ステップ投稿フロー・画像圧縮仕様を追記、Firestore構造に `users/private`・`users/following`・`posts/reports`・`groups/lastRead`・`banners`・`moderation_config` を追加、セキュリティルールを実装準拠で全面更新、アカウント削除手順を拡充。 |
+| v3 改訂2 | 2026-03-17 | いいねシステム刷新（無制限いいね、XP上限5回/日、タップ位置アニメーション、いいね一覧モーダル、楽観的UI、XP取り消し廃止）。フィードアルゴリズム導入（スコアベースランキング + localStorage既読追跡）。フォロー楽観的UI更新。公開プロフィールUI刷新（MyPageと統一、ブロック/アンブロックトグル）。モードカラー統一（WH=amber、その他=blue、全6画面）。Live SessionをHOMEからCommunityタブへ移動。HOME画面リファクタ（WeeklyChallenge抽出、ストリーク火消去）。右スワイプで閉じるジェスチャー（useSwipeDismiss、GPU加速）。いいね通知Cloud Function（onLikeCreated、未デプロイ）。新規ファイル: feedScore.ts, WeeklyChallenge.tsx, useSwipeDismiss.ts, AsciiWarn.tsx, useAsciiInput.ts。 |

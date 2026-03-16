@@ -14,13 +14,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import GroupCard from "@/components/GroupCard";
 import { IconSearch, IconUsers, IconLock, FocusModeIcon } from "@/components/icons";
 import BannerCarousel from "@/components/BannerCarousel";
-import type { Group } from "@/types";
-
-interface LiveSession {
-  label: string;
-  url: string;
-  description?: string;
-}
+import type { Group, LiveSession } from "@/types";
 
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });

@@ -51,7 +51,7 @@ export default function EditPostPage() {
       });
       router.back();
     } catch (e) {
-      console.error(e);
+      console.error("Failed to save post edit:", e);
     } finally {
       setSaving(false);
     }

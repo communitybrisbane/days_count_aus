@@ -52,7 +52,7 @@ export function TermsModal({ onClose }: LegalModalProps) {
           <p>- Hidden posts older than 30 days may be permanently deleted.</p>
 
           <p className="font-bold text-sm text-gray-800">7. Communities (Groups)</p>
-          <p>- Users at Lv.5 or above can join communities. Users at Lv.5 or above can create communities.</p>
+          <p>- Users at Lv.7 or above can join communities. Users at Lv.10 or above can create communities.</p>
           <p>- Each user can join up to 2 communities (plus official communities).</p>
           <p>- Maximum 10 members per community.</p>
           <p>- Group leaders are responsible for managing their community. If a leader leaves, the community is disbanded.</p>
@@ -61,11 +61,11 @@ export function TermsModal({ onClose }: LegalModalProps) {
           <p className="font-bold text-sm text-gray-800">8. XP, Levels, and Streaks</p>
           <p>- XP is earned through posting and receiving likes. XP and levels have no monetary value.</p>
           <p>- Streaks reset after 48 hours of inactivity. A warning notification is sent 6 hours before expiry (if notifications are enabled).</p>
-          <p>- Daily like limit: 5 likes per day.</p>
+          <p>- Likes are unlimited. XP from sending likes is capped at 5 per day.</p>
 
           <p className="font-bold text-sm text-gray-800">9. Push Notifications</p>
           <p>- Push notifications are optional. You may enable or disable them at any time through your browser settings.</p>
-          <p>- Notifications are used solely for streak warnings and App-related alerts.</p>
+          <p>- Notifications are used for streak warnings, like notifications, and other App-related alerts.</p>
 
           <p className="font-bold text-sm text-gray-800">10. Blocking and Reporting</p>
           <p>- You can block any user. Blocked users&apos; posts will not appear in your feed.</p>
@@ -119,7 +119,7 @@ export function PrivacyModal({ onClose }: LegalModalProps) {
           <p><b>b) Profile information you provide:</b></p>
           <p>- Nickname, region, goal, focus mode, departure/arrival dates, profile photo</p>
           <p><b>c) User-generated content:</b></p>
-          <p>- Posts (text up to 500 characters, images up to 5MB)</p>
+          <p>- Posts (text up to 400 characters, images up to 300KB after compression)</p>
           <p>- Group messages (up to 100 characters), message reactions</p>
           <p>- Likes, follows, blocks, and reports</p>
           <p><b>d) Automatically collected data:</b></p>
@@ -131,7 +131,7 @@ export function PrivacyModal({ onClose }: LegalModalProps) {
           <p>- Provide and operate the App&apos;s features (posting, groups, explore, streaks, leveling)</p>
           <p>- Display your public profile to other users (nickname, photo, level, region, focus mode)</p>
           <p>- Calculate XP, level, and streak progress</p>
-          <p>- Send push notifications (streak warnings, only if enabled)</p>
+          <p>- Send push notifications (streak warnings, like notifications, only if enabled)</p>
           <p>- Moderate content and enforce community guidelines</p>
           <p>- Improve the App based on aggregated usage analytics</p>
 
@@ -157,7 +157,7 @@ export function PrivacyModal({ onClose }: LegalModalProps) {
 
           <p className="font-bold text-sm text-gray-800">7. Third-Party Services</p>
           <p>The App uses the following third-party services:</p>
-          <p>- <b>Google Firebase:</b> Authentication, database, file storage, push notifications, analytics</p>
+          <p>- <b>Google Firebase:</b> Authentication, database, file storage, push notifications, analytics, Cloud Functions (server-side processing)</p>
           <p>- <b>Vercel:</b> App hosting and deployment</p>
           <p>No advertising networks, tracking pixels, or other third-party analytics are used.</p>
 

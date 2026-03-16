@@ -19,20 +19,7 @@ import { IconEdit } from "@/components/icons";
 import WeeklyChallenge from "@/components/WeeklyChallenge";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
-
-interface Announcement {
-  title: string;
-  body?: string;
-  type: "info" | "warning" | "event";
-  linkUrl?: string;
-  linkLabel?: string;
-  active: boolean;
-}
-
-interface AdminConfig {
-  announcements?: Announcement[];
-  bannerImageUrl?: string;
-}
+import type { AdminConfig } from "@/types";
 
 const STATUS_LABELS: Record<string, string> = {
   "pre-departure": "Before departure",

@@ -14,6 +14,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import { FocusModeIcon, IconBan, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Post, UserProfile } from "@/types";
+import { NO_SCROLLBAR_STYLE } from "@/types";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
 export default function PublicProfilePage() {
@@ -80,7 +81,7 @@ export default function PublicProfilePage() {
 
   return (
     <div className="h-dvh pb-16 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" as any }}>
+      <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト（myタブと統一） */}
       <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
         {/* 戻るボタン — 右上 */}

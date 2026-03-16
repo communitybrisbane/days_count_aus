@@ -9,12 +9,13 @@ import {
   increment,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import type { Group } from "@/types";
 
 /**
  * Find the official group doc for a given mode.
- * Returns { id, ...data } or null.
+ * Returns Group or null.
  */
-export async function getOfficialGroup(mode: string) {
+export async function getOfficialGroup(mode: string): Promise<Group | null> {
   const q = query(
     collection(db, "groups"),
     where("mode", "==", mode),
@@ -23,8 +24,8 @@ export async function getOfficialGroup(mode: string) {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const doc = snap.docs[0];
-  return { id: doc.id, ...doc.data() };
+  const d = snap.docs[0];
+  return { id: d.id, ...d.data() } as Group;
 }
 
 /**
@@ -34,7 +35,7 @@ export async function getOfficialGroup(mode: string) {
 export async function joinOfficialGroup(uid: string, mode: string) {
   const group = await getOfficialGroup(mode);
   if (!group) return;
-  const memberIds = (group as any).memberIds || [];
+  const memberIds = group.memberIds || [];
   if (memberIds.includes(uid)) return;
 
   const { doc: firestoreDoc } = await import("firebase/firestore");
@@ -50,7 +51,7 @@ export async function joinOfficialGroup(uid: string, mode: string) {
 export async function leaveOfficialGroup(uid: string, mode: string) {
   const group = await getOfficialGroup(mode);
   if (!group) return;
-  const memberIds = (group as any).memberIds || [];
+  const memberIds = group.memberIds || [];
   if (!memberIds.includes(uid)) return;
 
   const { doc: firestoreDoc } = await import("firebase/firestore");
