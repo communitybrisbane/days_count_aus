@@ -208,6 +208,7 @@ export default function OnboardingPage() {
             <p className="text-xs font-medium text-gray-500 mb-2">Departure date <span className="text-red-400">*</span></p>
             <input
               type="date"
+              lang="en"
               value={departureDate}
               onChange={(e) => setDepartureDate(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
@@ -220,6 +221,7 @@ export default function OnboardingPage() {
             <p className="text-xs font-medium text-gray-500 mb-2">When did you arrive? <span className="text-red-400">*</span></p>
             <input
               type="date"
+              lang="en"
               value={departureDate}
               onChange={(e) => setDepartureDate(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
