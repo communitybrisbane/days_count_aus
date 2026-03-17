@@ -72,21 +72,27 @@ export default function OnboardingPage() {
 
     setSubmitting(true);
     try {
+      console.log("[ONBOARD] Step 0a: Checking nickname...");
       const taken = await isNicknameTaken(nickname.trim());
       if (taken) { setNicknameError("Already taken"); setSubmitting(false); return; }
+      console.log("[ONBOARD] Step 0b: Nickname OK");
 
       let photoURL = "";
       if (photoBlob) {
+        console.log("[ONBOARD] Step 0c: Uploading photo...");
         const imgRef = ref(storage, `avatars/${user.uid}.jpg`);
         await uploadBytes(imgRef, photoBlob);
         photoURL = await getDownloadURL(imgRef);
+        console.log("[ONBOARD] Step 0d: Photo uploaded");
       }
 
       const today = getTodayStr();
 
       // Clean up partial doc from previous failed attempt
+      console.log("[ONBOARD] Step 0e: Checking existing doc...");
       const existingDoc = await getDoc(doc(db, "users", user.uid));
       if (existingDoc.exists()) {
+        console.log("[ONBOARD] Step 0f: Deleting existing doc...");
         await deleteDoc(doc(db, "users", user.uid));
       }
 
