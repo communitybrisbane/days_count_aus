@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { calculateLevel, getDayCount, formatDayCount } from "@/lib/utils";
+import { calculateLevel, getDayCount, formatDayCount, timestampToDate } from "@/lib/utils";
 import { fetchUserPosts } from "@/lib/services/posts";
 import { FOCUS_MODES, GRADIENTS } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
@@ -94,8 +94,7 @@ export default function MyPage() {
       .map(([k, v]) => `${FOCUS_MODES.find((m) => m.id === k)?.description || k}: ${v}x`)
       .join(", ");
 
-    const ca = profile.createdAt as { toDate?: () => Date } | undefined;
-    const createdAtDate = ca?.toDate?.() ?? null;
+    const createdAtDate = timestampToDate(profile.createdAt);
     const dayCount = getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
 
     const text = `[Current Goal]

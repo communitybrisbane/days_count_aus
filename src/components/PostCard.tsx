@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP } from "@/lib/constants";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
 import XPToast from "./XPToast";
@@ -150,13 +150,13 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
         if (!isOwnPost && hasXPQuota) {
-          await updateDoc(doc(db, "users", post.userId), { totalXP: increment(10) });
+          await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
           await updateDoc(doc(db, "users", user.uid), {
-            totalXP: increment(5),
+            totalXP: increment(LIKE_SEND_XP),
             dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
             lastLikeDate: today,
           });
-          setXpGained(5);
+          setXpGained(LIKE_SEND_XP);
           setShowXP(true);
           setTimeout(() => setShowXP(false), 1500);
         } else if (!isOwnPost && !hasXPQuota) {

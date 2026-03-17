@@ -101,7 +101,7 @@ export async function createPost(input: CreatePostInput): Promise<string> {
 
   if (input.imageBlob) {
     const imageRef = ref(storage, `posts/${input.userId}/${postRef.id}.jpg`);
-    await uploadBytes(imageRef, input.imageBlob);
+    await uploadBytes(imageRef, input.imageBlob, { contentType: "image/jpeg" });
     const url = await getDownloadURL(imageRef);
     await updateDoc(postRef, { imageUrl: url });
   }

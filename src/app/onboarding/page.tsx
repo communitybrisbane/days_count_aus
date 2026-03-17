@@ -6,7 +6,7 @@ import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from "firebase/firest
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, REGIONS } from "@/lib/constants";
+import { FOCUS_MODES, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup } from "@/lib/groups";
@@ -78,7 +78,7 @@ export default function OnboardingPage() {
       let photoURL = "";
       if (photoBlob) {
         const imgRef = ref(storage, `avatars/${user.uid}.jpg`);
-        await uploadBytes(imgRef, photoBlob);
+        await uploadBytes(imgRef, photoBlob, { contentType: "image/jpeg" });
         photoURL = await getDownloadURL(imgRef);
       }
 
@@ -143,7 +143,7 @@ export default function OnboardingPage() {
           onCropComplete={handleCropComplete}
           onCancel={() => setCropSrc("")}
           cropShape="round"
-          outputSize={512}
+          outputSize={AVATAR_SIZE}
         />
       )}
 
@@ -167,7 +167,7 @@ export default function OnboardingPage() {
           <div className="flex-1">
             <input
               type="text"
-              maxLength={15}
+              maxLength={NICKNAME_MAX}
               value={nickname}
               onChange={(e) => setNickname(sanitize(e.target.value, /[^a-zA-Z0-9_]/g))}
               placeholder="Nickname (a-z, 0-9, _) *"
@@ -289,7 +289,7 @@ export default function OnboardingPage() {
           <p className="text-xs font-medium text-gray-500 mb-2">Goal <span className="text-gray-300 text-[10px]">optional</span></p>
           <input
             type="text"
-            maxLength={100}
+            maxLength={GOAL_MAX}
             value={goal}
             onChange={(e) => setGoal(sanitize(e.target.value))}
             placeholder="Your goal for this journey"

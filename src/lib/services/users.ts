@@ -26,6 +26,7 @@ import {
 import { db, storage } from "@/lib/firebase";
 import type { UserProfile, NotificationPrefs } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
+import { POST_IMAGE_SIZE } from "@/lib/constants";
 
 export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, "users", uid));
@@ -41,7 +42,7 @@ export async function updateProfile(
 
 export async function uploadAvatar(uid: string, blob: Blob): Promise<string> {
   const imgRef = ref(storage, `avatars/${uid}.jpg`);
-  await uploadBytes(imgRef, blob);
+  await uploadBytes(imgRef, blob, { contentType: "image/jpeg" });
   const url = await getDownloadURL(imgRef);
   await updateDoc(doc(db, "users", uid), { photoURL: url });
   return url;
@@ -129,9 +130,9 @@ export async function submitReport(
   reason: string,
   imageFile: File
 ): Promise<void> {
-  const compressed = await compressImage(imageFile, { maxSize: 1024 });
+  const compressed = await compressImage(imageFile, { maxSize: POST_IMAGE_SIZE });
   const imgRef = ref(storage, `reports/${reporterId}_${Date.now()}.jpg`);
-  await uploadBytes(imgRef, compressed);
+  await uploadBytes(imgRef, compressed, { contentType: "image/jpeg" });
   const imageUrl = await getDownloadURL(imgRef);
 
   await addDoc(collection(db, "reports"), {

@@ -37,6 +37,12 @@ export function levelProgress(totalXP: number): number {
   return ((totalXP - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
 }
 
+/** Convert Firestore Timestamp to Date */
+export function timestampToDate(ts: unknown): Date | null {
+  const t = ts as { toDate?: () => Date } | undefined;
+  return t?.toDate?.() ?? null;
+}
+
 /** Calculate day count string based on phase and dates */
 export function getDayCount(
   status: string,

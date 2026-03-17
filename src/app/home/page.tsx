@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { getDayCount, calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
+import { calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
+import { useDayCount } from "@/hooks/useDayCount";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
 import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
 import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
@@ -14,7 +15,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
 import MilestoneAnimation from "@/components/MilestoneAnimation";
 import BannerCarousel from "@/components/BannerCarousel";
-import { MILESTONES } from "@/lib/constants";
+import { MILESTONES, GOAL_MAX } from "@/lib/constants";
 import { IconEdit } from "@/components/icons";
 import WeeklyChallenge from "@/components/WeeklyChallenge";
 import AsciiWarn from "@/components/AsciiWarn";
@@ -43,16 +44,7 @@ export default function HomePage() {
   const [toast, setToast] = useState<{ title: string; body: string; link?: string } | null>(null);
   const dismissToast = useCallback(() => setToast(null), []);
 
-  // createdAt: Firestore Timestamp → Date
-  const createdAtDate = useMemo(() => {
-    const ca = profile?.createdAt as { toDate?: () => Date } | undefined;
-    return ca?.toDate?.() ?? null;
-  }, [profile]);
-
-  const dayCount = useMemo(() => {
-    if (!profile) return { label: "D", number: 0 };
-    return getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
-  }, [profile, createdAtDate]);
+  const dayCount = useDayCount(profile ?? null);
 
   const level = profile ? calculateLevel(profile.totalXP) : 1;
   const progress = profile ? levelProgress(profile.totalXP) : 0;
@@ -282,7 +274,7 @@ export default function HomePage() {
             <label className="text-xs text-gray-500">What are you working towards?</label>
             <input
               type="text"
-              maxLength={100}
+              maxLength={GOAL_MAX}
               value={goalTextDraft}
               onChange={(e) => setGoalTextDraft(sanitize(e.target.value))}
               placeholder="e.g. Improve my English skills"

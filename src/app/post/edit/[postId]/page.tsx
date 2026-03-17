@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, POST_CONTENT_MAX } from "@/lib/constants";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
@@ -98,11 +98,11 @@ export default function EditPostPage() {
           <textarea
             value={content}
             onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
-            maxLength={400}
+            maxLength={POST_CONTENT_MAX}
             rows={6}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 mt-1 resize-none focus:outline-none focus:ring-2 focus:ring-aussie-gold"
           />
-          <p className="text-[10px] text-gray-300 text-right mt-1">{content.length}/400</p>
+          <p className="text-[10px] text-gray-300 text-right mt-1">{content.length}/{POST_CONTENT_MAX}</p>
         </div>
 
         <button

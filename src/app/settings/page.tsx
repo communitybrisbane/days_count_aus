@@ -6,7 +6,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
-import { FOCUS_MODES, REGIONS } from "@/lib/constants";
+import { FOCUS_MODES, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
@@ -216,7 +216,7 @@ export default function SettingsPage() {
           onCropComplete={handleCropComplete}
           onCancel={() => setCropSrc("")}
           cropShape="round"
-          outputSize={512}
+          outputSize={AVATAR_SIZE}
         />
       )}
 
@@ -255,7 +255,7 @@ export default function SettingsPage() {
             <div>
               <label className="text-xs text-gray-500">Nickname</label>
               <input
-                type="text" maxLength={15} value={nickname}
+                type="text" maxLength={NICKNAME_MAX} value={nickname}
                 onChange={(e) => setNickname(sanitize(e.target.value, /[^a-zA-Z0-9_]/g))}
                 className={`w-full border rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold ${nicknameError ? "border-red-400" : "border-gray-300"}`}
               />
@@ -294,7 +294,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="text-xs text-gray-500">Goal</label>
-              <input type="text" maxLength={100} value={goal} onChange={(e) => setGoal(sanitize(e.target.value))}
+              <input type="text" maxLength={GOAL_MAX} value={goal} onChange={(e) => setGoal(sanitize(e.target.value))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold" />
             </div>
 

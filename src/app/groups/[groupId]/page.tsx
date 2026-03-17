@@ -25,7 +25,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, MESSAGE_CHAR_LIMIT } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -235,7 +235,7 @@ export default function GroupChatPage() {
     if (!file || !group) return;
     const blob = await compressImage(file, { maxSize: 256, maxFileSize: 100 * 1024 });
     const iconRef = ref(storage, `groups/${groupId}/icon.jpg`);
-    await uploadBytes(iconRef, blob);
+    await uploadBytes(iconRef, blob, { contentType: "image/jpeg" });
     const url = await getDownloadURL(iconRef);
     await updateDoc(doc(db, "groups", groupId), { iconUrl: url });
     setGroup((g) => g ? { ...g, iconUrl: url } : g);
@@ -502,10 +502,10 @@ export default function GroupChatPage() {
           <input
             type="text"
             value={text}
-            onChange={(e) => setText(sanitize(e.target.value).slice(0, 100))}
+            onChange={(e) => setText(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Message (100 chars max)"
-            maxLength={100}
+            placeholder={`Message (${MESSAGE_CHAR_LIMIT} chars max)`}
+            maxLength={MESSAGE_CHAR_LIMIT}
             className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
           />
           <button

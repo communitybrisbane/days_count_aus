@@ -28,6 +28,19 @@ export const WEEK_STREAK_MAX = 10;
 export const MAX_GROUP_MEMBERS = 10;
 export const DAILY_LIKE_LIMIT = 5;
 export const POST_EDIT_WINDOW_MS = 5 * 60 * 1000;
+export const DOUBLE_TAP_DELAY_MS = 300;
+export const MESSAGE_CHAR_LIMIT = 100;
+export const POST_CONTENT_MAX = 400;
+export const NICKNAME_MAX = 15;
+export const GROUP_NAME_MAX = 30;
+export const GOAL_MAX = 100;
+export const POST_IMAGE_SIZE = 1024;
+export const AVATAR_SIZE = 512;
+export const GROUP_JOIN_LEVEL = 13;
+export const GROUP_CREATE_LEVEL = 20;
+export const FIRST_POST_BONUS = 100;
+export const LIKE_SEND_XP = 5;
+export const LIKE_RECEIVE_XP = 10;
 
 export const REGIONS = [
   "Sydney",

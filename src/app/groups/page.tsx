@@ -6,7 +6,7 @@ import { collection, getDocs, getDoc, doc, query, orderBy, where, limit } from "
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { fetchAdminConfig } from "@/lib/services/users";
 import BottomNav from "@/components/layout/BottomNav";
@@ -74,8 +74,8 @@ export default function GroupsPage() {
   }, [groups]);
 
   const level = profile ? calculateLevel(profile.totalXP) : 1;
-  const canJoinCommunity = level >= 13;
-  const canCreateCommunity = level >= 20;
+  const canJoinCommunity = level >= GROUP_JOIN_LEVEL;
+  const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
   const groupCount = profile?.groupIds?.length || 0;
   const hasMaxGroups = groupCount >= 2;
 
@@ -249,16 +249,16 @@ export default function GroupsPage() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-700">Join Communities</p>
-                          <p className="text-[10px] text-gray-400">Unlocks at Lv.13</p>
+                          <p className="text-[10px] text-gray-400">Unlocks at Lv.{GROUP_JOIN_LEVEL}</p>
                         </div>
                       </div>
                       <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-ocean-blue h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((level / 13) * 100, 100)}%` }}
+                          style={{ width: `${Math.min((level / GROUP_JOIN_LEVEL) * 100, 100)}%` }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.13</p>
+                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_JOIN_LEVEL}</p>
                     </div>
                   ) : (
                     <div className="bg-white rounded-2xl border border-ocean-blue/20 p-4">
@@ -291,16 +291,16 @@ export default function GroupsPage() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-700">Create Community</p>
-                          <p className="text-[10px] text-gray-400">Unlocks at Lv.20</p>
+                          <p className="text-[10px] text-gray-400">Unlocks at Lv.{GROUP_CREATE_LEVEL}</p>
                         </div>
                       </div>
                       <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-aussie-gold h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((level / 20) * 100, 100)}%` }}
+                          style={{ width: `${Math.min((level / GROUP_CREATE_LEVEL) * 100, 100)}%` }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.20</p>
+                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_CREATE_LEVEL}</p>
                     </div>
                   ) : (
                     <Link href="/groups/create" className="block bg-white rounded-2xl border border-aussie-gold/20 p-4">

@@ -6,7 +6,7 @@ import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getD
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, GROUP_NAME_MAX } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
@@ -126,7 +126,7 @@ export default function CreateGroupPage() {
       // Upload icon if selected
       if (iconBlob) {
         const iconRef = ref(storage, `groups/${groupRef.id}/icon.jpg`);
-        await uploadBytes(iconRef, iconBlob);
+        await uploadBytes(iconRef, iconBlob, { contentType: "image/jpeg" });
         const url = await getDownloadURL(iconRef);
         await updateDoc(groupRef, { iconUrl: url });
       }
@@ -191,7 +191,7 @@ export default function CreateGroupPage() {
           </label>
           <input
             type="text"
-            maxLength={30}
+            maxLength={GROUP_NAME_MAX}
             value={groupName}
             onChange={(e) => setGroupName(sanitize(e.target.value))}
             className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-aussie-gold ${

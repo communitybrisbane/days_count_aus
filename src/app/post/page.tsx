@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX } from "@/lib/constants";
-import { getDayCount, calculateLevel } from "@/lib/utils";
+import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, FIRST_POST_BONUS, POST_CONTENT_MAX } from "@/lib/constants";
+import { calculateLevel } from "@/lib/utils";
+import { useDayCount } from "@/hooks/useDayCount";
 import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount } from "@/lib/services/posts";
 import ImageCropper from "@/components/ImageCropper";
 import BottomNav from "@/components/layout/BottomNav";
@@ -37,15 +38,7 @@ export default function PostPage() {
   const [levelUpTo, setLevelUpTo] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
 
-  const createdAtDate = useMemo(() => {
-    const ca = profile?.createdAt as { toDate?: () => Date } | undefined;
-    return ca?.toDate?.() ?? null;
-  }, [profile]);
-
-  const dayCount = useMemo(() => {
-    if (!profile) return { label: "D", number: 0 };
-    return getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
-  }, [profile, createdAtDate]);
+  const dayCount = useDayCount(profile ?? null);
 
   // Set default mode from profile.mainMode once loaded
   useEffect(() => {
@@ -118,7 +111,7 @@ export default function PostPage() {
       }
 
       // First post bonus (one-time)
-      const totalXpGain = xpGain + (firstPost ? 100 : 0);
+      const totalXpGain = xpGain + (firstPost ? FIRST_POST_BONUS : 0);
 
       const prevLevel = calculateLevel(profile.totalXP);
       await updateUserXPAndStreak(user.uid, totalXpGain, newStreak);
@@ -350,12 +343,12 @@ export default function PostPage() {
           <textarea
             value={content}
             onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
-            maxLength={400}
+            maxLength={POST_CONTENT_MAX}
             rows={8}
             placeholder="What happened today?"
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold resize-none"
           />
-          <p className="text-[10px] text-gray-300 text-right mb-3">{content.length}/400</p>
+          <p className="text-[10px] text-gray-300 text-right mb-3">{content.length}/{POST_CONTENT_MAX}</p>
 
           <div className="flex gap-3 mt-auto pb-2">
             <button

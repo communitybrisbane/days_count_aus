@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Cropper, { Area } from "react-easy-crop";
 import { compressCroppedImage } from "@/lib/imageUtils";
+import { POST_IMAGE_SIZE } from "@/lib/constants";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -17,7 +18,7 @@ export default function ImageCropper({
   onCropComplete,
   onCancel,
   cropShape = "rect",
-  outputSize = 1024,
+  outputSize = POST_IMAGE_SIZE,
 }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
