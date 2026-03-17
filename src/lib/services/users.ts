@@ -51,61 +51,7 @@ export async function uploadAvatar(uid: string, blob: Blob): Promise<string> {
 export async function deleteAccount(user: User): Promise<void> {
   const uid = user.uid;
 
-  // 1. Delete all user posts (batch limit 500)
-  const postsQ = query(collection(db, "posts"), where("userId", "==", uid), limit(500));
-  const postsSnap = await getDocs(postsQ);
-  if (postsSnap.docs.length > 0) {
-    const batch = writeBatch(db);
-    postsSnap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-  }
-
-  // 2. Delete post images from storage
-  try {
-    const storageRef = ref(storage, `posts/${uid}`);
-    const files = await listAll(storageRef);
-    await Promise.all(files.items.map((item) => deleteObject(item)));
-  } catch {}
-
-  // 3. Delete avatar from storage
-  try {
-    await deleteObject(ref(storage, `avatars/${uid}.jpg`));
-  } catch {}
-
-  // 4. Leave all groups (leader → close, member → leave)
-  const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid));
-  const groupsSnap = await getDocs(memberGroupsQ);
-  for (const groupDoc of groupsSnap.docs) {
-    const data = groupDoc.data();
-    if (data.creatorId === uid) {
-      await updateDoc(groupDoc.ref, { isClosed: true });
-    } else {
-      await updateDoc(groupDoc.ref, {
-        memberIds: arrayRemove(uid),
-        memberCount: increment(-1),
-      });
-    }
-  }
-
-  // 5. Delete following subcollection
-  try {
-    const followingSnap = await getDocs(collection(db, "users", uid, "following"));
-    if (followingSnap.docs.length > 0) {
-      const batch2 = writeBatch(db);
-      followingSnap.docs.forEach((d) => batch2.delete(d.ref));
-      await batch2.commit();
-    }
-  } catch {}
-
-  // 6. Delete private subcollection (fcmToken, blockedUsers)
-  try {
-    await deleteDoc(doc(db, "users", uid, "private", "config"));
-  } catch {}
-
-  // 7. Delete user document
-  await deleteDoc(doc(db, "users", uid));
-
-  // 8. Re-authenticate then delete Firebase Auth account (must be last)
+  // 1. Re-authenticate FIRST (before deleting any data)
   const provider = new GoogleAuthProvider();
   try {
     await reauthenticateWithPopup(user, provider);
@@ -121,6 +67,68 @@ export async function deleteAccount(user: User): Promise<void> {
     }
     throw e;
   }
+
+  // 2. Delete all user posts (loop to handle >500)
+  let hasMore = true;
+  while (hasMore) {
+    const postsQ = query(collection(db, "posts"), where("userId", "==", uid), limit(500));
+    const postsSnap = await getDocs(postsQ);
+    if (postsSnap.docs.length === 0) {
+      hasMore = false;
+    } else {
+      const batch = writeBatch(db);
+      postsSnap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      hasMore = postsSnap.docs.length === 500;
+    }
+  }
+
+  // 3. Delete post images from storage
+  try {
+    const storageRef = ref(storage, `posts/${uid}`);
+    const files = await listAll(storageRef);
+    await Promise.all(files.items.map((item) => deleteObject(item)));
+  } catch {}
+
+  // 4. Delete avatar from storage
+  try {
+    await deleteObject(ref(storage, `avatars/${uid}.jpg`));
+  } catch {}
+
+  // 5. Leave all groups (leader → close, member → leave)
+  const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid));
+  const groupsSnap = await getDocs(memberGroupsQ);
+  for (const groupDoc of groupsSnap.docs) {
+    const data = groupDoc.data();
+    if (data.creatorId === uid) {
+      await updateDoc(groupDoc.ref, { isClosed: true });
+    } else {
+      await updateDoc(groupDoc.ref, {
+        memberIds: arrayRemove(uid),
+        memberCount: increment(-1),
+      });
+    }
+  }
+
+  // 6. Delete following subcollection
+  try {
+    const followingSnap = await getDocs(collection(db, "users", uid, "following"));
+    if (followingSnap.docs.length > 0) {
+      const batch2 = writeBatch(db);
+      followingSnap.docs.forEach((d) => batch2.delete(d.ref));
+      await batch2.commit();
+    }
+  } catch {}
+
+  // 7. Delete private subcollection (fcmToken, blockedUsers)
+  try {
+    await deleteDoc(doc(db, "users", uid, "private", "config"));
+  } catch {}
+
+  // 8. Delete user document
+  await deleteDoc(doc(db, "users", uid));
+
+  // 9. Delete Firebase Auth account (must be last)
   await deleteUser(user);
 }
 
