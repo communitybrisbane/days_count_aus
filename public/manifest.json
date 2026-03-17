@@ -1,27 +1,40 @@
 {
+  "id": "/",
   "name": "Days Count in AUS",
   "short_name": "Count",
-  "description": "Make Days Count — ワーホリの365日を、一生の資産に変える。",
+  "description": "Make Days Count — Turn your 365 days into a lifetime of growth.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
+  "lang": "en",
+  "categories": ["social", "lifestyle"],
   "background_color": "#F5F5DC",
   "theme_color": "#FFB800",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
