@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +19,7 @@ import { IconEdit } from "@/components/icons";
 import WeeklyChallenge from "@/components/WeeklyChallenge";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
+import NotificationToast from "@/components/NotificationToast";
 import type { AdminConfig } from "@/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,6 +40,8 @@ export default function HomePage() {
   const [showNotifBanner, setShowNotifBanner] = useState(false);
   const [showGoalInput, setShowGoalInput] = useState(false);
   const [goalTextDraft, setGoalTextDraft] = useState("");
+  const [toast, setToast] = useState<{ title: string; body: string; link?: string } | null>(null);
+  const dismissToast = useCallback(() => setToast(null), []);
 
   // createdAt: Firestore Timestamp → Date
   const createdAtDate = useMemo(() => {
@@ -99,8 +102,10 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) return;
     return onFCMMessage((payload: unknown) => {
-      const p = payload as { notification?: { title?: string; body?: string } };
-      if (p.notification?.title) alert(`${p.notification.title}\n${p.notification.body || ""}`);
+      const p = payload as { notification?: { title?: string; body?: string }; fcmOptions?: { link?: string } };
+      if (p.notification?.title) {
+        setToast({ title: p.notification.title, body: p.notification.body || "", link: p.fcmOptions?.link });
+      }
     });
   }, [user]);
 
@@ -165,6 +170,7 @@ export default function HomePage() {
 
   return (
     <div className="pb-18 flex flex-col min-h-dvh">
+      <NotificationToast show={!!toast} title={toast?.title || ""} body={toast?.body || ""} link={toast?.link} onDismiss={dismissToast} />
       <AsciiWarn show={showWarn} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
 

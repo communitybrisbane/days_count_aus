@@ -56,10 +56,18 @@ export interface UserProfile {
   createdAt?: Timestamp;
 }
 
+/** Notification preferences (per-type toggles) */
+export interface NotificationPrefs {
+  likes: boolean;
+  groupMessage: boolean;
+  streakWarning: boolean;
+}
+
 /** Private user data (stored in users/{uid}/private/config) */
 export interface UserPrivate {
   blockedUsers: string[];
   fcmToken: string;
+  notificationPrefs?: NotificationPrefs;
 }
 
 /** Live Session config (from admin_config/main.liveSession) */

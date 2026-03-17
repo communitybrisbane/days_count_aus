@@ -45,7 +45,7 @@ service cloud.firestore {
         allow create: if isOwner(userId);
         allow update: if isOwner(userId)
                        && request.resource.data.diff(resource.data).affectedKeys()
-                          .hasOnly(['blockedUsers', 'fcmToken']);
+                          .hasOnly(['blockedUsers', 'fcmToken', 'notificationPrefs']);
       }
 
       // Following subcollection

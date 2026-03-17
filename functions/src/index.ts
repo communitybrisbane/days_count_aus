@@ -167,11 +167,15 @@ export const onLikeCreated = onDocumentCreated(
     const likerSnap = await db.doc(`users/${likerId}`).get();
     const likerName = likerSnap.exists ? (likerSnap.data()!.displayName || "Someone") : "Someone";
 
-    // Get author's FCM token
+    // Get author's FCM token and notification prefs
     const privSnap = await db.doc(`users/${authorId}/private/config`).get();
-    const fcmToken = privSnap.exists ? privSnap.data()?.fcmToken : "";
+    const privData = privSnap.exists ? privSnap.data() : null;
+    const fcmToken = privData?.fcmToken || "";
 
     if (!fcmToken) return;
+
+    // Respect notification preferences (default: enabled)
+    if (privData?.notificationPrefs?.likes === false) return;
 
     try {
       await admin.messaging().send({
@@ -224,9 +228,13 @@ export const checkStreaks = onSchedule(
         elapsed >= FORTY_TWO_HOURS &&
         !data.streakWarningSent
       ) {
-        // Read fcmToken from private subcollection
+        // Read fcmToken and prefs from private subcollection
         const privSnap = await db.doc(`users/${userDoc.id}/private/config`).get();
-        const fcmToken = privSnap.exists ? privSnap.data()?.fcmToken : "";
+        const privData = privSnap.exists ? privSnap.data() : null;
+        const fcmToken = privData?.fcmToken || "";
+
+        // Respect notification preferences (default: enabled)
+        if (privData?.notificationPrefs?.streakWarning === false) continue;
 
         if (fcmToken) {
           // Send 6-hour warning
@@ -288,6 +296,89 @@ export const cleanupHiddenPosts = onSchedule(
     await batch.commit();
 
     console.log(`[CLEANUP] Deleted ${snap.size} old hidden posts`);
+  }
+);
+
+// ─── Cloud Function: Group message notification ───
+export const onGroupMessageCreated = onDocumentCreated(
+  "groups/{groupId}/messages/{messageId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const { groupId } = event.params;
+    const msgData = snap.data();
+    const senderId = msgData.senderId as string;
+    const text = (msgData.text as string) || "";
+
+    // Get group info
+    const groupSnap = await db.doc(`groups/${groupId}`).get();
+    if (!groupSnap.exists) return;
+    const groupData = groupSnap.data()!;
+    const groupName = (groupData.groupName as string) || "Group";
+    const memberIds: string[] = groupData.memberIds || [];
+
+    // Get sender's display name
+    const senderSnap = await db.doc(`users/${senderId}`).get();
+    const senderName = senderSnap.exists ? (senderSnap.data()!.displayName || "Someone") : "Someone";
+
+    // Send to all members except sender
+    const recipients = memberIds.filter((uid) => uid !== senderId);
+    if (recipients.length === 0) return;
+
+    // Read all FCM tokens in parallel
+    const privSnaps = await Promise.all(
+      recipients.map((uid) => db.doc(`users/${uid}/private/config`).get())
+    );
+
+    const messages: admin.messaging.TokenMessage[] = [];
+    const invalidTokenUsers: string[] = [];
+
+    for (let i = 0; i < recipients.length; i++) {
+      const privData = privSnaps[i].exists ? privSnaps[i].data() : null;
+      const fcmToken = privData?.fcmToken || "";
+      if (!fcmToken) continue;
+
+      // Respect notification preferences (default: enabled)
+      if (privData?.notificationPrefs?.groupMessage === false) continue;
+
+      messages.push({
+        token: fcmToken,
+        notification: {
+          title: `${senderName} in ${groupName}`,
+          body: text.slice(0, 80),
+        },
+        webpush: {
+          fcmOptions: { link: `/groups/${groupId}` },
+        },
+      });
+    }
+
+    if (messages.length === 0) return;
+
+    // Send all notifications
+    const results = await admin.messaging().sendEach(messages);
+
+    // Clear invalid tokens
+    results.responses.forEach((resp, idx) => {
+      if (!resp.success && resp.error?.code === "messaging/registration-token-not-registered") {
+        // Find which user this was for
+        const tokenToFind = messages[idx].token;
+        for (let i = 0; i < recipients.length; i++) {
+          const privData = privSnaps[i].exists ? privSnaps[i].data() : null;
+          if (privData?.fcmToken === tokenToFind) {
+            invalidTokenUsers.push(recipients[i]);
+            break;
+          }
+        }
+      }
+    });
+
+    for (const uid of invalidTokenUsers) {
+      await db.doc(`users/${uid}/private/config`).update({ fcmToken: "" });
+    }
+
+    console.log(`[GROUP_MSG] Sent ${results.successCount}/${messages.length} notifications for group ${groupId}`);
   }
 );
 

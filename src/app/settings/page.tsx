@@ -10,7 +10,8 @@ import { FOCUS_MODES, REGIONS } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, submitReport } from "@/lib/services/users";
+import { uploadAvatar, deleteAccount, submitReport, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
+import type { NotificationPrefs } from "@/types";
 import ImageCropper from "@/components/ImageCropper";
 import ConfirmModal from "@/components/ConfirmModal";
 import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
@@ -31,7 +32,8 @@ export default function SettingsPage() {
   const [showRegion, setShowRegion] = useState(profile?.showRegion !== false);
   const [saving, setSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
-  const [activeSection, setActiveSection] = useState<"profile" | "report" | null>(null);
+  const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "report" | null>(null);
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({ likes: true, groupMessage: true, streakWarning: true });
 
   // Image crop
   const [cropSrc, setCropSrc] = useState("");
@@ -52,6 +54,19 @@ export default function SettingsPage() {
   // Logout/Delete confirmation modal
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Load notification prefs
+  useEffect(() => {
+    if (!user) return;
+    fetchNotificationPrefs(user.uid).then(setNotifPrefs).catch(console.error);
+  }, [user]);
+
+  const handleNotifToggle = async (key: keyof NotificationPrefs) => {
+    if (!user) return;
+    const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+    setNotifPrefs(updated);
+    await updateNotificationPrefs(user.uid, updated);
+  };
 
   // Nickname uniqueness check
   useEffect(() => {
@@ -338,6 +353,36 @@ export default function SettingsPage() {
               className="w-full bg-aussie-gold text-white font-bold py-2 rounded-full text-sm disabled:opacity-50">
               {saving ? "Saving..." : "Save"}
             </button>
+          </div>
+        )}
+
+        {/* Notifications — Accordion */}
+        <button
+          onClick={() => toggle("notifications")}
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 active:bg-gray-50"
+        >
+          <span className="font-medium text-sm">Notifications</span>
+          <span className="text-gray-400 text-sm">{activeSection === "notifications" ? "▲" : "▼"}</span>
+        </button>
+        {activeSection === "notifications" && (
+          <div className="px-4 py-3 space-y-3 bg-gray-50 border-b border-gray-100">
+            {([
+              { key: "likes" as const, label: "Like notifications" },
+              { key: "groupMessage" as const, label: "Group message notifications" },
+              { key: "streakWarning" as const, label: "Streak warnings" },
+            ]).map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className="text-sm text-gray-700">{label}</span>
+                <button
+                  type="button"
+                  onClick={() => handleNotifToggle(key)}
+                  className={`relative w-10 h-5.5 rounded-full transition-colors ${notifPrefs[key] ? "bg-aussie-gold" : "bg-gray-300"}`}
+                >
+                  <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${notifPrefs[key] ? "left-5" : "left-0.5"}`} />
+                </button>
+              </div>
+            ))}
+            <p className="text-[10px] text-gray-400">To fully disable push notifications, use your browser settings.</p>
           </div>
         )}
 

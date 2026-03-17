@@ -24,7 +24,7 @@ import {
   User,
 } from "firebase/auth";
 import { db, storage } from "@/lib/firebase";
-import type { UserProfile } from "@/types";
+import type { UserProfile, NotificationPrefs } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
 
 export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
@@ -158,6 +158,21 @@ export async function unblockUser(myUid: string, targetUid: string): Promise<voi
 export async function saveFCMToken(uid: string, token: string): Promise<void> {
   const privRef = doc(db, "users", uid, "private", "config");
   await updateDoc(privRef, { fcmToken: token });
+}
+
+export async function fetchNotificationPrefs(uid: string): Promise<NotificationPrefs> {
+  const snap = await getDoc(doc(db, "users", uid, "private", "config"));
+  const data = snap.data();
+  return {
+    likes: data?.notificationPrefs?.likes !== false,
+    groupMessage: data?.notificationPrefs?.groupMessage !== false,
+    streakWarning: data?.notificationPrefs?.streakWarning !== false,
+  };
+}
+
+export async function updateNotificationPrefs(uid: string, prefs: NotificationPrefs): Promise<void> {
+  const privRef = doc(db, "users", uid, "private", "config");
+  await updateDoc(privRef, { notificationPrefs: prefs });
 }
 
 export async function fetchAdminConfig() {
