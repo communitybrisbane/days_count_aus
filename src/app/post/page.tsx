@@ -84,43 +84,45 @@ export default function PostPage() {
         imageBlob,
       });
 
-      // Weekly XP: base + streak bonus
-      const weeklyCount = await getWeeklyPostCount(user.uid);
-      const streakWeeks = Math.min(profile.weekStreak || 0, WEEK_STREAK_MAX);
-      const baseXp = weeklyCount < 7 ? WEEKLY_XP[weeklyCount] : 0;
-      const streakBonus = weeklyCount < 7 ? streakWeeks * WEEK_STREAK_BONUS : 0;
-      const xpGain = baseXp + streakBonus;
-
-      // Streak tracking
+      // XPは1日1回のみ付与
       const now = new Date();
       const todayStr = now.toISOString().slice(0, 10);
+      const alreadyPostedToday = profile.lastPostAt
+        && new Date(profile.lastPostAt).toISOString().slice(0, 10) === todayStr;
+
+      let totalXpGain = 0;
       let newStreak = 1;
-      if (profile.lastPostAt) {
-        const lastPostDate = new Date(profile.lastPostAt);
-        const lastPostStr = lastPostDate.toISOString().slice(0, 10);
-        if (lastPostStr === todayStr) {
-          newStreak = profile.currentStreak ?? 1;
-        } else {
+
+      if (!alreadyPostedToday) {
+        // Weekly XP: base + streak bonus
+        const weeklyCount = await getWeeklyPostCount(user.uid);
+        const streakWeeks = Math.min(profile.weekStreak || 0, WEEK_STREAK_MAX);
+        const baseXp = weeklyCount < 7 ? WEEKLY_XP[weeklyCount] : 0;
+        const streakBonus = weeklyCount < 7 ? streakWeeks * WEEK_STREAK_BONUS : 0;
+        totalXpGain = baseXp + streakBonus + (firstPost ? FIRST_POST_BONUS : 0);
+
+        // Streak tracking
+        if (profile.lastPostAt) {
+          const lastPostStr = new Date(profile.lastPostAt).toISOString().slice(0, 10);
           const yesterday = new Date(now);
           yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().slice(0, 10);
-          if (lastPostStr === yesterdayStr) {
+          if (lastPostStr === yesterday.toISOString().slice(0, 10)) {
             newStreak = (profile.currentStreak ?? 0) + 1;
           }
         }
-      }
 
-      // First post bonus (one-time)
-      const totalXpGain = xpGain + (firstPost ? FIRST_POST_BONUS : 0);
+        // If this was the 7th post of the week → update weekStreak
+        if (weeklyCount === 6) {
+          const { updateWeekStreak } = await import("@/lib/services/users");
+          await updateWeekStreak(user.uid, profile.weekStreak, profile.lastCompletedWeekStart);
+        }
+      } else {
+        // 今日2回目以降 → XPなし、ストリークは維持
+        newStreak = profile.currentStreak ?? 1;
+      }
 
       const prevLevel = calculateLevel(profile.totalXP);
       await updateUserXPAndStreak(user.uid, totalXpGain, newStreak);
-
-      // If this was the 7th post of the week → update weekStreak
-      if (weeklyCount === 6) {
-        const { updateWeekStreak } = await import("@/lib/services/users");
-        await updateWeekStreak(user.uid, profile.weekStreak, profile.lastCompletedWeekStart);
-      }
       await refreshProfile();
 
       setXpGained(totalXpGain);

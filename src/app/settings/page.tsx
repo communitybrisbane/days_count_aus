@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { FOCUS_MODES, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, submitReport, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
+import { uploadAvatar, deleteAccount, submitReport, fetchNotificationPrefs, updateNotificationPrefs, unblockUser } from "@/lib/services/users";
 import type { NotificationPrefs } from "@/types";
 import ImageCropper from "@/components/ImageCropper";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -19,7 +19,7 @@ import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 export default function SettingsPage() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, privateData, refreshProfile } = useAuth();
   const router = useRouter();
   const { showWarn, sanitize } = useAsciiInput();
 
@@ -32,7 +32,9 @@ export default function SettingsPage() {
   const [showRegion, setShowRegion] = useState(profile?.showRegion !== false);
   const [saving, setSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
-  const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "report" | null>(null);
+  const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "blocked" | "report" | null>(null);
+  const [blockedProfiles, setBlockedProfiles] = useState<{ uid: string; displayName: string }[]>([]);
+  const [loadingBlocked, setLoadingBlocked] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({ likes: true, groupMessage: true, streakWarning: true });
 
   // Image crop
@@ -203,6 +205,33 @@ export default function SettingsPage() {
 
   const toggle = (section: typeof activeSection) => {
     setActiveSection(activeSection === section ? null : section);
+    if (section === "blocked" && activeSection !== "blocked") {
+      loadBlockedProfiles();
+    }
+  };
+
+  const loadBlockedProfiles = async () => {
+    const blockedIds = privateData?.blockedUsers || [];
+    if (blockedIds.length === 0) { setBlockedProfiles([]); return; }
+    setLoadingBlocked(true);
+    const profiles: { uid: string; displayName: string }[] = [];
+    for (const uid of blockedIds) {
+      try {
+        const snap = await getDoc(doc(db, "users", uid));
+        profiles.push({ uid, displayName: snap.exists() ? snap.data().displayName || "Unknown" : "Deleted Account" });
+      } catch {
+        profiles.push({ uid, displayName: "Unknown" });
+      }
+    }
+    setBlockedProfiles(profiles);
+    setLoadingBlocked(false);
+  };
+
+  const handleUnblock = async (targetUid: string) => {
+    if (!user) return;
+    await unblockUser(user.uid, targetUid);
+    setBlockedProfiles((prev) => prev.filter((p) => p.uid !== targetUid));
+    await refreshProfile();
   };
 
   if (!profile) return null;
@@ -384,6 +413,40 @@ export default function SettingsPage() {
               </div>
             ))}
             <p className="text-[10px] text-gray-400">To fully disable push notifications, use your browser settings.</p>
+          </div>
+        )}
+
+        {/* Blocked Users — Accordion */}
+        <button
+          onClick={() => toggle("blocked")}
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 active:bg-gray-50"
+        >
+          <span className="font-medium text-sm">Blocked Users</span>
+          <span className="text-gray-400 text-sm">{activeSection === "blocked" ? "▲" : "▼"}</span>
+        </button>
+        {activeSection === "blocked" && (
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+            {loadingBlocked ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-aussie-gold" />
+              </div>
+            ) : blockedProfiles.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-2">No blocked users</p>
+            ) : (
+              <div className="space-y-2">
+                {blockedProfiles.map((bp) => (
+                  <div key={bp.uid} className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5">
+                    <span className="text-sm text-gray-700 truncate flex-1">{bp.displayName}</span>
+                    <button
+                      onClick={() => handleUnblock(bp.uid)}
+                      className="text-xs text-red-400 border border-red-200 px-3 py-1 rounded-full shrink-0 ml-2"
+                    >
+                      Unblock
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
