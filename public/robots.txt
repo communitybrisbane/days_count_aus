@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://days-count-aus.vercel.app/sitemap.xml
+Sitemap: https://days-count.com/sitemap.xml
