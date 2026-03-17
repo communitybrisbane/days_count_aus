@@ -21,8 +21,10 @@
 | セキュリティ | Firebase App Check（reCAPTCHA Enterprise） |
 | 画像処理 | react-easy-crop + Canvas API（EXIF自動除去 + 圧縮） |
 | 通知 | FCM Web Push（トークン登録 + Cloud Functions v2 による通知発火） |
+| エラー監視 | Sentry（無料枠） |
 | デプロイ | Vercel |
-| PWA | manifest.json + アイコン（next-pwa未使用、手動設定） |
+| ドメイン | https://days-count.com（Vercel管理） |
+| PWA | manifest.json + アイコン + OGP + iOS standalone（next-pwa未使用、手動設定） |
 | ビルドツール | Turbopack（Next.js 16 デフォルト） |
 | フォント | Geist / Geist Mono（Google Fonts） |
 
@@ -103,19 +105,20 @@
 
 | アクション | XP | 制限 |
 |---|---|---|
-| ログ投稿（1日1回） | +50 | 1日1回 |
-| 初投稿ウェルカムボーナス | +100 | 初回のみ（投稿50XPと合算で計150XP） |
+| 週間投稿（段階制） | +5/7/10/15/25/35/50 | 週7回まで（火曜リセット、合計147XP） |
+| 初投稿ウェルカムボーナス | +100 | 初回のみ |
 | いいねをもらう（受信） | +10 | 無制限（自己いいねではXP付与なし） |
 | いいねを送る（送信） | +5 | **XP付与は1日5回まで**（計25XP）。いいね自体は**無制限**に可能。自己いいねではXP付与なし |
-| 7日継続ボーナス | +100 | ストリークが7の倍数に達するたび（7, 14, 21...） |
+| 連続週ボーナス | +5/投稿/週 | 週間チャレンジ（7投稿）連続達成で加算、最大10週（+50/投稿） |
 
 ### レベル計算式
 
 ```
-Level = floor( sqrt( TotalXP / 4 ) ) + 1
+Level = floor( sqrt( TotalXP / 1.5 ) ) + 1
 ```
 
-- `xpForLevel(level) = round((level - 1)² × 4)`
+- `xpForLevel(level) = round((level - 1)² × 1.5)`
+- **設計目標**: ガチ勢（週6投稿+いいね活用）が10ヶ月で Lv.90 到達。普通の利用者は Lv.60〜70。
 - UI: 名前の横に **`Lv.数値`** を常時表示。
 - プログレスバー: 次のレベルまでの進捗（%）を表示。
 
@@ -264,7 +267,8 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 
 #### ユーザー作成グループ
 - **グループ一覧** (`/groups`): クローズ済みグループは非表示。モードフィルタ・検索機能あり。
-- **作成条件**: **Lv.5以上** のユーザーのみ。未満の場合は作成不可のメッセージ表示。
+- **参加条件**: **Lv.13以上**（約2日間の活動で到達）。未満の場合はプログレスバー表示。
+- **作成条件**: **Lv.20以上**（約8日間の活動で到達）。未満の場合はプログレスバー表示。
 - **リーダー制限**: 1ユーザーにつきリーダーになれるグループは1つまで。
 - **グループ作成** (`/groups/create`): グループ名（30文字以内、**アクティブグループ内で重複不可**）+ フォーカスモード選択 + アイコン画像（任意）+ グループ目標（任意）。
 - **最大人数**: **10名**。満員時は **「FULL」バッジ** 表示。
@@ -305,7 +309,8 @@ Level = floor( sqrt( TotalXP / 4 ) ) + 1
 - **プロフィール編集**: ニックネーム（半角英数字15文字、**重複不可**）、滞在地域（スクロール選択式）、目標（100文字、リアルタイム文字数カウント）、メインモード（pill型ボタン選択）、渡航予定日、プロフィール写真（**丸型クロップ**付き、512×512px → `avatars/{userId}.jpg` に保存）。
 - **フェーズ切り替え**: ステータス（渡航前/ワーホリ中/帰国後）を手動変更。各選択肢にconfirm確認ダイアログ付き。現在のステータスに ✓ マーク表示。
 - **通報機能**: 対象ユーザーID + 理由 + スクリーンショット画像を入力して `reports` コレクションに送信（画像は `reports/` に保存）。
-- **法定項目**: プライバシーポリシー、利用規約、法的通知（LegalModals コンポーネントでモーダル表示）。
+- **通知設定**: アコーディオン内に3つのトグル（いいね通知、グループメッセージ通知、ストリーク警告通知）。
+- **法定項目**: プライバシーポリシー、利用規約、法的通知（Firestoreの `legal_docs` コレクションから取得、フォールバック付き）。
 - **アカウント管理**: ログアウト（confirm付き）、アカウント削除（confirm付き + 再認証）。
 - **拡張枠**: 将来的な Stripe サブスク導入の余白。
 
@@ -478,6 +483,7 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 |---|---|---|
 | blockedUsers | array | ブロックしたユーザーUIDの配列 |
 | fcmToken | string | FCMプッシュ通知トークン |
+| notificationPrefs | map | `{ likes: bool, groupMessage: bool, streakWarning: bool }` — 通知種別ごとのON/OFF |
 
 ### `users/{uid}/following` サブコレクション
 
@@ -601,10 +607,10 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 - **読み取り**: 認証済みユーザーは全ユーザーを読み取り可。
 - **作成・削除**: 本人のみ。
 - **更新（本人）**: ホワイトリスト制。変更可能フィールド: `displayName`, `photoURL`, `region`, `goal`, `mainMode`, `departureDate`, `returnStartDate`, `status`, `weeklyGoal`, `groupIds`, `currentStreak`, `lastPostAt`, `totalXP`, `dailyLikeCount`, `lastLikeDate`, `streakWarningSent`。`isPro`, `createdAt`, `uid` は不変。
-- **更新（他人）**: `totalXP`, `dailyLikeCount`, `lastLikeDate`, `groupIds` のみ（いいねシステム・グループ参加/退出用）。
+- **更新（他人）**: `totalXP` のみ（いいねシステム用）。`groupIds` の同期は Cloud Function `syncGroupMembership` が担当。
 
 ### Users > Private
-- 読み取り・作成・更新すべて本人のみ。更新は `blockedUsers`, `fcmToken` のみ。
+- 読み取り・作成・更新すべて本人のみ。更新は `blockedUsers`, `fcmToken`, `notificationPrefs` のみ。
 
 ### Users > Following
 - 読み取り: 認証済み全員。作成・削除: 本人のみ。
@@ -643,8 +649,9 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 ### Reports
 - 読み取り: 不可。作成: 認証済み + `reporterId` = 自身 + `resolved` = false。
 
-### Admin Config / Banners / Moderation Config
+### Admin Config / Banners / Moderation Config / Legal Docs
 - 読み取り: 認証済み全員。書き込み: 不可（管理者はConsoleで編集）。
+- `legal_docs/{docId}`: Terms(`terms`), Privacy(`privacy`), Legal Notice(`legal_notice`)。`content` フィールドにHTML。
 
 ---
 
@@ -743,7 +750,8 @@ src/
 │   ├── XPToast.tsx             # XP獲得トースト
 │   ├── LoadingSpinner.tsx      # ローディングスピナー
 │   ├── ConfirmModal.tsx        # 汎用確認ダイアログ
-│   ├── LegalModals.tsx         # 利用規約・プライバシーポリシーモーダル
+│   ├── LegalModals.tsx         # 利用規約・プライバシーポリシーモーダル（Firestore管理+フォールバック）
+│   ├── NotificationToast.tsx   # 通知トーストUI（Framer Motion、スワイプ dismissible）
 │   ├── BannerCarousel.tsx      # 運営バナーカルーセル
 │   ├── AsciiWarn.tsx           # ASCII入力警告バナー
 │   ├── GroupCard.tsx           # グループカード
@@ -775,19 +783,32 @@ src/
     └── next-pwa.d.ts           # PWA型定義
 
 firestore.rules                 # Firestoreセキュリティルール
-next.config.ts                  # Next.js設定（COOPヘッダー）
+next.config.ts                  # Next.js設定（COOPヘッダー + Sentry）
+sentry.client.config.ts         # Sentry クライアント設定
+sentry.server.config.ts         # Sentry サーバー設定
+sentry.edge.config.ts           # Sentry Edge設定
+functions/src/index.ts          # Cloud Functions（全7つ）
 public/
-├── manifest.json               # PWAマニフェスト
-└── icons/                      # PWAアイコン（192×192, 512×512）
+├── manifest.json               # PWAマニフェスト（OGP、iOS standalone対応）
+├── robots.txt                  # クローラー設定
+├── sitemap.xml                 # サイトマップ
+├── firebase-messaging-sw.js    # FCMサービスワーカー
+└── icons/                      # PWAアイコン（192×192, 512×512, SVG）
 ```
 
 ---
 
-## 15. Cloud Functions
+## 15. Cloud Functions（全7つ、デプロイ済み）
 
 | 関数名 | トリガー | 機能 |
 |---|---|---|
-| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいね通知。投稿者にFCMプッシュ通知「{likerName} liked your post」を送信。自己いいねはスキップ。無効トークンは自動クリーニング。 |
+| `moderatePost` | `onDocumentCreated("posts/{postId}")` | 投稿自動モデレーション。禁止語句チェック + 毒性スコア計算。該当時は `status: "hidden"` に更新 + ログ記録。 |
+| `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。`reportCount` を記録。 |
+| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいね通知。投稿者にFCMプッシュ通知「{likerName} liked your post」を送信。自己いいねはスキップ。`notificationPrefs.likes` を尊重。無効トークンは自動クリーニング。 |
+| `checkStreaks` | `onSchedule("every 1 hours")` | ストリーク管理。48時間超過でリセット。42時間経過時にFCM警告通知。`notificationPrefs.streakWarning` を尊重。 |
+| `cleanupHiddenPosts` | `onSchedule("every day 03:00")` | 非表示投稿の30日後自動削除（100件/回）。 |
+| `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージ通知。送信者以外の全メンバーにFCM通知。`notificationPrefs.groupMessage` を尊重。 |
+| `syncGroupMembership` | `onDocumentUpdated("groups/{groupId}")` | メンバー除外時の `groupIds` 同期。キック/退出で除外されたユーザーの `groupIds` から自動削除。 |
 
 ---
 
@@ -795,14 +816,13 @@ public/
 
 | 項目 | ステータス | 備考 |
 |---|---|---|
-| いいね通知（Cloud Function） | 実装済み（未デプロイ） | `onLikeCreated` — `firebase deploy --only functions` が必要 |
-| ストリーク警告通知 | 未実装 | Cloud Functions でのスケジュール実行が必要 |
-| グループメッセージ通知 | 未実装 | — |
 | フォロー通知 | 未実装 | — |
-| プライバシーポリシー・利用規約の内容精査 | 未完了 | LegalModals は実装済み、本文は仮 |
+| プライバシーポリシー・利用規約の内容精査 | 未完了 | LegalModals + Firestore `legal_docs` は実装済み、本文は仮 |
 | Stripeサブスクリプション | 未実装 | `isPro` フィールドのみ用意済み |
-| App Check の Cloud Firestore 強制適用 | 未有効化 | reCAPTCHA Enterprise 設定を整えてから |
+| App Check の Cloud Firestore 強制適用 | 未有効化 | reCAPTCHA Enterprise トークン取得が本番で失敗する問題の解決が必要 |
 | 全体的なUIデザイン改善 | 継続 | — |
+| OG画像作成 | 未実装 | 1200×630px のSNS共有用画像（現在は512pxアイコンで代用） |
+| FCM VAPID key修正 | 未解決 | 本番環境で通知トークン取得が失敗する |
 
 ---
 
@@ -814,3 +834,4 @@ public/
 | v3 | 2025-03-10 | Phase 1〜9 実装完了。実装詳細・ルート・ファイル構成・未実装項目を追記。 |
 | v3 改訂 | 2026-03-12 | 現在の実装に完全準拠して全面書き直し。主な差分: レベル計算式を `sqrt(TotalXP/4)+1` に修正、投稿テキストを統合 `content` フィールド（400文字）に変更、投稿に `visibility`（public/private）と `status`（active/hidden/pending）を追加、フォロー機能・公式グループ・投稿モデレーション（自動非表示）・禁止語句フィルター・ブロックUI を追記、グループ作成条件を Lv.5 に修正、自己いいね（XP付与なし）を明記、ダブルタップいいね・2ステップ投稿フロー・画像圧縮仕様を追記、Firestore構造に `users/private`・`users/following`・`posts/reports`・`groups/lastRead`・`banners`・`moderation_config` を追加、セキュリティルールを実装準拠で全面更新、アカウント削除手順を拡充。 |
 | v3 改訂2 | 2026-03-17 | いいねシステム刷新（無制限いいね、XP上限5回/日、タップ位置アニメーション、いいね一覧モーダル、楽観的UI、XP取り消し廃止）。フィードアルゴリズム導入（スコアベースランキング + localStorage既読追跡）。フォロー楽観的UI更新。公開プロフィールUI刷新（MyPageと統一、ブロック/アンブロックトグル）。モードカラー統一（WH=amber、その他=blue、全6画面）。Live SessionをHOMEからCommunityタブへ移動。HOME画面リファクタ（WeeklyChallenge抽出、ストリーク火消去）。右スワイプで閉じるジェスチャー（useSwipeDismiss、GPU加速）。いいね通知Cloud Function（onLikeCreated、未デプロイ）。新規ファイル: feedScore.ts, WeeklyChallenge.tsx, useSwipeDismiss.ts, AsciiWarn.tsx, useAsciiInput.ts。 |
+| v3 改訂3 | 2026-03-17 | Cloud Functions全7つデプロイ（moderatePost, checkReportThreshold, onLikeCreated, checkStreaks, cleanupHiddenPosts, onGroupMessageCreated, syncGroupMembership）。通知システム強化（NotificationToast UI、設定画面にトグル3種、通知種別ごとのPrefs対応）。Firestoreセキュリティルール全面監査・強化（groupIds他人更新禁止、フィールドホワイトリスト厳格化）。Legal文書をFirestore管理に移行（legal_docsコレクション）。XPバランス調整（除数4→1.5、Lv.90=10ヶ月目標）。グループ解放レベル変更（参加Lv.13、作成Lv.20、初回ボーナス考慮）。PWA本番対応（OGP、iOS standalone、manifest強化、robots.txt、sitemap.xml）。Sentry導入。カスタムドメイン days-count.com 設定。オンボーディングUI改善（必須/任意マーカー、グリッドレイアウト、英語日付入力）。 |
