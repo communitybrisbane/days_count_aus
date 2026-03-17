@@ -166,7 +166,7 @@ export default function OnboardingPage() {
               maxLength={15}
               value={nickname}
               onChange={(e) => setNickname(sanitize(e.target.value, /[^a-zA-Z0-9_]/g))}
-              placeholder="Nickname (a-z, 0-9, _)"
+              placeholder="Nickname (a-z, 0-9, _) *"
               className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold ${
                 nicknameError ? "border-red-400" : "border-gray-200"
               }`}
@@ -179,7 +179,7 @@ export default function OnboardingPage() {
 
         {/* Row 2: Phase (horizontal pills) */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Status</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Status <span className="text-red-400">*</span></p>
           <div className="flex gap-2">
             {([
               { value: "pre-departure" as Phase, label: "Before" },
@@ -205,7 +205,7 @@ export default function OnboardingPage() {
         {/* Row 3: Date picker (conditional) */}
         {phase === "pre-departure" && (
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">Departure date</p>
+            <p className="text-xs font-medium text-gray-500 mb-2">Departure date <span className="text-red-400">*</span></p>
             <input
               type="date"
               value={departureDate}
@@ -217,7 +217,7 @@ export default function OnboardingPage() {
         )}
         {phase === "in-australia" && (
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">When did you arrive?</p>
+            <p className="text-xs font-medium text-gray-500 mb-2">When did you arrive? <span className="text-red-400">*</span></p>
             <input
               type="date"
               value={departureDate}
@@ -235,7 +235,7 @@ export default function OnboardingPage() {
 
         {/* Row 4: Focus Mode */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Focus</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Focus <span className="text-red-400">*</span></p>
           <div className="flex gap-1.5 flex-wrap">
             {FOCUS_MODES.map((mode) => {
               const isWH = mode.id === "enjoying" || mode.id === "challenging";
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
 
         {/* Row 5: Region */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Region</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Region <span className="text-gray-300 text-[10px]">optional</span></p>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {REGIONS.map((r) => (
               <button
@@ -280,7 +280,7 @@ export default function OnboardingPage() {
 
         {/* Row 6: Goal */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Goal</p>
+          <p className="text-xs font-medium text-gray-500 mb-2">Goal <span className="text-gray-300 text-[10px]">optional</span></p>
           <input
             type="text"
             maxLength={100}
