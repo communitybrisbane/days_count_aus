@@ -84,7 +84,7 @@ const TERMS_FALLBACK = `
 <p>- Users can report posts and other users. Posts receiving 3 or more reports are automatically hidden for review.</p>
 <p>- Hidden posts older than 30 days may be permanently deleted.</p>
 <p class="font-bold text-sm text-gray-800">7. Communities (Groups)</p>
-<p>- Users at Lv.7 or above can join communities. Users at Lv.10 or above can create communities.</p>
+<p>- Users at Lv.10 or above can join communities. Users at Lv.16 or above can create communities.</p>
 <p>- Each user can join up to 2 communities (plus official communities).</p>
 <p>- Maximum 10 members per community.</p>
 <p>- Group leaders are responsible for managing their community. If a leader leaves, the community is disbanded.</p>

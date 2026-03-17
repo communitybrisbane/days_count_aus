@@ -74,8 +74,8 @@ export default function GroupsPage() {
   }, [groups]);
 
   const level = profile ? calculateLevel(profile.totalXP) : 1;
-  const canJoinCommunity = level >= 7;
-  const canCreateCommunity = level >= 10;
+  const canJoinCommunity = level >= 10;
+  const canCreateCommunity = level >= 16;
   const groupCount = profile?.groupIds?.length || 0;
   const hasMaxGroups = groupCount >= 2;
 
@@ -249,16 +249,16 @@ export default function GroupsPage() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-700">Join Communities</p>
-                          <p className="text-[10px] text-gray-400">Unlocks at Lv.7</p>
+                          <p className="text-[10px] text-gray-400">Unlocks at Lv.10</p>
                         </div>
                       </div>
                       <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-ocean-blue h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((level / 7) * 100, 100)}%` }}
+                          style={{ width: `${Math.min((level / 10) * 100, 100)}%` }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.7</p>
+                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.10</p>
                     </div>
                   ) : (
                     <div className="bg-white rounded-2xl border border-ocean-blue/20 p-4">
@@ -291,16 +291,16 @@ export default function GroupsPage() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-700">Create Community</p>
-                          <p className="text-[10px] text-gray-400">Unlocks at Lv.10</p>
+                          <p className="text-[10px] text-gray-400">Unlocks at Lv.16</p>
                         </div>
                       </div>
                       <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div
                           className="bg-aussie-gold h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((level / 10) * 100, 100)}%` }}
+                          style={{ width: `${Math.min((level / 16) * 100, 100)}%` }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.10</p>
+                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.16</p>
                     </div>
                   ) : (
                     <Link href="/groups/create" className="block bg-white rounded-2xl border border-aussie-gold/20 p-4">

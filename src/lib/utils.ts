@@ -21,12 +21,12 @@ export function getInitials(name: string): string {
 
 /** Calculate level from totalXP */
 export function calculateLevel(totalXP: number): number {
-  return Math.floor(Math.sqrt(totalXP / 4)) + 1;
+  return Math.floor(Math.sqrt(totalXP / 1.5)) + 1;
 }
 
 /** Calculate XP needed for a given level */
 export function xpForLevel(level: number): number {
-  return Math.round((level - 1) ** 2 * 4);
+  return Math.round((level - 1) ** 2 * 1.5);
 }
 
 /** Get progress percentage to next level */
