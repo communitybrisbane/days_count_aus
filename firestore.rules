@@ -271,5 +271,11 @@ service cloud.firestore {
       allow read: if isAuth();
       allow write: if false;
     }
+
+    // Legal documents (Terms, Privacy, Legal Notice) — editable via Firebase Console only
+    match /legal_docs/{docId} {
+      allow read: if isAuth();
+      allow write: if false;
+    }
   }
 }
