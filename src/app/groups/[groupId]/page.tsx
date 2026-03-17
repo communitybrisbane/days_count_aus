@@ -198,7 +198,7 @@ export default function GroupChatPage() {
       memberIds: arrayRemove(uid),
       memberCount: increment(-1),
     });
-    await updateDoc(doc(db, "users", uid), { groupIds: arrayRemove(groupId) });
+    // groupIds cleanup for kicked user is handled by syncGroupMembership Cloud Function
     setGroup((g) => g ? {
       ...g,
       memberIds: g.memberIds.filter((id) => id !== uid),

@@ -26,17 +26,18 @@ service cloud.firestore {
       // isPro, createdAt, uid are immutable
       allow update: if isOwner(userId)
                      && changed().hasOnly([
-                       'displayName', 'photoURL', 'region', 'goal', 'mainMode',
+                       'displayName', 'photoURL', 'region', 'showRegion', 'goal', 'mainMode',
                        'departureDate', 'returnStartDate', 'status', 'weeklyGoal',
                        'groupIds',
                        'currentStreak', 'lastPostAt', 'totalXP',
-                       'dailyLikeCount', 'lastLikeDate', 'streakWarningSent'
+                       'dailyLikeCount', 'lastLikeDate', 'streakWarningSent',
+                       'weekStreak', 'lastCompletedWeekStart'
                      ]);
 
-      // Other user update: XP/like-related or groupIds (from like system and group kick/join)
+      // Other user update: XP grant from like system only
       allow update: if isAuth()
                      && request.auth.uid != userId
-                     && changed().hasOnly(['totalXP', 'dailyLikeCount', 'lastLikeDate', 'groupIds']);
+                     && changed().hasOnly(['totalXP']);
 
       // Private subcollection: blockedUsers, fcmToken — owner only
       match /private/{docId} {
@@ -117,11 +118,12 @@ service cloud.firestore {
 
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
 
-      // Likes subcollection
+      // Likes subcollection (only on public active posts)
       match /likes/{likeId} {
         allow read: if isAuth();
         allow create: if isAuth() && request.auth.uid == likeId
-                       && resource == null;
+                       && resource == null
+                       && get(/databases/$(database)/documents/posts/$(postId)).data.visibility == 'public';
         allow delete: if isAuth() && request.auth.uid == likeId;
       }
 
@@ -232,9 +234,10 @@ service cloud.firestore {
                       && request.resource.data.text is string
                       && request.resource.data.text.size() >= 1
                       && request.resource.data.text.size() <= 100;
-        // Reaction updates only
+        // Reaction updates only — restrict to reactions field changes
         allow update: if isAuth()
-                      && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+                      && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
       }
     }
 

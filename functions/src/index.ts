@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
 admin.initializeApp();
@@ -288,5 +288,33 @@ export const cleanupHiddenPosts = onSchedule(
     await batch.commit();
 
     console.log(`[CLEANUP] Deleted ${snap.size} old hidden posts`);
+  }
+);
+
+// ─── Cloud Function: Sync groupIds when members are removed (kick/leave) ───
+export const syncGroupMembership = onDocumentUpdated(
+  "groups/{groupId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const groupId = event.params.groupId;
+    const oldMembers: string[] = before.memberIds || [];
+    const newMembers: string[] = after.memberIds || [];
+
+    // Find removed members
+    const removedMembers = oldMembers.filter((uid) => !newMembers.includes(uid));
+
+    for (const uid of removedMembers) {
+      try {
+        await db.doc(`users/${uid}`).update({
+          groupIds: admin.firestore.FieldValue.arrayRemove(groupId),
+        });
+        console.log(`[GROUP_SYNC] Removed groupId ${groupId} from user ${uid}`);
+      } catch (e) {
+        console.error(`[GROUP_SYNC] Failed to update user ${uid}:`, e);
+      }
+    }
   }
 );
