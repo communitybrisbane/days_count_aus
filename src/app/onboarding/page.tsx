@@ -233,10 +233,10 @@ export default function OnboardingPage() {
           </p>
         )}
 
-        {/* Row 4: Focus Mode */}
+        {/* Row 4: Focus Mode — grid layout */}
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">Focus <span className="text-red-400">*</span></p>
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="grid grid-cols-3 gap-2">
             {FOCUS_MODES.map((mode) => {
               const isWH = mode.id === "enjoying" || mode.id === "challenging";
               return (
@@ -244,7 +244,7 @@ export default function OnboardingPage() {
                 key={mode.id}
                 type="button"
                 onClick={() => setMainMode(mode.id)}
-                className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                className={`py-2.5 rounded-xl text-xs font-medium border transition-all ${
                   mainMode === mode.id
                     ? isWH ? "border-aussie-gold bg-amber-50 font-bold" : "border-ocean-blue bg-blue-50 font-bold"
                     : "border-gray-200 bg-white"
@@ -257,19 +257,19 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Row 5: Region */}
+        {/* Row 5: Region — grid layout */}
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">Region <span className="text-gray-300 text-[10px]">optional</span></p>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="grid grid-cols-3 gap-2">
             {REGIONS.map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRegion(region === r ? "" : r)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm border transition-colors ${
+                className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
                   region === r
                     ? "bg-aussie-gold text-white border-aussie-gold"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-aussie-gold"
+                    : "bg-white text-gray-600 border-gray-200"
                 }`}
               >
                 {r}

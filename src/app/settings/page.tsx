@@ -264,16 +264,16 @@ export default function SettingsPage() {
 
             <div>
               <label className="text-xs text-gray-500">Region</label>
-              <div className="flex gap-2 overflow-x-auto pb-2 mt-0.5 scrollbar-hide">
+              <div className="grid grid-cols-3 gap-1.5 mt-0.5">
                 {REGIONS.map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setRegion(region === r ? "" : r)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    className={`py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       region === r
                         ? "bg-aussie-gold text-white border-aussie-gold"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-aussie-gold"
+                        : "bg-white text-gray-600 border-gray-200"
                     }`}
                   >
                     {r}
