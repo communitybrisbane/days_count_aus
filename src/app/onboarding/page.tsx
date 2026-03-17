@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,6 +84,13 @@ export default function OnboardingPage() {
 
       const today = getTodayStr();
 
+      // Clean up partial doc from previous failed attempt
+      const existingDoc = await getDoc(doc(db, "users", user.uid));
+      if (existingDoc.exists()) {
+        await deleteDoc(doc(db, "users", user.uid));
+      }
+
+      console.log("[ONBOARD] Step 1: Creating user doc...");
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         displayName: nickname.trim(),
@@ -103,13 +110,16 @@ export default function OnboardingPage() {
         groupIds: [],
         createdAt: serverTimestamp(),
       });
+      console.log("[ONBOARD] Step 2: Creating private config...");
       // Create private subcollection for sensitive data
       await setDoc(doc(db, "users", user.uid, "private", "config"), {
         blockedUsers: [],
         fcmToken: "",
       });
+      console.log("[ONBOARD] Step 3: Joining official group...");
       // Auto-join official group for selected mode
       await joinOfficialGroup(user.uid, mainMode);
+      console.log("[ONBOARD] All steps complete!");
 
       await refreshProfile();
       router.replace("/home");
