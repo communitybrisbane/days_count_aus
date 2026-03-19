@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function RootPage() {
   const { user, profile, loading } = useAuth();
@@ -19,9 +20,5 @@ export default function RootPage() {
     }
   }, [user, profile, loading, router]);
 
-  return (
-    <div className="flex items-center justify-center min-h-dvh">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-orange" />
-    </div>
-  );
+  return <LoadingSpinner fullScreen />;
 }

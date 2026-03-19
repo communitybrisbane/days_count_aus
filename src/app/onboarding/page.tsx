@@ -11,6 +11,7 @@ import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup } from "@/lib/groups";
 import ImageCropper from "@/components/ImageCropper";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { FocusModeIcon } from "@/components/icons";
@@ -144,11 +145,7 @@ export default function OnboardingPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-dvh">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-orange" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   // Progress bar

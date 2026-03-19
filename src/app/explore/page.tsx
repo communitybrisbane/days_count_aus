@@ -76,14 +76,14 @@ export default function ExplorePage() {
           );
         }
 
-        // Client-side filter by searched user IDs
-        if (searchUserIds !== null) {
-          newPosts = newPosts.filter((p) => searchUserIds.includes(p.userId));
-        }
-
-        // Client-side filter by tag
-        if (searchTag) {
-          newPosts = newPosts.filter((p) => p.tags?.some((t) => t.toLowerCase().includes(searchTag)));
+        // Client-side filter: user/region OR tag match
+        if (searchUserIds !== null || searchTag) {
+          const tagQuery = searchTag ? searchTag.replace(/^#/, "") : "";
+          newPosts = newPosts.filter((p) => {
+            const matchUser = searchUserIds !== null && searchUserIds.includes(p.userId);
+            const matchTag = tagQuery && p.tags?.some((t) => t.toLowerCase().replace(/^#/, "").includes(tagQuery));
+            return matchUser || matchTag;
+          });
         }
 
         // Score-based ranking (skip when searching — just show matches)
@@ -133,8 +133,8 @@ export default function ExplorePage() {
       return;
     }
 
-    // User/region search
-    setSearchTag(null);
+    // User/region search + also search tags
+    setSearchTag(trimmed);
     try {
       const usersRef = collection(db, "users");
       const snap = await getDocs(query(usersRef, limit(500)));

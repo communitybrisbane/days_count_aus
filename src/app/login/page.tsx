@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { signInWithGoogle } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function LoginPage() {
   const { user, profile, loading } = useAuth();
@@ -28,11 +29,7 @@ export default function LoginPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-dvh">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-orange" />
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

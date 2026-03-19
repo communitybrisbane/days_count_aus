@@ -35,35 +35,39 @@ export default function ImageCropper({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center">
-      <div className="w-full max-w-[450px] h-full max-h-dvh bg-black flex flex-col">
-        <div className="relative flex-1">
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            aspect={1}
-            cropShape={cropShape}
-            showGrid={cropShape === "rect"}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropChange}
-          />
-        </div>
-        <div className="flex gap-4 p-4 bg-black">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 border border-white/30 text-white rounded-xl"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            className="flex-1 py-3 bg-accent-orange text-white font-bold rounded-xl"
-          >
-            Confirm
-          </button>
-        </div>
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+      {/* Top bar: Cancel left, Confirm right */}
+      <div
+        className="shrink-0 flex items-center justify-between px-4 py-3 z-10"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+      >
+        <button
+          onClick={onCancel}
+          className="text-white/70 text-sm font-medium px-3 py-2 active:text-white"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleConfirm}
+          className="bg-accent-orange text-white text-sm font-bold px-5 py-2 rounded-full active:scale-[0.96]"
+        >
+          Done
+        </button>
+      </div>
+
+      {/* Crop area */}
+      <div className="relative flex-1">
+        <Cropper
+          image={imageSrc}
+          crop={crop}
+          zoom={zoom}
+          aspect={1}
+          cropShape={cropShape}
+          showGrid={cropShape === "rect"}
+          onCropChange={setCrop}
+          onZoomChange={setZoom}
+          onCropComplete={onCropChange}
+        />
       </div>
     </div>
   );

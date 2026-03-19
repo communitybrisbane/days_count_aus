@@ -44,7 +44,7 @@ const roundedClass = (listRounded?: "top" | "bottom" | "none") => {
 };
 
 export default function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
-  const { user, profile, following, refreshFollowing, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
+  const { user, profile, following, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
   const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean } | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);

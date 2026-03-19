@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Days Count in AUS",
-  description: "Make Days Count — Turn your 365 days into a lifetime of growth.",
+  description: "Count the days that count — Your working holiday journal in Australia.",
   manifest: "/manifest.json",
   icons: {
     icon: "/icons/icon-192x192.png",
@@ -23,16 +23,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Days Count in AUS",
-    description: "Make Days Count — Turn your 365 days into a lifetime of growth.",
+    description: "Count the days that count — Your working holiday journal in Australia.",
     siteName: "Days Count in AUS",
-    images: [{ url: "/icons/icon-512x512.png", width: 512, height: 512 }],
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Days Count in AUS",
-    description: "Make Days Count — Turn your 365 days into a lifetime of growth.",
-    images: ["/icons/icon-512x512.png"],
+    description: "Count the days that count — Your working holiday journal in Australia.",
   },
   appleWebApp: {
     capable: true,
