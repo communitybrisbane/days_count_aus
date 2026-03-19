@@ -101,17 +101,17 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden pb-16 bg-sand-beige">
+    <div className="h-dvh flex flex-col overflow-hidden pb-16">
       {/* Header */}
-      <div className="sticky top-0 bg-white z-10 border-b border-gray-100" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <div className="sticky top-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="px-4 pt-3 pb-2">
-          <h1 className="text-lg font-bold">Community</h1>
+          <h1 className="text-lg font-bold text-white/90">Community</h1>
         </div>
       </div>
 
       {/* Search panel — community only */}
       {showSearch && (
-        <div className="bg-white border-b border-gray-100">
+        <div className="bg-forest/90 border-b border-forest-light/20">
           <div className="px-4 pb-3 pt-2 space-y-2">
             <div className="flex items-center gap-2">
               <input
@@ -119,12 +119,12 @@ export default function GroupsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value.replace(/[^\x20-\x7E]/g, ""))}
                 placeholder="Search by community name..."
-                className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
+                className="flex-1 border border-forest-light/30 bg-forest-light/20 text-white rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30"
                 autoFocus
               />
               <button
                 onClick={() => { setShowSearch(false); setSearchQuery(""); setModeFilter(""); }}
-                className="text-gray-400 text-sm shrink-0"
+                className="text-white/40 text-sm shrink-0"
               >
                 Cancel
               </button>
@@ -134,34 +134,31 @@ export default function GroupsPage() {
               <button
                 onClick={() => setModeFilter("")}
                 className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                  !modeFilter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
+                  !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
                 }`}
               >
                 All
               </button>
-              {FOCUS_MODES.map((m) => {
-                const isWH = m.id === "enjoying" || m.id === "challenging";
-                return (
+              {FOCUS_MODES.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setModeFilter(m.id)}
                   className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
                     modeFilter === m.id
-                      ? isWH ? "bg-aussie-gold text-white" : "bg-ocean-blue text-white"
-                      : "bg-gray-100 text-gray-500"
+                      ? "bg-accent-orange text-white"
+                      : "bg-white text-forest-mid"
                   }`}
                 >
                   <FocusModeIcon modeId={m.id} size={14} className="inline-block align-middle" /> {m.description}
                 </button>
-                );
-              })}
+              ))}
             </div>
           </div>
 
           <div className="p-4 space-y-3">
             {loadingGroups && <LoadingSpinner size="sm" />}
             {!loadingGroups && filteredUserGroups.length === 0 && (
-              <p className="text-center text-gray-400 py-4 text-sm">No matching communities found</p>
+              <p className="text-center text-white/40 py-4 text-sm">No matching communities found</p>
             )}
             {filteredUserGroups.map((group) => (
               <GroupCard
@@ -189,18 +186,18 @@ export default function GroupsPage() {
                 <div className="px-4 pt-2">
                   <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${
                     liveSession.url
-                      ? "border-ocean-blue/30 ring-2 ring-ocean-blue/20 shadow-ocean-blue/10"
+                      ? "border-forest-mid/30 ring-2 ring-ocean-blue/20 shadow-ocean-blue/10"
                       : "border-gray-100"
                   }`}>
                     <div className="px-4 py-3 flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${liveSession.url ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-                          <p className={`font-bold text-sm truncate ${liveSession.url ? "text-ocean-blue" : "text-gray-600"}`}>
+                          <p className={`font-bold text-sm truncate ${liveSession.url ? "text-forest-mid" : "text-gray-600"}`}>
                             {liveSession.label || "Live Session"}
                           </p>
                           {liveSession.url && (
-                            <span className="text-[10px] font-bold text-white bg-ocean-blue px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                            <span className="text-[10px] font-bold text-white bg-forest-mid px-2 py-0.5 rounded-full animate-pulse shrink-0">
                               LIVE
                             </span>
                           )}
@@ -214,7 +211,7 @@ export default function GroupsPage() {
                           href={liveSession.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-ocean-blue text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md shrink-0 ml-3 active:scale-[0.97]"
+                          className="bg-forest-mid text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md shrink-0 ml-3 active:scale-[0.97]"
                         >
                           Join
                         </a>
@@ -242,10 +239,10 @@ export default function GroupsPage() {
                 {/* Join suggest — only when not joined any non-official group (excludes own created) */}
                 {myJoinedOnly.length === 0 && (
                   !canJoinCommunity ? (
-                    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                    <div className="card-material border-0 p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-ocean-blue/10 flex items-center justify-center shrink-0">
-                          <IconLock size={18} className="text-ocean-blue" />
+                        <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
+                          <IconLock size={18} className="text-forest-mid" />
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-700">Join Communities</p>
@@ -254,26 +251,26 @@ export default function GroupsPage() {
                       </div>
                       <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div
-                          className="bg-ocean-blue h-2 rounded-full transition-all"
+                          className="bg-forest-mid h-2 rounded-full transition-all"
                           style={{ width: `${Math.min((level / GROUP_JOIN_LEVEL) * 100, 100)}%` }}
                         />
                       </div>
                       <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_JOIN_LEVEL}</p>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-2xl border border-ocean-blue/20 p-4">
+                    <div className="bg-white rounded-2xl border border-forest-mid/20 p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-ocean-blue/10 flex items-center justify-center shrink-0">
-                          <IconUsers size={18} className="text-ocean-blue" />
+                        <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
+                          <IconUsers size={18} className="text-forest-mid" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-ocean-blue">Join Communities</p>
+                          <p className="text-sm font-bold text-forest-mid">Join Communities</p>
                           <p className="text-[10px] text-gray-400">Search to find and join communities</p>
                         </div>
                       </div>
                       <button
                         onClick={() => setShowSearch(true)}
-                        className="w-full py-2 text-xs font-bold text-white bg-ocean-blue rounded-full"
+                        className="w-full py-2 text-xs font-bold text-white bg-forest-mid rounded-full"
                       >
                         Search Communities
                       </button>
@@ -284,10 +281,10 @@ export default function GroupsPage() {
                 {/* Create suggest — only when no created groups */}
                 {!hasCreatedGroup && (
                   !canCreateCommunity ? (
-                    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+                    <div className="card-material border-0 p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-aussie-gold/10 flex items-center justify-center shrink-0">
-                          <IconLock size={18} className="text-aussie-gold" />
+                        <div className="w-10 h-10 rounded-full bg-accent-orange/10 flex items-center justify-center shrink-0">
+                          <IconLock size={18} className="text-accent-orange" />
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-bold text-gray-700">Create Community</p>
@@ -296,24 +293,24 @@ export default function GroupsPage() {
                       </div>
                       <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
                         <div
-                          className="bg-aussie-gold h-2 rounded-full transition-all"
+                          className="bg-accent-orange h-2 rounded-full transition-all"
                           style={{ width: `${Math.min((level / GROUP_CREATE_LEVEL) * 100, 100)}%` }}
                         />
                       </div>
                       <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_CREATE_LEVEL}</p>
                     </div>
                   ) : (
-                    <Link href="/groups/create" className="block bg-white rounded-2xl border border-aussie-gold/20 p-4">
+                    <Link href="/groups/create" className="block bg-white rounded-2xl border border-accent-orange/20 p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-aussie-gold/10 flex items-center justify-center shrink-0">
-                          <span className="text-aussie-gold font-bold text-lg">+</span>
+                        <div className="w-10 h-10 rounded-full bg-accent-orange/10 flex items-center justify-center shrink-0">
+                          <span className="text-accent-orange font-bold text-lg">+</span>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-aussie-gold">Create Community</p>
+                          <p className="text-sm font-bold text-accent-orange">Create Community</p>
                           <p className="text-[10px] text-gray-400">Start your own community as a leader</p>
                         </div>
                       </div>
-                      <div className="w-full py-2 text-xs font-bold text-white bg-aussie-gold rounded-full text-center">
+                      <div className="w-full py-2 text-xs font-bold text-white bg-accent-orange rounded-full text-center">
                         Create Now
                       </div>
                     </Link>
@@ -334,7 +331,7 @@ export default function GroupsPage() {
       {!showSearch && canCreateCommunity && (
         <Link
           href="/groups/create"
-          className="fixed bottom-20 right-4 z-30 bg-aussie-gold text-white shadow-lg rounded-full px-5 py-3 text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-transform"
+          className="fixed bottom-20 right-4 z-30 bg-gradient-to-br from-accent-orange to-accent-orange-dark text-white shadow-long rounded-full px-5 py-3 text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-transform"
         >
           + Create
         </Link>

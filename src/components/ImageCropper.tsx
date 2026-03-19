@@ -59,7 +59,7 @@ export default function ImageCropper({
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 py-3 bg-aussie-gold text-white font-bold rounded-xl"
+            className="flex-1 py-3 bg-accent-orange text-white font-bold rounded-xl"
           >
             Confirm
           </button>

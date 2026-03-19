@@ -238,7 +238,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <AsciiWarn show={showWarn} />
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
@@ -250,9 +249,9 @@ export default function SettingsPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
-        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-gray-400 text-xl -ml-2">←</button>
-        <h1 className="text-lg font-bold">Settings</h1>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-forest-light/20 bg-forest/95 backdrop-blur-md" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/40 text-xl -ml-2">←</button>
+        <h1 className="text-lg font-bold text-white/90">Settings</h1>
         <div className="w-10" />
       </div>
 
@@ -260,20 +259,20 @@ export default function SettingsPage() {
         {/* Profile Edit — Accordion */}
         <button
           onClick={() => toggle("profile")}
-          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 active:bg-gray-50"
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
         >
-          <span className="font-medium text-sm">Edit Profile</span>
-          <span className="text-gray-400 text-sm">{activeSection === "profile" ? "▲" : "▼"}</span>
+          <span className="font-medium text-sm text-white/80">Edit Profile</span>
+          <span className="text-white/30 text-sm">{activeSection === "profile" ? "▲" : "▼"}</span>
         </button>
         {activeSection === "profile" && (
-          <div className="px-4 py-3 space-y-3 bg-gray-50 border-b border-gray-100">
+          <div className="px-4 py-3 space-y-3 bg-forest-light/10 border-b border-forest-light/15">
             <div className="flex justify-center py-2">
               <button onClick={() => fileInputRef.current?.click()} className="relative shrink-0">
                 {profile.photoURL ? (
-                  <img src={profile.photoURL} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-gray-200" />
+                  <img src={profile.photoURL} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-white/20" />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                    <span className="text-lg text-gray-400">+</span>
+                  <div className="w-14 h-14 rounded-full bg-forest-light/20 flex items-center justify-center border-2 border-dashed border-white/30">
+                    <span className="text-lg text-white/40">+</span>
                   </div>
                 )}
                 <span className="absolute -bottom-0.5 -right-0.5 text-base bg-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm border border-gray-100 text-gray-600 font-medium">+</span>
@@ -282,17 +281,18 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">Nickname</label>
+              <label className="text-xs text-white/60">Nickname</label>
               <input
                 type="text" maxLength={NICKNAME_MAX} value={nickname}
                 onChange={(e) => setNickname(sanitize(e.target.value, /[^a-zA-Z0-9_]/g))}
-                className={`w-full border rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold ${nicknameError ? "border-red-400" : "border-gray-300"}`}
+                className={`w-full border rounded-lg px-3 py-2 text-sm mt-0.5 bg-forest-light/10 text-white focus:outline-none focus:ring-2 focus:ring-accent-orange ${nicknameError ? "border-red-400" : "border-forest-light/30"}`}
               />
+              <AsciiWarn show={showWarn} />
               {nicknameError && <p className="text-xs text-red-400 mt-0.5">{nicknameError}</p>}
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">Region</label>
+              <label className="text-xs text-white/60">Region</label>
               <div className="grid grid-cols-3 gap-1.5 mt-0.5">
                 {REGIONS.map((r) => (
                   <button
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                     onClick={() => setRegion(region === r ? "" : r)}
                     className={`py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       region === r
-                        ? "bg-aussie-gold text-white border-aussie-gold"
+                        ? "bg-accent-orange text-white border-accent-orange"
                         : "bg-white text-gray-600 border-gray-200"
                     }`}
                   >
@@ -310,11 +310,11 @@ export default function SettingsPage() {
                 ))}
               </div>
               <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-gray-500">Show region on posts</span>
+                <span className="text-xs text-white/60">Show region on posts</span>
                 <button
                   type="button"
                   onClick={() => setShowRegion(!showRegion)}
-                  className={`relative w-10 h-5.5 rounded-full transition-colors ${showRegion ? "bg-aussie-gold" : "bg-gray-300"}`}
+                  className={`relative w-10 h-5.5 rounded-full transition-colors ${showRegion ? "bg-accent-orange" : "bg-forest-light/30"}`}
                 >
                   <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${showRegion ? "left-5" : "left-0.5"}`} />
                 </button>
@@ -322,35 +322,32 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">Goal</label>
+              <label className="text-xs text-white/60">Goal</label>
               <input type="text" maxLength={GOAL_MAX} value={goal} onChange={(e) => setGoal(sanitize(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold" />
+                className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent-orange" />
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">Main Mode</label>
+              <label className="text-xs text-white/60">Main Mode</label>
               <div className="flex gap-1.5 mt-1 flex-wrap">
-                {FOCUS_MODES.map((m) => {
-                  const isWH = m.id === "enjoying" || m.id === "challenging";
-                  return (
+                {FOCUS_MODES.map((m) => (
                   <button key={m.id} onClick={() => setMainMode(m.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs border ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${
                       mainMode === m.id
-                        ? isWH ? "border-aussie-gold bg-amber-50 font-bold" : "border-ocean-blue bg-blue-50 font-bold"
-                        : "border-gray-200"
+                        ? "bg-accent-orange text-white font-bold"
+                        : "bg-white text-forest-mid"
                     }`}
                   >{m.description}</button>
-                  );
-                })}
+                ))}
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">
+              <label className="text-xs text-white/60">
                 {status === "in-australia" ? "Arrival Date" : "Departure Date"}
               </label>
               {status === "post-return" ? (
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-white/60 mt-0.5">
                   {profile.returnStartDate || "Set to today automatically when you mark as Returned."}
                 </p>
               ) : (
@@ -359,13 +356,13 @@ export default function SettingsPage() {
                   lang="en"
                   value={departureDate}
                   onChange={(e) => setDepartureDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-aussie-gold"
+                  className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent-orange"
                 />
               )}
             </div>
 
             <div>
-              <label className="text-xs text-gray-500">Phase</label>
+              <label className="text-xs text-white/60">Phase</label>
               <div className="flex gap-1.5 mt-1">
                 {[
                   { value: "pre-departure", label: "Before" },
@@ -373,14 +370,14 @@ export default function SettingsPage() {
                   { value: "post-return", label: "Returned" },
                 ].map((opt) => (
                   <button key={opt.value} type="button" onClick={() => handlePhaseChange(opt.value)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-medium border ${status === opt.value ? "border-aussie-gold bg-amber-50 font-bold" : "border-gray-200"}`}
+                    className={`flex-1 py-2 rounded-xl text-xs font-medium ${status === opt.value ? "bg-accent-orange text-white font-bold" : "bg-white text-forest-mid"}`}
                   >{opt.label}{status === opt.value && " ✓"}</button>
                 ))}
               </div>
             </div>
 
             <button onClick={handleSave} disabled={saving}
-              className="w-full bg-aussie-gold text-white font-bold py-2 rounded-full text-sm disabled:opacity-50">
+              className="w-full bg-accent-orange text-white font-bold py-2 rounded-full text-sm disabled:opacity-50">
               {saving ? "Saving..." : "Save"}
             </button>
           </div>
@@ -389,49 +386,49 @@ export default function SettingsPage() {
         {/* Notifications — Accordion */}
         <button
           onClick={() => toggle("notifications")}
-          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 active:bg-gray-50"
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
         >
-          <span className="font-medium text-sm">Notifications</span>
-          <span className="text-gray-400 text-sm">{activeSection === "notifications" ? "▲" : "▼"}</span>
+          <span className="font-medium text-sm text-white/80">Notifications</span>
+          <span className="text-white/30 text-sm">{activeSection === "notifications" ? "▲" : "▼"}</span>
         </button>
         {activeSection === "notifications" && (
-          <div className="px-4 py-3 space-y-3 bg-gray-50 border-b border-gray-100">
+          <div className="px-4 py-3 space-y-3 bg-forest-light/10 border-b border-forest-light/15">
             {([
               { key: "likes" as const, label: "Like notifications" },
               { key: "groupMessage" as const, label: "Group message notifications" },
               { key: "streakWarning" as const, label: "Streak warnings" },
             ]).map(({ key, label }) => (
               <div key={key} className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">{label}</span>
+                <span className="text-sm text-white/80">{label}</span>
                 <button
                   type="button"
                   onClick={() => handleNotifToggle(key)}
-                  className={`relative w-10 h-5.5 rounded-full transition-colors ${notifPrefs[key] ? "bg-aussie-gold" : "bg-gray-300"}`}
+                  className={`relative w-10 h-5.5 rounded-full transition-colors ${notifPrefs[key] ? "bg-accent-orange" : "bg-forest-light/30"}`}
                 >
                   <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${notifPrefs[key] ? "left-5" : "left-0.5"}`} />
                 </button>
               </div>
             ))}
-            <p className="text-[10px] text-gray-400">To fully disable push notifications, use your browser settings.</p>
+            <p className="text-[10px] text-white/40">To fully disable push notifications, use your browser settings.</p>
           </div>
         )}
 
         {/* Blocked Users — Accordion */}
         <button
           onClick={() => toggle("blocked")}
-          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 active:bg-gray-50"
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
         >
-          <span className="font-medium text-sm">Blocked Users</span>
-          <span className="text-gray-400 text-sm">{activeSection === "blocked" ? "▲" : "▼"}</span>
+          <span className="font-medium text-sm text-white/80">Blocked Users</span>
+          <span className="text-white/30 text-sm">{activeSection === "blocked" ? "▲" : "▼"}</span>
         </button>
         {activeSection === "blocked" && (
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+          <div className="px-4 py-3 bg-forest-light/10 border-b border-forest-light/15">
             {loadingBlocked ? (
               <div className="flex justify-center py-4">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-aussie-gold" />
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent-orange" />
               </div>
             ) : blockedProfiles.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-2">No blocked users</p>
+              <p className="text-sm text-white/40 text-center py-2">No blocked users</p>
             ) : (
               <div className="space-y-2">
                 {blockedProfiles.map((bp) => (
@@ -453,46 +450,46 @@ export default function SettingsPage() {
         {/* Report — Accordion */}
         <button
           onClick={() => toggle("report")}
-          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-gray-100 active:bg-gray-50"
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
         >
-          <span className="font-medium text-sm">Report</span>
-          <span className="text-gray-400 text-sm">{activeSection === "report" ? "▲" : "▼"}</span>
+          <span className="font-medium text-sm text-white/80">Report</span>
+          <span className="text-white/30 text-sm">{activeSection === "report" ? "▲" : "▼"}</span>
         </button>
         {activeSection === "report" && (
-          <div className="px-4 py-3 space-y-2 bg-gray-50 border-b border-gray-100">
+          <div className="px-4 py-3 space-y-2 bg-forest-light/10 border-b border-forest-light/15">
             <input type="text" placeholder="Target user ID" value={reportTarget} onChange={(e) => setReportTarget(sanitize(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+              className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none placeholder-white/30" />
             <input type="text" placeholder="Reason for report" value={reportReason} onChange={(e) => setReportReason(sanitize(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+              className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none placeholder-white/30" />
             <div>
               <button onClick={() => reportFileRef.current?.click()}
-                className="text-xs text-ocean-blue border border-ocean-blue px-3 py-1.5 rounded-full">
+                className="text-xs text-forest-mid border border-forest-mid px-3 py-1.5 rounded-full">
                 {reportImagePreview ? "Change image" : "Attach screenshot (required)"}
               </button>
               <input ref={reportFileRef} type="file" accept="image/*" onChange={handleReportImage} className="hidden" />
               {reportImagePreview && (
-                <img src={reportImagePreview} alt="" className="mt-2 w-20 h-20 object-cover rounded-lg border border-gray-200" />
+                <img src={reportImagePreview} alt="" className="mt-2 w-20 h-20 object-cover rounded-lg border border-forest-light/30" />
               )}
             </div>
             <button onClick={handleReport} disabled={!reportTarget.trim() || !reportReason.trim() || !reportImage}
-              className="text-sm bg-gray-200 text-gray-600 px-4 py-2 rounded-full disabled:opacity-50">Submit Report</button>
+              className="text-sm bg-forest-light/20 text-white/80 px-4 py-2 rounded-full disabled:opacity-50">Submit Report</button>
           </div>
         )}
       </div>
 
       {/* フッター直上: Legal links・Log Out・Delete Account */}
-      <div className="shrink-0 border-t border-gray-100 px-4 py-4 space-y-3">
-        <p className="text-center text-xs text-gray-400">
+      <div className="shrink-0 border-t border-forest-light/15 px-4 py-4 space-y-3">
+        <p className="text-center text-xs text-white/30">
           produced by{" "}
-          <a href="https://www.instagram.com/count_taku/" target="_blank" rel="noopener noreferrer" className="text-ocean-blue underline">@count_taku</a>
+          <a href="https://www.instagram.com/count_taku/" target="_blank" rel="noopener noreferrer" className="text-accent-orange underline">@count_taku</a>
         </p>
         <div className="flex justify-center gap-3 text-xs flex-wrap">
-          <button onClick={() => setShowTerms(true)} className="text-gray-400 underline">Terms</button>
-          <button onClick={() => setShowPrivacy(true)} className="text-gray-400 underline">Privacy</button>
-          <button onClick={() => setShowTokusho(true)} className="text-gray-400 underline">Legal Notice</button>
+          <button onClick={() => setShowTerms(true)} className="text-white/30 underline">Terms</button>
+          <button onClick={() => setShowPrivacy(true)} className="text-white/30 underline">Privacy</button>
+          <button onClick={() => setShowTokusho(true)} className="text-white/30 underline">Legal Notice</button>
         </div>
         <button onClick={() => setShowLogoutModal(true)}
-          className="w-full border border-gray-300 text-gray-600 py-2.5 rounded-full text-sm">Log Out</button>
+          className="w-full border border-forest-light/30 text-white/60 py-2.5 rounded-full text-sm">Log Out</button>
         <button onClick={() => setShowDeleteModal(true)}
           className="w-full text-red-400 text-xs py-2">Delete Account</button>
       </div>

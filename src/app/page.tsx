@@ -21,7 +21,7 @@ export default function RootPage() {
 
   return (
     <div className="flex items-center justify-center min-h-dvh">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aussie-gold" />
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-orange" />
     </div>
   );
 }

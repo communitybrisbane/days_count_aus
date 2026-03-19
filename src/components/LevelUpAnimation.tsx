@@ -36,7 +36,7 @@ export default function LevelUpAnimation({ level, show, onClose }: LevelUpAnimat
               transition={{ duration: 1.5, ease: "easeOut" }}
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <div className="w-48 h-48 rounded-full bg-gradient-to-r from-aussie-gold/20 to-amber-200/10" />
+              <div className="w-48 h-48 rounded-full bg-gradient-to-r from-accent-orange/20 to-amber-200/10" />
             </motion.div>
 
             {/* Level number */}
@@ -47,7 +47,7 @@ export default function LevelUpAnimation({ level, show, onClose }: LevelUpAnimat
               className="relative"
             >
               <p className="text-sm font-bold text-gray-400 mb-1">LEVEL UP!</p>
-              <p className="text-6xl font-black text-aussie-gold leading-none">
+              <p className="text-6xl font-black text-accent-orange leading-none">
                 {level}
               </p>
             </motion.div>
@@ -68,7 +68,7 @@ export default function LevelUpAnimation({ level, show, onClose }: LevelUpAnimat
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
               onClick={onClose}
-              className="relative mt-5 bg-aussie-gold text-white font-bold px-8 py-2.5 rounded-full text-sm"
+              className="relative mt-5 bg-accent-orange text-white font-bold px-8 py-2.5 rounded-full text-sm"
             >
               OK
             </motion.button>

@@ -136,64 +136,72 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
   return (
     <div className="h-dvh pb-16 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
-      {/* プロフィール — Instagram風中央レイアウト */}
+      {/* プロフィール — Instagram風中央レイアウト with geometric bg */}
       <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        {/* Geometric background for profile header */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-forest-light/15 rotate-45" />
+          <div className="absolute bottom-0 -left-6 w-36 h-36 bg-forest-mid/10 -rotate-12" />
+        </div>
+
         {/* 設定アイコン — 右上 */}
-        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-gray-400 w-10 h-10 flex items-center justify-center" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
           <IconSettings size={24} />
         </button>
 
-        <div className="flex flex-col items-center pt-10">
+        <div className="flex flex-col items-center pt-10 relative">
           {/* アバター */}
-          <Avatar
-            photoURL={profile.photoURL}
-            displayName={profile.displayName}
-            uid={user!.uid}
-            size={96}
-          />
+          <div className="ring-3 ring-accent-orange/40 rounded-full">
+            <Avatar
+              photoURL={profile.photoURL}
+              displayName={profile.displayName}
+              uid={user!.uid}
+              size={96}
+            />
+          </div>
 
           {/* 名前 */}
-          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center">{profile.displayName}</h2>
+          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center text-white/90">{profile.displayName}</h2>
 
           {/* モード・地域 — 横並び */}
           <div className="flex items-center justify-center gap-1.5 mt-2">
             {profile.mainMode && (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
                 <FocusModeIcon modeId={profile.mainMode} size={12} />
                 {FOCUS_MODES.find((m) => m.id === profile.mainMode)?.description}
               </span>
             )}
             {profile.region && profile.showRegion !== false && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
                 {profile.region}
               </span>
             )}
           </div>
           {/* ゴール */}
           {profile.goal && (
-            <p className="text-lg font-bold text-gray-700 mt-2 text-center max-w-[85%] leading-snug">{profile.goal}</p>
+            <p className="text-lg font-bold text-white/80 mt-2 text-center max-w-[85%] leading-snug">{profile.goal}</p>
           )}
 
           {/* Likes / Streak / Following */}
           <div className="flex gap-8 mt-4 text-center">
             <div>
-              <p className="font-bold text-base">{posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
-              <p className="text-[11px] text-gray-400">Likes</p>
+              <p className="font-bold text-base text-white/90">{posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
+              <p className="text-[11px] text-white/40">Likes</p>
             </div>
             <div>
-              <p className="font-bold text-base">{profile.currentStreak ?? 0}</p>
-              <p className="text-[11px] text-gray-400">Streak</p>
+              <p className="font-bold text-base text-white/90">{profile.currentStreak ?? 0}</p>
+              <p className="text-[11px] text-white/40">Streak</p>
             </div>
             <button onClick={handleOpenFollowing}>
-              <p className="font-bold text-base">{following.length}</p>
-              <p className="text-[11px] text-gray-400">Following</p>
+              <p className="font-bold text-base text-white/90">{following.length}</p>
+              <p className="text-[11px] text-white/40">Following</p>
             </button>
           </div>
 
           {isSunday && (
             <button
               onClick={handleCopyAIData}
-              className="text-xs bg-ocean-blue text-white px-3 py-1.5 rounded-full mt-3"
+              className="text-xs bg-forest-mid text-white px-3 py-1.5 rounded-full mt-3"
             >
               Copy AI Review Data
             </button>
@@ -202,31 +210,28 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
       </div>
 
       {/* モードアイコン — 投稿のすぐ上 */}
-      <div className="flex justify-around px-4 py-4 bg-white/80">
+      <div className="flex justify-around px-4 py-4 bg-forest/50">
         <button
           onClick={() => setModeFilter("")}
           className={`w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold ${
-            !modeFilter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-400"
+            !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
           }`}
         >
           All
         </button>
-        {FOCUS_MODES.map((m) => {
-          const isWH = m.id === "enjoying" || m.id === "challenging";
-          return (
+        {FOCUS_MODES.map((m) => (
           <button
             key={m.id}
             onClick={() => setModeFilter(m.id)}
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
               modeFilter === m.id
-                ? isWH ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-ocean-blue/15 ring-2 ring-ocean-blue"
-                : isWH ? "bg-amber-50" : "bg-blue-50"
+                ? "bg-accent-orange"
+                : "bg-white"
             }`}
           >
-            <FocusModeIcon modeId={m.id} size={33} />
+            <FocusModeIcon modeId={m.id} size={33} className={modeFilter === m.id ? "text-white" : "text-forest-mid"} />
           </button>
-          );
-        })}
+        ))}
       </div>
 
       {/* 投稿グリッド */}
@@ -234,7 +239,7 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
         {loadingPosts ? (
           <LoadingSpinner size="sm" />
         ) : filteredPosts.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
+          <p className="text-center text-white/40 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
         ) : (
           <div className="grid grid-cols-4">
             {filteredPosts.map((post, idx) => {
@@ -314,25 +319,25 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
       {showFollowing && (
         <>
           <div ref={swipeFollowing.bgRef} className="fixed inset-0 z-50 flex justify-center bg-black/40">
-          <div ref={swipeFollowing.ref} className="w-full max-w-[430px] bg-white flex flex-col min-h-dvh" {...swipeFollowing.handlers}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <button onClick={() => setShowFollowing(false)} className="text-gray-400">←</button>
-              <h3 className="font-bold text-sm">Following ({following.length})</h3>
+          <div ref={swipeFollowing.ref} className="w-full max-w-[430px] bg-forest flex flex-col min-h-dvh" {...swipeFollowing.handlers}>
+            <div className="flex items-center justify-between p-4 border-b border-forest-light/20">
+              <button onClick={() => setShowFollowing(false)} className="text-white/40">←</button>
+              <h3 className="font-bold text-sm text-white/90">Following ({following.length})</h3>
               <div className="w-8" />
             </div>
             <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
               {loadingFollowing ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aussie-gold" />
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent-orange" />
                 </div>
               ) : followingProfiles.length === 0 ? (
-                <p className="text-center text-gray-400 py-8 text-sm">Not following anyone yet</p>
+                <p className="text-center text-white/40 py-8 text-sm">Not following anyone yet</p>
               ) : (
                 followingProfiles.map((fp) => (
                   <button
                     key={fp.uid}
                     onClick={() => { setShowFollowing(false); router.push(`/user/${fp.uid}`); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 border-b border-gray-50 active:bg-gray-50"
+                    className="w-full flex items-center gap-3 px-4 py-3 border-b border-forest-light/10 active:bg-forest-light/10"
                   >
                     <Avatar
                       photoURL={fp.photoURL}
@@ -341,8 +346,8 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
                       size={44}
                     />
                     <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-bold truncate">{fp.displayName}</p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-sm font-bold truncate text-white/90">{fp.displayName}</p>
+                      <p className="text-xs text-white/40">
                         {fp.mainMode && FOCUS_MODES.find((m) => m.id === fp.mainMode)?.description}
                         {fp.region && fp.showRegion !== false && ` · ${fp.region}`}
                       </p>

@@ -161,9 +161,8 @@ export default function HomePage() {
   const goalCleared = weeklyGoal > 0 && weeklyPostCount >= weeklyGoal;
 
   return (
-    <div className="pb-18 flex flex-col min-h-dvh">
+    <div className="h-dvh flex flex-col overflow-hidden pb-16">
       <NotificationToast show={!!toast} title={toast?.title || ""} body={toast?.body || ""} link={toast?.link} onDismiss={dismissToast} />
-      <AsciiWarn show={showWarn} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
 
       {phasePrompt && (
@@ -176,27 +175,19 @@ export default function HomePage() {
         />
       )}
 
-      {/* Notification permission banner */}
-      {showNotifBanner && (
-        <div className="mx-5 mt-3 bg-ocean-blue/10 border border-ocean-blue/20 rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="flex-1">
-            <p className="text-sm font-bold text-gray-800">Enable notifications</p>
-            <p className="text-xs text-gray-500">Get streak warnings before you lose your progress</p>
-          </div>
-          <button onClick={handleEnableNotifications} className="px-3 py-1.5 bg-ocean-blue text-white text-xs font-bold rounded-lg shrink-0">
-            Enable
-          </button>
-          <button onClick={dismissNotifBanner} className="text-gray-400 text-lg leading-none">×</button>
+      {/* ===== 1. Hero Header — Fixed, Day Count with polygon overlay ===== */}
+      <div className="shrink-0 relative text-white pb-10 px-6 rounded-b-[2rem] overflow-hidden" style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top, 0px))" }}>
+        {/* Polygon gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-orange via-accent-orange-light to-accent-orange-dark" />
+        {/* Geometric polygon overlays */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rotate-45" />
+          <div className="absolute bottom-0 -left-4 w-32 h-32 bg-white/8 rotate-12" />
+          <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-white/5 -rotate-30" />
         </div>
-      )}
-
-      {/* ===== 1. Hero Header — Day Count Only ===== */}
-      <div className="bg-gradient-to-br from-aussie-gold via-amber-500 to-orange-400 text-white pb-10 px-6 rounded-b-[2rem] relative overflow-hidden" style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top, 0px))" }}>
-        {/* Subtle background texture */}
-        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
         <div className="relative">
-          <p className="text-white/70 text-xs font-medium tracking-widest uppercase mb-4">
+          <p className="text-white/60 text-xs font-medium tracking-widest uppercase mb-4">
             {STATUS_LABELS[profile.status || "pre-departure"] ?? profile.status}
           </p>
 
@@ -206,30 +197,47 @@ export default function HomePage() {
             </span>
           </div>
 
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-white/50 text-sm mt-1">
             Hello, {profile.displayName}
           </p>
         </div>
       </div>
 
-      {/* ===== 2. Weekly Goal — Main Card (7 days fixed) ===== */}
-      <div className="px-5 -mt-6 relative z-10">
-        <div className={`rounded-2xl shadow-lg overflow-hidden transition-all duration-500 ${
+      {/* ===== Scrollable content ===== */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+
+      {/* Notification permission banner */}
+      {showNotifBanner && (
+        <div className="mx-5 mt-3 bg-forest-light/20 border border-forest-light/30 rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-bold text-white/90">Enable notifications</p>
+            <p className="text-xs text-white/50">Get streak warnings before you lose your progress</p>
+          </div>
+          <button onClick={handleEnableNotifications} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg shrink-0">
+            Enable
+          </button>
+          <button onClick={dismissNotifBanner} className="text-white/40 text-lg leading-none">×</button>
+        </div>
+      )}
+
+      {/* ===== 2. Weekly Goal — Material Card ===== */}
+      <div className="px-5 mt-3 relative z-10">
+        <div className={`card-material overflow-hidden transition-all duration-500 ${
           goalCleared
-            ? "ring-2 ring-aussie-gold/40 shadow-aussie-gold/15"
-            : "shadow-gray-200/80"
+            ? "ring-2 ring-accent-orange/40 shadow-accent-orange/15"
+            : ""
         }`}>
-          <div className={`px-5 pt-5 pb-5 ${goalCleared ? "bg-gradient-to-br from-amber-50/80 to-yellow-50/60" : "bg-white"}`}>
+          <div className={`px-5 pt-5 pb-5 ${goalCleared ? "bg-gradient-to-br from-amber-50/80 to-orange-50/40" : ""}`}>
             {/* Goal text + edit button top-right */}
             <div className="flex items-start justify-between mb-4">
               <div className="min-w-0 flex-1">
                 {profile.goal ? (
-                  <p className="text-base font-bold text-gray-800 leading-snug">{profile.goal}</p>
+                  <p className="text-base font-bold text-forest leading-snug">{profile.goal}</p>
                 ) : (
                   <p className="text-base text-gray-400 italic">No goal set</p>
                 )}
                 {goalCleared && (
-                  <span className="inline-block mt-1 text-[10px] font-black text-white bg-gradient-to-r from-aussie-gold to-amber-500 px-2.5 py-0.5 rounded-full shadow-sm">
+                  <span className="inline-block mt-1 text-[10px] font-black text-white bg-gradient-to-r from-accent-orange to-accent-orange-dark px-2.5 py-0.5 rounded-full shadow-sm">
                     Complete!
                   </span>
                 )}
@@ -248,14 +256,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ===== 3. XP / Level — Compact Row ===== */}
+      {/* ===== 3. XP / Level — Material Row ===== */}
       <div className="px-5 mt-3">
-        <div className="bg-white rounded-xl px-4 py-3 shadow-sm flex items-center gap-3">
-          <span className="text-lg font-black text-gray-800">Lv.{level}</span>
+        <div className="card-material px-4 py-3 flex items-center gap-3">
+          <span className="text-lg font-black text-forest">Lv.{level}</span>
           <div className="flex-1">
-            <div className="w-full bg-gray-100 rounded-full h-1.5">
+            <div className="w-full bg-forest/10 rounded-full h-1.5">
               <div
-                className="bg-gradient-to-r from-aussie-gold to-amber-400 h-1.5 rounded-full transition-all duration-700"
+                className="bg-gradient-to-r from-forest-mid to-lime h-1.5 rounded-full transition-all duration-700"
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
@@ -269,8 +277,8 @@ export default function HomePage() {
       {/* Goal text modal */}
       {showGoalInput && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-8" onClick={() => setShowGoalInput(false)}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-bold text-gray-800 mb-3">My Goal</p>
+          <div className="card-material p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-bold text-forest mb-3">My Goal</p>
             <label className="text-xs text-gray-500">What are you working towards?</label>
             <input
               type="text"
@@ -278,9 +286,11 @@ export default function HomePage() {
               value={goalTextDraft}
               onChange={(e) => setGoalTextDraft(sanitize(e.target.value))}
               placeholder="e.g. Improve my English skills"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-0.5 mb-4 focus:outline-none focus:ring-2 focus:ring-aussie-gold"
+              className="w-full border border-forest/20 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent-orange"
             />
-            <button onClick={handleSaveGoal} className="w-full bg-ocean-blue text-white font-bold text-sm py-2.5 rounded-xl">
+            <AsciiWarn show={showWarn} />
+            <div className="mb-4" />
+            <button onClick={handleSaveGoal} className="w-full bg-forest-mid text-white font-bold text-sm py-2.5 rounded-xl">
               Save
             </button>
           </div>
@@ -297,9 +307,9 @@ export default function HomePage() {
         <div className="px-5 mt-3 space-y-2">
           {adminConfig.announcements.filter((a) => a.active).map((ann, i) => {
             const colors = {
-              info: { bg: "bg-blue-50", border: "border-blue-100", title: "text-blue-700", dot: "bg-blue-400" },
-              warning: { bg: "bg-red-50", border: "border-red-100", title: "text-red-600", dot: "bg-red-400" },
-              event: { bg: "bg-amber-50", border: "border-amber-200", title: "text-amber-700", dot: "bg-amber-400" },
+              info: { bg: "bg-forest-light/10", border: "border-forest-light/20", title: "text-lime", dot: "bg-lime" },
+              warning: { bg: "bg-red-500/10", border: "border-red-500/20", title: "text-red-400", dot: "bg-red-400" },
+              event: { bg: "bg-accent-orange/10", border: "border-accent-orange/20", title: "text-accent-orange", dot: "bg-accent-orange" },
             };
             const c = colors[ann.type] || colors.info;
             return (
@@ -308,7 +318,7 @@ export default function HomePage() {
                   <span className={`w-2 h-2 rounded-full ${c.dot} mt-1 shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-bold ${c.title}`}>{ann.title}</p>
-                    {ann.body && <p className="text-xs text-gray-600 mt-0.5 leading-snug">{ann.body}</p>}
+                    {ann.body && <p className="text-xs text-white/60 mt-0.5 leading-snug">{ann.body}</p>}
                     {ann.linkUrl && (
                       <a
                         href={ann.linkUrl}
@@ -326,6 +336,8 @@ export default function HomePage() {
           })}
         </div>
       )}
+
+      </div>{/* end scrollable content */}
 
       <BottomNav />
     </div>

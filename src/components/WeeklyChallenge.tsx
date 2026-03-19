@@ -49,7 +49,7 @@ export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalClear
   const rank = RANK_COLORS[ws];
   const barGrad = BAR_GRADIENTS[ws];
   const completedBarGrad = ws === 0
-    ? "from-aussie-gold to-amber-300"
+    ? "from-accent-orange to-amber-300"
     : BAR_GRADIENTS[ws].replace(/\/\d+/g, "");
 
   return (
@@ -71,7 +71,7 @@ export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalClear
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
               <span className={`text-[10px] font-bold tabular-nums ${
-                filled ? rank.text || "text-aussie-gold" : isNext ? "text-gray-500" : "text-gray-300"
+                filled ? rank.text || "text-accent-orange" : isNext ? "text-gray-500" : "text-gray-300"
               }`}>
                 +{baseXp}
               </span>

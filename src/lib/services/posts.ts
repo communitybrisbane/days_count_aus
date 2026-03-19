@@ -79,6 +79,7 @@ interface CreatePostInput {
   dayNumber: number;
   visibility: "public" | "private";
   imageBlob: Blob | null;
+  tags?: string[];
 }
 
 export async function createPost(input: CreatePostInput): Promise<string> {
@@ -95,6 +96,7 @@ export async function createPost(input: CreatePostInput): Promise<string> {
     visibility: input.visibility,
     status: "active",
     reportCount: 0,
+    tags: input.tags || [],
     createdAt: serverTimestamp(),
     editableUntil: Timestamp.fromDate(editDeadline),
   });

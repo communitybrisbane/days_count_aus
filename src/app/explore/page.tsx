@@ -21,7 +21,6 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
 import { IconEucalyptus, FocusModeIcon, IconSearch } from "@/components/icons";
 import type { Post } from "@/types";
-import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 import { rankPosts, markSeen } from "@/lib/feedScore";
@@ -39,7 +38,9 @@ export default function ExplorePage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
+  const [searchTag, setSearchTag] = useState<string | null>(null);
   const snapContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
   const loadingRef = useRef(false);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,8 +81,13 @@ export default function ExplorePage() {
           newPosts = newPosts.filter((p) => searchUserIds.includes(p.userId));
         }
 
+        // Client-side filter by tag
+        if (searchTag) {
+          newPosts = newPosts.filter((p) => p.tags?.some((t) => t.toLowerCase().includes(searchTag)));
+        }
+
         // Score-based ranking (skip when searching — just show matches)
-        if (searchUserIds === null) {
+        if (searchUserIds === null && !searchTag) {
           newPosts = rankPosts(
             newPosts,
             following,
@@ -108,17 +114,27 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [filter, user, profile, privateData, following, searchUserIds]
+    [filter, user, profile, privateData, following, searchUserIds, searchTag]
   );
 
-  // Search handler — username (partial) or city/region
+  // Search handler — #tag, username (partial), or city/region
   const handleSearch = useCallback(async (q: string) => {
     const trimmed = q.trim().toLowerCase();
     if (!trimmed) {
       setSearchUserIds(null);
+      setSearchTag(null);
       return;
     }
 
+    // Tag search: starts with #
+    if (trimmed.startsWith("#")) {
+      setSearchUserIds(null);
+      setSearchTag(trimmed);
+      return;
+    }
+
+    // User/region search
+    setSearchTag(null);
     try {
       const usersRef = collection(db, "users");
       const snap = await getDocs(query(usersRef, limit(500)));
@@ -145,7 +161,7 @@ export default function ExplorePage() {
     lastDocRef.current = null;
     setHasMore(true);
     fetchPosts(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollAreaRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [fetchPosts]);
 
   useEffect(() => {
@@ -158,17 +174,19 @@ export default function ExplorePage() {
   }, [user, filter, fetchPosts]);
 
   useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
     const handleScroll = () => {
       if (
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 &&
+        el.scrollTop + el.clientHeight >= el.scrollHeight - 500 &&
         hasMore &&
         !loadingRef.current
       ) {
         fetchPosts();
       }
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
   }, [hasMore, fetchPosts]);
 
   const handleDelete = (postId: string) => {
@@ -201,10 +219,9 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="min-h-dvh pb-20">
-      <AsciiWarn show={showWarn} />
+    <div className="h-dvh flex flex-col overflow-hidden pb-16">
       <div
-        className="sticky top-0 bg-white z-10 border-b border-gray-100"
+        className="shrink-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         {/* Filter chips */}
@@ -212,9 +229,9 @@ export default function ExplorePage() {
           {/* Row 1: All + WH modes */}
           <div className="flex gap-1.5">
             <button
-              onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); }}
+              onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
               className={`flex-1 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
-                !filter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-500"
+                !filter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
               }`}
             >
               All
@@ -222,9 +239,9 @@ export default function ExplorePage() {
             {FOCUS_MODES.filter((m) => m.id === "enjoying" || m.id === "challenging").map((m) => (
               <button
                 key={m.id}
-                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
+                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filter === m.id ? "bg-aussie-gold text-white" : "bg-amber-50 text-amber-700"
+                  filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={14} /> {m.label}
@@ -236,9 +253,9 @@ export default function ExplorePage() {
             {FOCUS_MODES.filter((m) => m.id !== "enjoying" && m.id !== "challenging").map((m) => (
               <button
                 key={m.id}
-                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); }}
+                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
                 className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filter === m.id ? "bg-ocean-blue text-white" : "bg-blue-50 text-blue-700"
+                  filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={14} /> {m.label}
@@ -248,19 +265,20 @@ export default function ExplorePage() {
         </div>
         {/* Search bar */}
         <div className="px-4 pb-2">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
-            <IconSearch size={16} className="text-gray-400 shrink-0" />
+          <div className="flex items-center gap-2 bg-forest-light/20 rounded-full px-3 py-2">
+            <IconSearch size={16} className="text-white/40 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchInput(sanitize(e.target.value))}
-              placeholder="Search by city or username..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
+              placeholder="Search by city, username, or #tag..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder-white/30 text-white"
             />
+            {showWarn && <span className="text-red-400 text-[10px] font-bold shrink-0">English only</span>}
             {searchQuery && (
               <button
-                onClick={() => { setSearchQuery(""); setSearchUserIds(null); }}
-                className="text-gray-400 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
+                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
+                className="text-white/40 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
               >
                 &times;
               </button>
@@ -269,13 +287,13 @@ export default function ExplorePage() {
         </div>
       </div>
 
-      <div>
+      <div className="flex-1 overflow-y-auto scrollbar-hide" ref={scrollAreaRef}>
         {posts.length === 0 && !loadingPosts && (
           <div className="text-center py-20">
             <div className="mb-4">
-              <IconEucalyptus size={40} className="text-gray-400 mx-auto" />
+              <IconEucalyptus size={40} className="text-white/40 mx-auto" />
             </div>
-            <p className="text-gray-500">
+            <p className="text-white/60">
               {searchQuery ? "No posts found" : "Post your first entry and start counting!"}
             </p>
           </div>

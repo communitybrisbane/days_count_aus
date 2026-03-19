@@ -14,6 +14,7 @@ export interface Post {
   reportCount: number;
   createdAt: Timestamp;
   editableUntil: Timestamp;
+  tags?: string[];
 }
 
 export interface Group {

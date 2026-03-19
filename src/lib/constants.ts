@@ -8,6 +8,16 @@ export const FOCUS_MODES = [
 
 export type FocusModeId = (typeof FOCUS_MODES)[number]["id"];
 
+/** Hashtag suggestions per mode + shared tags */
+export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {
+  enjoying: ["#adventure", "#travel", "#beach", "#nature", "#roadtrip", "#sunset", "#camping", "#surfing", "#explore"],
+  challenging: ["#challenge", "#growth", "#hardwork", "#nevergiveup", "#grind", "#hustle", "#pushthrough", "#overcome"],
+  english: ["#english", "#study", "#ielts", "#vocabulary", "#speaking", "#listening", "#reading", "#conversation"],
+  skills: ["#skills", "#coding", "#cooking", "#barista", "#farming", "#resume", "#career", "#newskill", "#learning"],
+  "social-media": ["#sns", "#content", "#youtube", "#tiktok", "#instagram", "#blog", "#creator", "#editing", "#vlog"],
+};
+export const HASHTAG_MAX = 5;
+
 export const MILESTONES = [30, 100, 200, 365] as const;
 
 export const GRADIENTS = [
@@ -36,8 +46,8 @@ export const GROUP_NAME_MAX = 30;
 export const GOAL_MAX = 100;
 export const POST_IMAGE_SIZE = 1024;
 export const AVATAR_SIZE = 512;
-export const GROUP_JOIN_LEVEL = 13;
-export const GROUP_CREATE_LEVEL = 20;
+export const GROUP_JOIN_LEVEL = 2;
+export const GROUP_CREATE_LEVEL = 2;
 export const FIRST_POST_BONUS = 100;
 export const LIKE_SEND_XP = 5;
 export const LIKE_RECEIVE_XP = 10;

@@ -60,55 +60,52 @@ export default function EditPostPage() {
   if (expired) {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
-        <p className="text-gray-500">Edit window (5 min) has expired</p>
-        <button onClick={() => router.back()} className="mt-4 text-ocean-blue">Back</button>
+        <p className="text-white/60">Edit window (5 min) has expired</p>
+        <button onClick={() => router.back()} className="mt-4 text-accent-orange">Back</button>
       </div>
     );
   }
 
   return (
     <div className="min-h-dvh p-6">
-      <AsciiWarn show={showWarn} />
-      <h1 className="text-2xl font-bold mb-6">Edit Post</h1>
+      <h1 className="text-2xl font-bold mb-6 text-white/90">Edit Post</h1>
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Focus Mode</label>
+          <label className="text-sm font-medium text-white/80 mb-2 block">Focus Mode</label>
           <div className="flex gap-2">
-            {FOCUS_MODES.map((m) => {
-              const isWH = m.id === "enjoying" || m.id === "challenging";
-              return (
+            {FOCUS_MODES.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
-                className={`flex-1 flex flex-col items-center p-2 rounded-xl border-2 ${
+                className={`flex-1 flex flex-col items-center p-2 rounded-xl ${
                   mode === m.id
-                    ? isWH ? "border-aussie-gold bg-amber-50" : "border-ocean-blue bg-blue-50"
-                    : isWH ? "border-aussie-gold/20 bg-amber-50/30" : "border-ocean-blue/20 bg-blue-50/30"
+                    ? "bg-accent-orange text-white"
+                    : "bg-white text-forest-mid"
                 }`}
               >
                 <span className="text-xl">{m.icon}</span>
               </button>
-              );
-            })}
+            ))}
           </div>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-gray-700">Content</label>
+          <label className="text-sm font-medium text-white/80">Content</label>
           <textarea
             value={content}
             onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
             maxLength={POST_CONTENT_MAX}
             rows={6}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 mt-1 resize-none focus:outline-none focus:ring-2 focus:ring-aussie-gold"
+            className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-xl px-4 py-3 mt-1 resize-none focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30"
           />
-          <p className="text-[10px] text-gray-300 text-right mt-1">{content.length}/{POST_CONTENT_MAX}</p>
+          <AsciiWarn show={showWarn} />
+          <p className="text-[10px] text-white/30 text-right mt-1">{content.length}/{POST_CONTENT_MAX}</p>
         </div>
 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-aussie-gold text-white font-bold py-3 rounded-full disabled:opacity-50"
+          className="w-full bg-accent-orange text-white font-bold py-3 rounded-full disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save"}
         </button>

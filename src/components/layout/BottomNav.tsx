@@ -1,7 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Avatar from "@/components/Avatar";
 import { IconHome, IconDiary, IconCamera, IconGroup } from "@/components/icons";
@@ -13,50 +14,86 @@ interface BottomNavProps {
 
 export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps = {}) {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile, user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
 
+  const handlePostClick = () => {
+    // If already on post page, do nothing special
+    if (isActive("/post")) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+    if (file) {
+      // Store image in sessionStorage as data URL, then navigate
+      const reader = new FileReader();
+      reader.onload = () => {
+        sessionStorage.setItem("post_image", reader.result as string);
+        router.push("/post");
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // User cancelled file picker — navigate without image
+      sessionStorage.removeItem("post_image");
+      router.push("/post");
+    }
+  };
+
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-white border-t border-gray-100 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      {/* Hidden file input for post image */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelected}
+        className="hidden"
+      />
+
       <div className="flex items-center justify-around h-16 px-2">
         {/* HOME */}
         <Link href="/home" className="flex items-center justify-center w-14 h-14">
-          <IconHome size={26} className={isActive("/home") ? "text-aussie-gold" : "text-gray-400"} />
+          <IconHome size={26} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
         </Link>
 
         {/* EXPLORE */}
         {onExploreClick ? (
           <button onClick={onExploreClick} className="flex items-center justify-center w-14 h-14">
-            <IconDiary size={26} className="text-aussie-gold" />
+            <IconDiary size={26} className="text-accent-orange" />
           </button>
         ) : (
           <Link href="/explore" className="flex items-center justify-center w-14 h-14">
-            <IconDiary size={26} className={isActive("/explore") ? "text-aussie-gold" : "text-gray-400"} />
+            <IconDiary size={26} className={isActive("/explore") ? "text-accent-orange" : "text-white/40"} />
           </Link>
         )}
 
-        {/* POST — center floating */}
-        <Link href="/post" className="flex items-center justify-center -mt-6">
+        {/* POST — center floating, opens file picker first */}
+        <button onClick={handlePostClick} className="flex items-center justify-center -mt-6">
           <div
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg ${
-              isActive("/post") ? "bg-aussie-gold" : "bg-aussie-gold/90"
+            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-long ${
+              isActive("/post") ? "bg-gradient-to-br from-accent-orange to-accent-orange-dark" : "bg-gradient-to-br from-accent-orange-light to-accent-orange"
             }`}
           >
             <IconCamera size={28} className="text-white" />
           </div>
-        </Link>
+        </button>
 
         {/* GROUPS */}
         <Link href="/groups" className="flex items-center justify-center w-14 h-14">
-          <IconGroup size={26} className={isActive("/groups") ? "text-aussie-gold" : "text-gray-400"} />
+          <IconGroup size={26} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
         </Link>
 
         {/* MY */}
         {onMyClick ? (
           <button onClick={onMyClick} className="flex items-center justify-center w-14 h-14">
-            <div className="rounded-full ring-2 ring-aussie-gold">
+            <div className="rounded-full ring-2 ring-accent-orange">
               <Avatar
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName || "?"}
@@ -67,7 +104,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
           </button>
         ) : (
           <Link href="/mypage" className="flex items-center justify-center w-14 h-14">
-            <div className={`rounded-full ${isActive("/mypage") ? "ring-2 ring-aussie-gold" : ""}`}>
+            <div className={`rounded-full ${isActive("/mypage") ? "ring-2 ring-accent-orange" : ""}`}>
               <Avatar
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName || "?"}

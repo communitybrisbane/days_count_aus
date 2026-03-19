@@ -271,7 +271,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
           {loadingLikers ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-aussie-gold" />
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent-orange" />
             </div>
           ) : likers.length === 0 ? (
             <p className="text-center text-gray-400 py-8 text-sm">No likes yet</p>
@@ -383,7 +383,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
                 className={`text-[11px] px-2 py-0.5 rounded-full border shrink-0 ${
                   following.includes(post.userId)
                     ? "border-gray-200 text-gray-400"
-                    : "border-ocean-blue text-ocean-blue"
+                    : "border-forest-mid text-forest-mid"
                 }`}
               >
                 {following.includes(post.userId) ? "Following" : "Follow"}
@@ -396,7 +396,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {authorProfile?.region && authorProfile.showRegion !== false && (
-            <span className="text-[10px] bg-ocean-blue/10 text-ocean-blue px-2 py-0.5 rounded-full font-medium">
+            <span className="text-[10px] bg-forest-mid/10 text-forest-mid px-2 py-0.5 rounded-full font-medium">
               {authorProfile.region}
             </span>
           )}
@@ -432,6 +432,11 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         {(post.content) && (
           <p className="text-sm text-gray-700">
             {post.content}
+          </p>
+        )}
+        {post.tags && post.tags.length > 0 && (
+          <p className="text-xs text-accent-orange mt-1.5">
+            {post.tags.join(" ")}
           </p>
         )}
       </div>

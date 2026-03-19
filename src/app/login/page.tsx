@@ -30,27 +30,29 @@ export default function LoginPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-dvh">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aussie-gold" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-orange" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-dvh px-6 bg-gradient-to-b from-aussie-gold/10 to-white">
+    <div className="flex flex-col items-center justify-center min-h-dvh px-6 geo-bg">
       {/* Logo area */}
       <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-20 h-20 bg-aussie-gold rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-          <span className="text-white text-4xl font-black">C</span>
-        </div>
-        <h1 className="text-3xl font-black text-gray-900 mb-1">Days Count in AUS</h1>
-        <p className="text-base text-gray-500">Make Days Count</p>
+        <img
+          src="/icons/icon-192x192.png"
+          alt="Days Count"
+          className="w-24 h-24 rounded-2xl shadow-long mb-6"
+        />
+        <h1 className="text-2xl font-black text-white/90 mb-1 lowercase tracking-wide">days count.</h1>
+        <p className="text-sm text-white/50">count the days that count</p>
       </div>
 
       {/* Bottom CTA */}
       <div className="w-full pb-10">
         <button
           onClick={handleLogin}
-          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm active:scale-[0.98] transition-transform"
+          className="w-full flex items-center justify-center gap-3 bg-white/95 border border-white/20 rounded-2xl px-6 py-4 shadow-long active:scale-[0.98] transition-transform"
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -63,11 +65,11 @@ export default function LoginPage() {
 
         {/* Legal links */}
         <div className="mt-4 text-center">
-          <p className="text-[11px] text-gray-400 leading-relaxed">
+          <p className="text-[11px] text-white/40 leading-relaxed">
             By signing in, you agree to our{" "}
-            <button onClick={() => setShowTerms(true)} className="text-aussie-gold underline">Terms</button>,{" "}
-            <button onClick={() => setShowPrivacy(true)} className="text-aussie-gold underline">Privacy Policy</button>, and{" "}
-            <button onClick={() => setShowTokusho(true)} className="text-aussie-gold underline">Legal Notice</button>.
+            <button onClick={() => setShowTerms(true)} className="text-accent-orange underline">Terms</button>,{" "}
+            <button onClick={() => setShowPrivacy(true)} className="text-accent-orange underline">Privacy Policy</button>, and{" "}
+            <button onClick={() => setShowTokusho(true)} className="text-accent-orange underline">Legal Notice</button>.
           </p>
         </div>
       </div>

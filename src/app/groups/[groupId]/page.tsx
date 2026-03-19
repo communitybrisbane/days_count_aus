@@ -32,7 +32,6 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { FocusModeIcon, IconHeart, IconCamera, IconEdit } from "@/components/icons";
 import type { Group } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
-import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 interface Message {
@@ -260,8 +259,8 @@ export default function GroupChatPage() {
   if (group.isClosed) {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
-        <p className="text-gray-500">This community has been disbanded</p>
-        <button onClick={() => router.push("/groups")} className="mt-4 text-ocean-blue">
+        <p className="text-white/60">This community has been disbanded</p>
+        <button onClick={() => router.push("/groups")} className="mt-4 text-accent-orange">
           Back to Community
         </button>
       </div>
@@ -270,11 +269,10 @@ export default function GroupChatPage() {
 
   return (
     <div className="flex flex-col min-h-dvh">
-      <AsciiWarn show={showWarn} />
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="sticky top-0 bg-forest/95 backdrop-blur-md border-b border-forest-light/20 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/groups")} className="w-10 h-10 flex items-center justify-center text-gray-400 text-xl -ml-2">
+          <button onClick={() => router.push("/groups")} className="w-10 h-10 flex items-center justify-center text-white/60 text-xl -ml-2">
             ←
           </button>
           {/* Group icon — leader can tap to change */}
@@ -282,14 +280,14 @@ export default function GroupChatPage() {
             {group.iconUrl ? (
               <img src={group.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <FocusModeIcon modeId={group.mode || "challenging"} size={22} className="text-gray-500" />
+              <div className="w-10 h-10 rounded-full bg-forest-light/30 flex items-center justify-center">
+                <FocusModeIcon modeId={group.mode || "challenging"} size={22} className="text-white/60" />
               </div>
             )}
             {isLeader && (
               <button
                 onClick={() => iconInputRef.current?.click()}
-                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-aussie-gold flex items-center justify-center"
+                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent-orange flex items-center justify-center"
               >
                 <IconCamera size={11} className="text-white" />
               </button>
@@ -299,15 +297,15 @@ export default function GroupChatPage() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="font-bold text-sm truncate">{group.groupName}</h1>
+              <h1 className="font-bold text-sm truncate text-white/90">{group.groupName}</h1>
               {group.isOfficial && (
-                <span className="text-[10px] bg-aussie-gold text-white px-1.5 py-0.5 rounded-full shrink-0">Official</span>
+                <span className="text-[10px] bg-accent-orange text-white px-1.5 py-0.5 rounded-full shrink-0">Official</span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5 text-xs text-white/50">
               {modeInfo && (
                 <span className="flex items-center gap-0.5">
-                  <FocusModeIcon modeId={modeInfo.id} size={10} className="text-gray-400" />
+                  <FocusModeIcon modeId={modeInfo.id} size={10} className="text-white/50" />
                   {modeInfo.description}
                 </span>
               )}
@@ -317,41 +315,41 @@ export default function GroupChatPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             {isLeader && (
-              <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="w-10 h-10 flex items-center justify-center text-gray-400">
+              <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="w-10 h-10 flex items-center justify-center text-white/50">
                 <IconEdit size={20} />
               </button>
             )}
             {isOfficial ? (
-              <span className="text-xs bg-aussie-gold text-white px-2.5 py-1 rounded-full">Official</span>
+              <span className="text-xs bg-accent-orange text-white px-2.5 py-1 rounded-full">Official</span>
             ) : isMember ? (
               <button onClick={() => setShowLeaveModal(true)} className="text-sm text-red-400 px-2 py-1">Leave</button>
             ) : !isFull && userLevel >= 5 ? (
-              <button onClick={handleJoinAttempt} className="bg-aussie-gold text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1">
+              <button onClick={handleJoinAttempt} className="bg-accent-orange text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1">
                 Join
               </button>
             ) : !isFull && userLevel < 5 ? (
-              <span className="text-xs text-gray-400">Lv.5+</span>
+              <span className="text-xs text-white/40">Lv.5+</span>
             ) : null}
           </div>
         </div>
 
         {/* Goal banner */}
         {group.goal ? (
-          <div className="mt-2 bg-amber-50 rounded-lg px-3 py-1.5 border border-aussie-gold/20">
-            <p className="text-[10px] font-bold text-aussie-gold mb-0.5">Goal / Rules</p>
-            <p className="text-xs text-gray-600 leading-snug">{group.goal}</p>
+          <div className="mt-2 bg-forest-light/20 rounded-lg px-3 py-1.5 border border-accent-orange/20">
+            <p className="text-[10px] font-bold text-accent-orange mb-0.5">Goal / Rules</p>
+            <p className="text-xs text-white/70 leading-snug">{group.goal}</p>
           </div>
         ) : (
-          <div className="mt-2 bg-gray-50 rounded-lg px-3 py-2 border border-dashed border-gray-300">
+          <div className="mt-2 bg-forest-light/10 rounded-lg px-3 py-2 border border-dashed border-white/20">
             {isLeader ? (
               <button
                 onClick={() => { setEditGoal(""); setShowSettings(true); }}
-                className="w-full text-xs text-gray-400 text-center"
+                className="w-full text-xs text-white/40 text-center"
               >
                 Set community goals & rules →
               </button>
             ) : (
-              <p className="text-xs text-gray-400 text-center">No community goals or rules set yet</p>
+              <p className="text-xs text-white/40 text-center">No community goals or rules set yet</p>
             )}
           </div>
         )}
@@ -365,12 +363,12 @@ export default function GroupChatPage() {
                 <div key={uid} className="flex flex-col items-center min-w-[56px]">
                   <button onClick={() => router.push(uid === user?.uid ? "/mypage" : `/user/${uid}`)} className="flex flex-col items-center">
                     <Avatar photoURL={mp?.photoURL} displayName={mp?.displayName || "?"} uid={uid} size={44} />
-                    <span className="text-[10px] text-gray-500 truncate max-w-[56px] mt-0.5">
+                    <span className="text-[10px] text-white/60 truncate max-w-[56px] mt-0.5">
                       {mp?.displayName || "..."}
                     </span>
                   </button>
                   {group.creatorId === uid && (
-                    <span className="text-[8px] text-aussie-gold">Leader</span>
+                    <span className="text-[8px] text-accent-orange">Leader</span>
                   )}
                   {isLeader && uid !== user?.uid && (
                     <button onClick={() => handleKick(uid)} className="text-[8px] text-red-400">kick</button>
@@ -396,13 +394,13 @@ export default function GroupChatPage() {
                 maxLength={200}
                 rows={3}
                 placeholder="Write your community's goals or rules"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold resize-none"
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none"
               />
               <p className="text-[10px] text-gray-300 text-right mb-3">{editGoal.length}/200</p>
               <button
                 onClick={handleSaveSettings}
                 disabled={savingSettings}
-                className="w-full bg-aussie-gold text-white font-bold py-2.5 rounded-full disabled:opacity-50"
+                className="w-full bg-accent-orange text-white font-bold py-2.5 rounded-full disabled:opacity-50"
               >
                 {savingSettings ? "Saving..." : "Save"}
               </button>
@@ -441,16 +439,16 @@ export default function GroupChatPage() {
             return (
               <div key={msg.id} className="flex justify-end items-end gap-1.5">
                 <div className="flex flex-col items-end">
-                  <div className="bg-aussie-gold text-white px-3 py-2 rounded-2xl rounded-br-md text-sm max-w-[65vw]">
+                  <div className="bg-accent-orange text-white px-3 py-2 rounded-2xl rounded-br-md text-sm max-w-[65vw]">
                     {msg.text}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
-                      <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-gray-300"}`}>
+                      <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
                         <IconHeart size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
                       </span>
                     </button>
-                    {timeStr && <span className="text-[10px] text-gray-300">{timeStr}</span>}
+                    {timeStr && <span className="text-[10px] text-white/30">{timeStr}</span>}
                   </div>
                 </div>
               </div>
@@ -461,8 +459,8 @@ export default function GroupChatPage() {
             <div key={msg.id} className="flex items-start gap-2">
               {/* Avatar */}
               {isDeleted ? (
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                  <span className="text-gray-400 text-xs">?</span>
+                <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0">
+                  <span className="text-white/40 text-xs">?</span>
                 </div>
               ) : (
                 <button onClick={() => router.push(`/user/${msg.senderId}`)} className="shrink-0">
@@ -472,22 +470,22 @@ export default function GroupChatPage() {
               {/* Name + Bubble + Time */}
               <div className="flex flex-col min-w-0">
                 {isDeleted ? (
-                  <span className="text-[10px] text-gray-300 mb-0.5 italic">Deleted Account</span>
+                  <span className="text-[10px] text-white/30 mb-0.5 italic">Deleted Account</span>
                 ) : (
-                  <button onClick={() => router.push(`/user/${msg.senderId}`)} className="text-[10px] text-gray-500 font-medium mb-0.5 text-left active:text-ocean-blue truncate max-w-[50vw]">
+                  <button onClick={() => router.push(`/user/${msg.senderId}`)} className="text-[10px] text-white/60 font-medium mb-0.5 text-left active:text-accent-orange truncate max-w-[50vw]">
                     {sender?.displayName || "..."}
                   </button>
                 )}
-                <div className="bg-gray-100 text-gray-800 px-3 py-2 rounded-2xl rounded-bl-md text-sm max-w-[65vw] w-fit">
+                <div className="bg-forest-light/20 text-white/90 px-3 py-2 rounded-2xl rounded-bl-md text-sm max-w-[65vw] w-fit">
                   {msg.text}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
-                    <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-gray-300"}`}>
+                    <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
                       <IconHeart size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
                     </span>
                   </button>
-                  {timeStr && <span className="text-[10px] text-gray-300">{timeStr}</span>}
+                  {timeStr && <span className="text-[10px] text-white/30">{timeStr}</span>}
                 </div>
               </div>
             </div>
@@ -498,7 +496,9 @@ export default function GroupChatPage() {
 
       {/* Input */}
       {isMember && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-3 flex gap-2">
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-3">
+          {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
+          <div className="flex gap-2">
           <input
             type="text"
             value={text}
@@ -506,15 +506,16 @@ export default function GroupChatPage() {
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={`Message (${MESSAGE_CHAR_LIMIT} chars max)`}
             maxLength={MESSAGE_CHAR_LIMIT}
-            className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold"
+            className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange"
           />
           <button
             onClick={handleSend}
             disabled={!text.trim()}
-            className="bg-aussie-gold text-white rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
+            className="bg-accent-orange text-white rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
           >
             Send
           </button>
+          </div>
         </div>
       )}
     </div>

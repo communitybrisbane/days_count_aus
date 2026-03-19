@@ -6,7 +6,7 @@ interface LoadingSpinnerProps {
 export default function LoadingSpinner({ fullScreen = false, size = "md" }: LoadingSpinnerProps) {
   const sizeClass = size === "sm" ? "h-6 w-6" : "h-8 w-8";
   const spinner = (
-    <div className={`animate-spin rounded-full ${sizeClass} border-b-2 border-aussie-gold`} />
+    <div className={`animate-spin rounded-full ${sizeClass} border-b-2 border-accent-orange`} />
   );
 
   if (fullScreen) {

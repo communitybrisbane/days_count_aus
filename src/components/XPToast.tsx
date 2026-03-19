@@ -23,7 +23,7 @@ export default function XPToast({ xp, show }: XPToastProps) {
               initial={{ rotate: -20, scale: 0.5 }}
               animate={{ rotate: 0, scale: 1 }}
               transition={{ type: "spring", delay: 0.1 }}
-              className="text-aussie-gold font-black text-lg"
+              className="text-accent-orange font-black text-lg"
             >
               +{xp}
             </motion.span>

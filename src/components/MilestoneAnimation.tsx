@@ -43,14 +43,14 @@ export default function MilestoneAnimation({ dayNumber, show, onClose }: Milesto
               transition={{ duration: 0.5, delay: 0.3 }}
               className="text-7xl mb-4"
             >
-              <MilestoneIcon dayNumber={dayNumber} size={72} className="text-aussie-gold" />
+              <MilestoneIcon dayNumber={dayNumber} size={72} className="text-accent-orange" />
             </motion.div>
 
             <motion.h2
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="text-3xl font-black text-aussie-gold mb-2"
+              className="text-3xl font-black text-accent-orange mb-2"
             >
               D + {dayNumber}
             </motion.h2>
@@ -71,7 +71,7 @@ export default function MilestoneAnimation({ dayNumber, show, onClose }: Milesto
             >
               <button
                 onClick={onClose}
-                className="mt-6 bg-aussie-gold text-white font-bold px-8 py-3 rounded-full"
+                className="mt-6 bg-accent-orange text-white font-bold px-8 py-3 rounded-full"
               >
                 <span className="flex items-center gap-1.5">Keep Going! <IconBoomerang size={18} className="text-white" /></span>
               </button>

@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 @theme inline {
+  --color-forest: #1A3C2E;
+  --color-forest-mid: #2D6B4F;
+  --color-forest-light: #3A7D5E;
+  --color-lime: #66BB6A;
+  --color-accent-orange: #FF6D00;
+  --color-accent-orange-light: #FF8C00;
+  --color-accent-orange-dark: #E65100;
   --color-aussie-gold: #FFB800;
   --color-ocean-blue: #0077BE;
   --color-outback-clay: #B85C38;
@@ -12,10 +19,71 @@
 }
 
 body {
-  background: var(--color-sand-beige);
+  background: var(--color-forest);
   color: var(--color-foreground);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100dvh;
+}
+
+/* ===== Geometric green background ===== */
+.geo-bg {
+  position: relative;
+  background: linear-gradient(135deg, #1A3C2E 0%, #245A42 30%, #2D6B4F 50%, #3A7D5E 70%, #1A3C2E 100%);
+}
+.geo-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    /* Large diagonal polygon overlays */
+    linear-gradient(135deg, transparent 25%, rgba(45, 107, 79, 0.4) 25%, rgba(45, 107, 79, 0.4) 50%, transparent 50%) 0 0 / 120px 120px,
+    linear-gradient(225deg, transparent 25%, rgba(58, 125, 94, 0.3) 25%, rgba(58, 125, 94, 0.3) 50%, transparent 50%) 0 0 / 180px 180px,
+    linear-gradient(315deg, transparent 30%, rgba(36, 90, 66, 0.35) 30%, rgba(36, 90, 66, 0.35) 60%, transparent 60%) 60px 60px / 200px 200px,
+    linear-gradient(45deg, transparent 40%, rgba(102, 187, 106, 0.12) 40%, rgba(102, 187, 106, 0.12) 60%, transparent 60%) 0 0 / 160px 160px;
+  pointer-events: none;
+  z-index: 0;
+}
+.geo-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Linen / canvas texture */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23ffffff' opacity='0.02'/%3E%3Crect width='1' height='1' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.geo-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Material card style */
+.card-material {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1rem;
+  box-shadow:
+    0 2px 8px rgba(26, 60, 46, 0.12),
+    0 4px 16px rgba(26, 60, 46, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+}
+
+/* Long shadow style (45 degrees bottom-left) */
+.shadow-long {
+  box-shadow:
+    2px 2px 4px rgba(26, 60, 46, 0.15),
+    4px 4px 8px rgba(26, 60, 46, 0.1),
+    8px 8px 16px rgba(26, 60, 46, 0.05);
+}
+
+/* Polygon clip accent — angled cut on right */
+.clip-polygon {
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
+}
+
+/* Polygon clip accent — angled cut on left */
+.clip-polygon-left {
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%);
 }
 
 /* Hide scrollbars globally */

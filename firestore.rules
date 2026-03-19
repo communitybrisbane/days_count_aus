@@ -72,7 +72,7 @@ service cloud.firestore {
       allow create: if isAuth()
                      && request.resource.data.userId == request.auth.uid
                      && request.resource.data.content is string
-                     && request.resource.data.content.size() >= 1
+                     && request.resource.data.content.size() >= 0
                      && request.resource.data.content.size() <= 500
                      && request.resource.data.status == 'active'
                      && request.resource.data.reportCount == 0
@@ -272,9 +272,9 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Legal documents (Terms, Privacy, Legal Notice) — editable via Firebase Console only
+    // Legal documents (Terms, Privacy, Legal Notice) — public read, editable via Firebase Console only
     match /legal_docs/{docId} {
-      allow read: if isAuth();
+      allow read: if true;
       allow write: if false;
     }
   }

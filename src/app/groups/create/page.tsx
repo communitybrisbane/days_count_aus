@@ -43,8 +43,8 @@ export default function CreateGroupPage() {
   if (!profile || calculateLevel(profile.totalXP) < 5) {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
-        <p className="text-gray-500">Reach Lv.5 to create a group</p>
-        <button onClick={() => router.back()} className="mt-4 text-ocean-blue">
+        <p className="text-white/60">Reach Lv.5 to create a group</p>
+        <button onClick={() => router.back()} className="mt-4 text-accent-orange">
           Back
         </button>
       </div>
@@ -70,9 +70,9 @@ export default function CreateGroupPage() {
   if (isAlreadyLeader) {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
-        <p className="text-gray-500">You can only lead 1 group</p>
-        <p className="text-xs text-gray-400 mt-1">Transfer or disband your current group first</p>
-        <button onClick={() => router.back()} className="mt-4 text-ocean-blue">
+        <p className="text-white/60">You can only lead 1 group</p>
+        <p className="text-xs text-white/40 mt-1">Transfer or disband your current group first</p>
+        <button onClick={() => router.back()} className="mt-4 text-accent-orange">
           Back
         </button>
       </div>
@@ -147,24 +147,23 @@ export default function CreateGroupPage() {
 
   return (
     <div className="min-h-dvh p-6">
-      <AsciiWarn show={showWarn} />
-      <h1 className="text-2xl font-bold mb-6">Create Community</h1>
+      <h1 className="text-2xl font-bold mb-6 text-white/90">Create Community</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Group Icon */}
         <div className="flex flex-col items-center">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-white/80 mb-2">
             Group Icon
           </label>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden active:border-aussie-gold transition-colors"
+            className="w-20 h-20 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden active:border-accent-orange transition-colors"
           >
             {iconPreview ? (
               <img src={iconPreview} alt="Icon" className="w-full h-full object-cover" />
             ) : (
-              <IconCamera size={28} className="text-gray-400" />
+              <IconCamera size={28} className="text-white/40" />
             )}
           </button>
           <input
@@ -178,7 +177,7 @@ export default function CreateGroupPage() {
             <button
               type="button"
               onClick={() => { setIconBlob(null); setIconPreview(""); }}
-              className="text-xs text-gray-400 mt-1"
+              className="text-xs text-white/40 mt-1"
             >
               Remove
             </button>
@@ -186,7 +185,7 @@ export default function CreateGroupPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             Group Name <span className="text-red-400">*</span>
           </label>
           <input
@@ -194,47 +193,45 @@ export default function CreateGroupPage() {
             maxLength={GROUP_NAME_MAX}
             value={groupName}
             onChange={(e) => setGroupName(sanitize(e.target.value))}
-            className={`w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-aussie-gold ${
-              groupNameError ? "border-red-400" : "border-gray-300"
+            className={`w-full border rounded-lg px-4 py-3 bg-forest-light/10 text-white focus:outline-none focus:ring-2 focus:ring-accent-orange ${
+              groupNameError ? "border-red-400" : "border-forest-light/30"
             }`}
             required
           />
+          <AsciiWarn show={showWarn} />
           {groupNameError ? (
             <p className="text-xs text-red-400 mt-1">{groupNameError}</p>
           ) : (
-            <p className="text-xs text-gray-400 mt-1 text-right">{groupName.length}/30</p>
+            <p className="text-xs text-white/40 mt-1 text-right">{groupName.length}/30</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-white/80 mb-2">
             Focus Mode <span className="text-red-400">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {FOCUS_MODES.map((m) => {
-              const isWH = m.id === "enjoying" || m.id === "challenging";
-              return (
+            {FOCUS_MODES.map((m) => (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => setMode(m.id)}
-                className={`flex flex-col items-center p-3 rounded-xl border-2 ${
+                className={`flex flex-col items-center p-3 rounded-xl ${
                   mode === m.id
-                    ? isWH ? "border-aussie-gold bg-amber-50" : "border-ocean-blue bg-blue-50"
-                    : isWH ? "border-aussie-gold/20 bg-amber-50/30" : "border-ocean-blue/20 bg-blue-50/30"
+                    ? "bg-accent-orange text-white"
+                    : "bg-white text-forest-mid"
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={24} />
-                <span className="text-xs text-gray-600">{m.description}</span>
+                <span className="text-xs">{m.description}</span>
               </button>
-              );
-            })}
+            ))}
           </div>
         </div>
 
         {/* Goal / Memo */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-white/80 mb-1">
             Goal / Rules
           </label>
           <textarea
@@ -243,15 +240,15 @@ export default function CreateGroupPage() {
             maxLength={200}
             rows={3}
             placeholder="What's the group's goal or rules?"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-aussie-gold resize-none"
+            className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
           />
-          <p className="text-xs text-gray-400 mt-1 text-right">{goal.length}/200</p>
+          <p className="text-xs text-white/40 mt-1 text-right">{goal.length}/200</p>
         </div>
 
         <button
           type="submit"
           disabled={submitting || !groupName.trim() || !mode || !!groupNameError}
-          className="w-full bg-aussie-gold text-white font-bold py-3 rounded-full disabled:opacity-50"
+          className="w-full bg-accent-orange text-white font-bold py-3 rounded-full disabled:opacity-50"
         >
           {submitting ? "Creating..." : "Create"}
         </button>

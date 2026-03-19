@@ -64,7 +64,7 @@ export default function PublicProfilePage() {
   if (!userData) {
     return (
       <div className="flex items-center justify-center min-h-dvh">
-        <p className="text-gray-400">User not found</p>
+        <p className="text-white/40">User not found</p>
       </div>
     );
   }
@@ -84,33 +84,41 @@ export default function PublicProfilePage() {
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト（myタブと統一） */}
       <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        {/* Geometric background for profile header */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-forest-light/15 rotate-45" />
+          <div className="absolute bottom-0 -left-6 w-36 h-36 bg-forest-mid/10 -rotate-12" />
+        </div>
+
         {/* 戻るボタン — 右上 */}
-        <button onClick={() => router.back()} className="absolute top-0 right-3 text-gray-400 w-10 h-10 flex items-center justify-center" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.back()} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
           ×
         </button>
 
-        <div className="flex flex-col items-center pt-10">
+        <div className="flex flex-col items-center pt-10 relative">
           {/* アバター */}
-          <Avatar
-            photoURL={userData.photoURL}
-            displayName={userData.displayName}
-            uid={userData.uid}
-            size={96}
-          />
+          <div className="ring-3 ring-accent-orange/40 rounded-full">
+            <Avatar
+              photoURL={userData.photoURL}
+              displayName={userData.displayName}
+              uid={userData.uid}
+              size={96}
+            />
+          </div>
 
           {/* 名前 */}
-          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center">{userData.displayName}</h2>
+          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center text-white/90">{userData.displayName}</h2>
 
           {/* モード・地域 — 横並び */}
           <div className="flex items-center justify-center gap-1.5 mt-2">
             {userData.mainMode && (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
                 <FocusModeIcon modeId={userData.mainMode} size={12} />
                 {FOCUS_MODES.find((m) => m.id === userData.mainMode)?.description}
               </span>
             )}
             {userData.region && userData.showRegion !== false && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
                 {userData.region}
               </span>
             )}
@@ -118,22 +126,22 @@ export default function PublicProfilePage() {
 
           {/* ゴール */}
           {userData.goal && (
-            <p className="text-lg font-bold text-gray-700 mt-2 text-center max-w-[85%] leading-snug">{userData.goal}</p>
+            <p className="text-lg font-bold text-white/80 mt-2 text-center max-w-[85%] leading-snug">{userData.goal}</p>
           )}
 
           {/* Likes / Streak / Following */}
           <div className="flex gap-8 mt-4 text-center">
             <div>
-              <p className="font-bold text-base">{totalLikes}</p>
-              <p className="text-[11px] text-gray-400">Likes</p>
+              <p className="font-bold text-base text-white/90">{totalLikes}</p>
+              <p className="text-[11px] text-white/40">Likes</p>
             </div>
             <div>
-              <p className="font-bold text-base">{streak}</p>
-              <p className="text-[11px] text-gray-400">Streak</p>
+              <p className="font-bold text-base text-white/90">{streak}</p>
+              <p className="text-[11px] text-white/40">Streak</p>
             </div>
             <div>
-              <p className="font-bold text-base">{followingCount}</p>
-              <p className="text-[11px] text-gray-400">Following</p>
+              <p className="font-bold text-base text-white/90">{followingCount}</p>
+              <p className="text-[11px] text-white/40">Following</p>
             </div>
           </div>
 
@@ -160,8 +168,8 @@ export default function PublicProfilePage() {
                 }}
                 className={`px-6 py-1.5 rounded-full text-sm font-bold ${
                   following.includes(uid)
-                    ? "border border-gray-300 text-gray-500"
-                    : "bg-ocean-blue text-white"
+                    ? "border border-white/30 text-white/60"
+                    : "bg-forest-mid text-white"
                 }`}
               >
                 {following.includes(uid) ? "Following" : "Follow"}
@@ -180,7 +188,7 @@ export default function PublicProfilePage() {
               ) : (
                 <button
                   onClick={() => setShowBlockModal(true)}
-                  className="p-1.5 rounded-full border border-gray-200 text-gray-400 active:bg-gray-100"
+                  className="p-1.5 rounded-full border border-white/20 text-white/40 active:bg-forest-light/20"
                 >
                   <IconBan size={14} />
                 </button>
@@ -191,37 +199,34 @@ export default function PublicProfilePage() {
       </div>
 
       {/* モードアイコン — 投稿のすぐ上 */}
-      <div className="flex justify-around px-4 py-4 bg-white/80">
+      <div className="flex justify-around px-4 py-4 bg-forest/50">
         <button
           onClick={() => setModeFilter("")}
           className={`w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold ${
-            !modeFilter ? "bg-aussie-gold text-white" : "bg-gray-100 text-gray-400"
+            !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
           }`}
         >
           All
         </button>
-        {FOCUS_MODES.map((m) => {
-          const isWH = m.id === "enjoying" || m.id === "challenging";
-          return (
+        {FOCUS_MODES.map((m) => (
           <button
             key={m.id}
             onClick={() => setModeFilter(m.id)}
             className={`w-14 h-14 rounded-full flex items-center justify-center ${
               modeFilter === m.id
-                ? isWH ? "bg-aussie-gold/15 ring-2 ring-aussie-gold" : "bg-ocean-blue/15 ring-2 ring-ocean-blue"
-                : isWH ? "bg-amber-50" : "bg-blue-50"
+                ? "bg-accent-orange"
+                : "bg-white"
             }`}
           >
-            <FocusModeIcon modeId={m.id} size={33} />
+            <FocusModeIcon modeId={m.id} size={33} className={modeFilter === m.id ? "text-white" : "text-forest-mid"} />
           </button>
-          );
-        })}
+        ))}
       </div>
 
       {/* 投稿グリッド */}
       <div className="flex-1 min-h-0">
         {filteredPosts.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
+          <p className="text-center text-white/40 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
         ) : (
           <div className="grid grid-cols-4">
             {filteredPosts.map((post, idx) => {
