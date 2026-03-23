@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTokusho, setShowTokusho] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -47,9 +48,26 @@ export default function LoginPage() {
 
       {/* Bottom CTA */}
       <div className="w-full pb-10">
+        {/* Agreement checkbox */}
+        <label className="flex items-start gap-2.5 mb-4 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded border-white/30 accent-accent-orange shrink-0"
+          />
+          <span className="text-[11px] text-white/50 leading-relaxed">
+            <button onClick={() => setShowTerms(true)} className="text-accent-orange underline">Terms</button>,{" "}
+            <button onClick={() => setShowPrivacy(true)} className="text-accent-orange underline">Privacy Policy</button>,{" "}
+            <button onClick={() => setShowTokusho(true)} className="text-accent-orange underline">Legal Notice</button>{" "}
+            に同意します / I agree
+          </span>
+        </label>
+
         <button
           onClick={handleLogin}
-          className="w-full flex items-center justify-center gap-3 bg-white/95 border border-white/20 rounded-2xl px-6 py-4 shadow-long active:scale-[0.98] transition-transform"
+          disabled={!agreed}
+          className="w-full flex items-center justify-center gap-3 bg-white/95 border border-white/20 rounded-2xl px-6 py-4 shadow-long active:scale-[0.98] transition-transform disabled:opacity-40 disabled:active:scale-100"
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -59,16 +77,6 @@ export default function LoginPage() {
           </svg>
           <span className="text-gray-800 font-semibold text-base">Sign in with Google</span>
         </button>
-
-        {/* Legal links */}
-        <div className="mt-4 text-center">
-          <p className="text-[11px] text-white/40 leading-relaxed">
-            By signing in, you agree to our{" "}
-            <button onClick={() => setShowTerms(true)} className="text-accent-orange underline">Terms</button>,{" "}
-            <button onClick={() => setShowPrivacy(true)} className="text-accent-orange underline">Privacy Policy</button>, and{" "}
-            <button onClick={() => setShowTokusho(true)} className="text-accent-orange underline">Legal Notice</button>.
-          </p>
-        </div>
       </div>
 
       {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
