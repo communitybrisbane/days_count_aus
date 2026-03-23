@@ -90,10 +90,10 @@ export default function MyPage() {
   };
 
   return (
-    <div className="h-dvh pb-16 flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト with geometric bg */}
-      <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
         {/* Geometric background for profile header */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-10 -right-10 w-48 h-48 bg-forest-light/15 rotate-45" />
@@ -101,11 +101,11 @@ export default function MyPage() {
         </div>
 
         {/* 設定アイコン — 右上 */}
-        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
           <IconSettings size={24} />
         </button>
 
-        <div className="flex flex-col items-center pt-10 relative">
+        <div className="flex flex-col items-center pt-8 relative">
           {/* アバター */}
           <div className="ring-3 ring-accent-orange/40 rounded-full">
             <Avatar
@@ -117,7 +117,7 @@ export default function MyPage() {
           </div>
 
           {/* 名前 */}
-          <h2 className="text-xl font-bold mt-3 truncate max-w-[80%] text-center text-white/90">{profile.displayName}</h2>
+          <h2 className="text-xl font-bold mt-2 truncate max-w-[80%] text-center text-white/90">{profile.displayName}</h2>
 
           {/* モード・地域 — 横並び */}
           <div className="flex items-center justify-center gap-1.5 mt-2">
@@ -139,7 +139,7 @@ export default function MyPage() {
           )}
 
           {/* Likes / Streak / Following */}
-          <div className="flex gap-8 mt-4 text-center">
+          <div className="flex gap-8 mt-3 text-center">
             <div>
               <p className="font-bold text-base text-white/90">{posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
               <p className="text-[11px] text-white/40">Likes</p>
@@ -156,14 +156,14 @@ export default function MyPage() {
 
           {/* Groups */}
           {userGroups.length > 0 && (
-            <div className="flex gap-3 mt-4 w-full justify-center">
+            <div className="flex gap-3 mt-3 w-full justify-center">
               {userGroups.map((g) => {
                 const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(g.mode || ""));
                 return (
                   <button
                     key={g.id}
                     onClick={() => router.push(`/groups/${g.id}`)}
-                    className="flex flex-col items-center gap-1.5 bg-forest-light/20 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/30 transition-colors"
+                    className="flex flex-col items-center gap-1.5 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/20 transition-colors"
                   >
                     {g.iconUrl ? (
                       <img src={g.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -185,10 +185,10 @@ export default function MyPage() {
       </div>
 
       {/* モードアイコン — 投稿のすぐ上 */}
-      <div className="flex justify-around px-4 py-4 bg-forest/50">
+      <div className="flex justify-around px-4 py-2.5 bg-forest/50">
         <button
           onClick={() => setModeFilter("")}
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold ${
+          className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold ${
             !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
           }`}
         >
@@ -198,13 +198,13 @@ export default function MyPage() {
           <button
             key={m.id}
             onClick={() => setModeFilter(m.id)}
-            className={`w-14 h-14 rounded-full flex items-center justify-center ${
+            className={`w-12 h-12 rounded-full flex items-center justify-center ${
               modeFilter === m.id
                 ? "bg-accent-orange"
                 : "bg-white"
             }`}
           >
-            <FocusModeIcon modeId={m.id} size={33} className={modeFilter === m.id ? "text-white" : "text-forest-mid"} />
+            <FocusModeIcon modeId={m.id} size={28} className={modeFilter === m.id ? "text-white" : "text-forest-mid"} />
           </button>
         ))}
       </div>
@@ -245,6 +245,7 @@ export default function MyPage() {
             })}
           </div>
         )}
+        <div className="h-16 shrink-0" />
       </div>
       </div>
 

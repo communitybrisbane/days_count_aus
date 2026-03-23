@@ -98,7 +98,7 @@ export default function PublicProfilePage() {
   };
 
   return (
-    <div className="h-dvh pb-16 flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト（myタブと統一） */}
       <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
@@ -223,7 +223,7 @@ export default function PublicProfilePage() {
                   <button
                     key={g.id}
                     onClick={() => router.push(`/groups/${g.id}`)}
-                    className="flex flex-col items-center gap-1.5 bg-forest-light/20 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/30 transition-colors"
+                    className="flex flex-col items-center gap-1.5 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/20 transition-colors"
                   >
                     {g.iconUrl ? (
                       <img src={g.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -299,6 +299,7 @@ export default function PublicProfilePage() {
             })}
           </div>
         )}
+        <div className="h-16 shrink-0" />
       </div>
       </div>
 

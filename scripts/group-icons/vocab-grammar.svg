@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#5B8C5A"/>
+  <!-- Open book -->
+  <path d="M100 65 L55 55 V135 L100 145 L145 135 V55 Z" fill="none" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+  <line x1="100" y1="65" x2="100" y2="145" stroke="white" stroke-width="3"/>
+  <!-- Left page lines -->
+  <line x1="68" y1="75" x2="92" y2="80" stroke="white" stroke-width="2" opacity="0.6" stroke-linecap="round"/>
+  <line x1="68" y1="88" x2="92" y2="93" stroke="white" stroke-width="2" opacity="0.6" stroke-linecap="round"/>
+  <line x1="68" y1="101" x2="92" y2="106" stroke="white" stroke-width="2" opacity="0.6" stroke-linecap="round"/>
+  <line x1="68" y1="114" x2="85" y2="118" stroke="white" stroke-width="2" opacity="0.6" stroke-linecap="round"/>
+  <!-- Right page: ABC -->
+  <text x="122" y="95" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="white" text-anchor="middle" opacity="0.9">Aa</text>
+  <text x="122" y="120" font-family="Georgia,serif" font-size="14" fill="white" text-anchor="middle" opacity="0.5">Bb</text>
+</svg>
