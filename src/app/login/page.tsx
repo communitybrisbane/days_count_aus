@@ -60,7 +60,7 @@ export default function LoginPage() {
             <button onClick={() => setShowTerms(true)} className="text-accent-orange underline">Terms</button>,{" "}
             <button onClick={() => setShowPrivacy(true)} className="text-accent-orange underline">Privacy Policy</button>,{" "}
             <button onClick={() => setShowTokusho(true)} className="text-accent-orange underline">Legal Notice</button>{" "}
-            に同意します / I agree
+            I agree
           </span>
         </label>
 
