@@ -1,4 +1,5 @@
 import type { Post } from "@/types";
+import { resolveMode } from "@/lib/constants";
 
 const SEEN_KEY = "seen_posts";
 const SEEN_MAX = 500;
@@ -60,7 +61,7 @@ function scorePost(post: Post, ctx: ScoreContext): number {
   }
 
   // 2. Same mode (+20)
-  if (ctx.myMode && post.mode === ctx.myMode) {
+  if (ctx.myMode && resolveMode(post.mode) === resolveMode(ctx.myMode)) {
     score += 20;
   }
 

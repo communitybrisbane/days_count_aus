@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, POST_CONTENT_MAX } from "@/lib/constants";
+import { FOCUS_MODES, POST_CONTENT_MAX, resolveMode } from "@/lib/constants";
+import { FocusModeIcon } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
@@ -37,7 +38,7 @@ export default function EditPostPage() {
         return;
       }
       setContent(data.content || data.contentFun || data.contentGrowth || "");
-      setMode(data.mode || "");
+      setMode(resolveMode(data.mode || ""));
     }
     if (user) fetchPost();
   }, [user, postId, router]);
@@ -72,18 +73,19 @@ export default function EditPostPage() {
       <div className="space-y-4">
         <div>
           <label className="text-sm font-medium text-white/80 mb-2 block">Focus Mode</label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {FOCUS_MODES.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
-                className={`flex-1 flex flex-col items-center p-2 rounded-xl ${
+                className={`flex flex-col items-center p-2 rounded-xl ${
                   mode === m.id
                     ? "bg-accent-orange text-white"
                     : "bg-white text-forest-mid"
                 }`}
               >
-                <span className="text-xl">{m.icon}</span>
+                <FocusModeIcon modeId={m.id} size={20} />
+                <span className="text-[10px] mt-0.5">{m.label}</span>
               </button>
             ))}
           </div>

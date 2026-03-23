@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { fetchUserPosts } from "@/lib/services/posts";
 import { fetchUserProfile, blockUser, unblockUser } from "@/lib/services/users";
-import { FOCUS_MODES, GRADIENTS } from "@/lib/constants";
+import { FOCUS_MODES, MAIN_MODE_OPTIONS, GRADIENTS, resolveMode } from "@/lib/constants";
 import { followUser, unfollowUser, getFollowingIds } from "@/lib/follow";
 import Avatar from "@/components/Avatar";
 import PostCard from "@/components/PostCard";
@@ -88,11 +88,12 @@ export default function PublicProfilePage() {
 
   const totalLikes = posts.reduce((sum, p) => sum + (p.likeCount || 0), 0);
   const streak = userData.currentStreak ?? 0;
-  const filteredPosts = modeFilter ? posts.filter((p) => p.mode === modeFilter) : posts;
+  const filteredPosts = modeFilter ? posts.filter((p) => resolveMode(p.mode) === modeFilter) : posts;
 
   const getPostThumb = (post: Post) => {
     if (post.imageUrl) return { type: "image" as const, url: post.imageUrl };
-    const gradientIdx = post.mode ? FOCUS_MODES.findIndex((m) => m.id === post.mode) : 0;
+    const resolved = resolveMode(post.mode || "");
+    const gradientIdx = resolved ? FOCUS_MODES.findIndex((m) => m.id === resolved) : 0;
     return { type: "gradient" as const, gradient: GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0] };
   };
 
@@ -130,8 +131,8 @@ export default function PublicProfilePage() {
           <div className="flex items-center justify-center gap-1.5 mt-2">
             {userData.mainMode && (
               <span className="inline-flex items-center gap-1 text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
-                <FocusModeIcon modeId={userData.mainMode} size={12} />
-                {FOCUS_MODES.find((m) => m.id === userData.mainMode)?.description}
+                <FocusModeIcon modeId={resolveMode(userData.mainMode)} size={12} />
+                {FOCUS_MODES.find((m) => m.id === resolveMode(userData.mainMode))?.description}
               </span>
             )}
             {userData.region && userData.showRegion !== false && (
@@ -217,7 +218,7 @@ export default function PublicProfilePage() {
           {userGroups.length > 0 && (
             <div className="flex gap-3 mt-4 w-full justify-center">
               {userGroups.map((g) => {
-                const modeInfo = FOCUS_MODES.find((m) => m.id === g.mode);
+                const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(g.mode || ""));
                 return (
                   <button
                     key={g.id}
@@ -253,7 +254,7 @@ export default function PublicProfilePage() {
         >
           All
         </button>
-        {FOCUS_MODES.map((m) => (
+        {MAIN_MODE_OPTIONS.map((m) => (
           <button
             key={m.id}
             onClick={() => setModeFilter(m.id)}
@@ -276,7 +277,7 @@ export default function PublicProfilePage() {
           <div className="grid grid-cols-4">
             {filteredPosts.map((post, idx) => {
               const thumb = getPostThumb(post);
-              const modeInfo = FOCUS_MODES.find((m) => m.id === post.mode);
+              const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(post.mode || ""));
               return (
                 <button
                   key={post.id}

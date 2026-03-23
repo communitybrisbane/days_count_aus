@@ -15,7 +15,7 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES } from "@/lib/constants";
+import { FOCUS_MODES, MAIN_MODE_OPTIONS } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
@@ -230,17 +230,17 @@ export default function ExplorePage() {
       >
         {/* Filter chips */}
         <div className="px-4 pt-3 pb-2 space-y-1.5">
-          {/* Row 1: All + WH modes */}
+          {/* Row 1: All + English, Skill, Adventure */}
           <div className="flex gap-1.5">
             <button
               onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
-              className={`flex-1 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
+              className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
                 !filter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
               }`}
             >
               All
             </button>
-            {FOCUS_MODES.filter((m) => m.id === "enjoying" || m.id === "challenging").map((m) => (
+            {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
               <button
                 key={m.id}
                 onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
@@ -252,9 +252,9 @@ export default function ExplorePage() {
               </button>
             ))}
           </div>
-          {/* Row 2: Other modes */}
+          {/* Row 2: Work, Chill */}
           <div className="flex gap-1.5">
-            {FOCUS_MODES.filter((m) => m.id !== "enjoying" && m.id !== "challenging").map((m) => (
+            {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
               <button
                 key={m.id}
                 onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}

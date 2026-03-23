@@ -7,7 +7,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, FIRST_POST_BONUS, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
-import { createPost, isFirstPost, hasPostedToday, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount } from "@/lib/services/posts";
+import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount } from "@/lib/services/posts";
 import ImageCropper from "@/components/ImageCropper";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
@@ -37,8 +37,6 @@ export default function PostPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const [alreadyPosted, setAlreadyPosted] = useState(false);
-  const [checkingPost, setCheckingPost] = useState(true);
   const imgTapCountRef = useRef(0);
   const imgTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,15 +44,6 @@ export default function PostPage() {
 
   const tagsRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-
-  // Check if user already posted today
-  useEffect(() => {
-    if (!user) return;
-    hasPostedToday(user.uid).then((posted) => {
-      setAlreadyPosted(posted);
-      setCheckingPost(false);
-    });
-  }, [user]);
 
   // Pick up image from BottomNav file picker (sessionStorage)
   useEffect(() => {
@@ -186,40 +175,8 @@ export default function PostPage() {
     }
   };
 
-  if (loading || !profile || checkingPost) {
+  if (loading || !profile) {
     return <LoadingSpinner fullScreen />;
-  }
-
-  if (alreadyPosted) {
-    return (
-      <div className="h-dvh flex flex-col">
-        <div
-          className="shrink-0 flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20"
-          style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}
-        >
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M13 4L7 10L13 16" />
-            </svg>
-          </button>
-          <span className="text-white/70 text-sm font-medium">New Post</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4">
-          <span className="text-4xl">📔</span>
-          <h2 className="text-lg font-bold text-white">Today&apos;s diary is done!</h2>
-          <p className="text-sm text-white/60">You can post once per day. Come back tomorrow, or delete today&apos;s post to write a new one.</p>
-          <button
-            onClick={() => router.push("/home")}
-            className="mt-2 px-6 py-2.5 bg-accent-orange text-white text-sm font-bold rounded-xl active:scale-[0.98]"
-          >
-            Back to Home
-          </button>
-        </div>
-      </div>
-    );
   }
 
   const modeInfo = FOCUS_MODES.find((m) => m.id === mode);
@@ -409,7 +366,7 @@ export default function PostPage() {
         {/* Mode selection */}
         <div className="px-4 mt-3">
           <div className="flex gap-1.5 mb-1.5">
-            {FOCUS_MODES.filter((m) => m.id === "enjoying" || m.id === "challenging").map((m) => (
+            {FOCUS_MODES.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
               <button
                 key={m.id}
                 onClick={() => handleModeSelect(m.id)}
@@ -423,7 +380,7 @@ export default function PostPage() {
             ))}
           </div>
           <div className="flex gap-1.5">
-            {FOCUS_MODES.filter((m) => m.id !== "enjoying" && m.id !== "challenging").map((m) => (
+            {FOCUS_MODES.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
               <button
                 key={m.id}
                 onClick={() => handleModeSelect(m.id)}

@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
-import { FOCUS_MODES, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
@@ -330,7 +330,7 @@ export default function SettingsPage() {
             <div>
               <label className="text-xs text-white/60">Main Mode</label>
               <div className="flex gap-1.5 mt-1 flex-wrap">
-                {FOCUS_MODES.map((m) => (
+                {MAIN_MODE_OPTIONS.map((m) => (
                   <button key={m.id} onClick={() => setMainMode(m.id)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium ${
                       mainMode === m.id

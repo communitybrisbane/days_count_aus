@@ -6,7 +6,7 @@ import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from "firebase/firest
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup } from "@/lib/groups";
@@ -299,7 +299,7 @@ export default function OnboardingPage() {
             <p className="text-sm text-gray-400 mb-8">Pick your main mode</p>
 
             <div className="flex flex-col gap-3">
-              {FOCUS_MODES.map((mode) => (
+              {MAIN_MODE_OPTIONS.map((mode) => (
                 <button
                   key={mode.id}
                   onClick={() => { setMainMode(mode.id); goNext(); }}

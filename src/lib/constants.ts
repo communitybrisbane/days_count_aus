@@ -1,31 +1,49 @@
 export const FOCUS_MODES = [
-  { id: "enjoying", label: "WH Enjoy", icon: "enjoying", description: "WH_enjoy" },
-  { id: "challenging", label: "WH Challenge", icon: "challenging", description: "WH_challenge" },
   { id: "english", label: "English", icon: "english", description: "English" },
-  { id: "skills", label: "Skill", icon: "skills", description: "Skill" },
-  { id: "social-media", label: "SNS", icon: "social-media", description: "SNS" },
+  { id: "skill", label: "Skill", icon: "skill", description: "Skill" },
+  { id: "adventure", label: "Challenge", icon: "adventure", description: "Challenge" },
+  { id: "work", label: "Work", icon: "work", description: "Work" },
+  { id: "chill", label: "Chill", icon: "chill", description: "Chill" },
 ] as const;
 
 export type FocusModeId = (typeof FOCUS_MODES)[number]["id"];
 
+/** All modes are selectable as main mode (Chill is the catch-all) */
+export const MAIN_MODE_OPTIONS = FOCUS_MODES;
+
+/** Map legacy mode IDs to new IDs */
+export const LEGACY_MODE_MAP: Record<string, string> = {
+  enjoying: "adventure",
+  challenging: "adventure",
+  skills: "skill",
+  "social-media": "chill",
+  daily: "chill",
+  challenge: "adventure",
+};
+
+/** Resolve a mode ID, mapping legacy IDs to new ones */
+export function resolveMode(mode: string): string {
+  return LEGACY_MODE_MAP[mode] || mode;
+}
+
 /** Hashtag suggestions per mode + shared tags */
 export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {
-  enjoying: ["#adventure", "#travel", "#beach", "#nature", "#roadtrip", "#sunset", "#camping", "#surfing", "#explore"],
-  challenging: ["#challenge", "#growth", "#hardwork", "#nevergiveup", "#grind", "#hustle", "#pushthrough", "#overcome"],
-  english: ["#english", "#study", "#ielts", "#vocabulary", "#speaking", "#listening", "#reading", "#conversation"],
-  skills: ["#skills", "#coding", "#cooking", "#barista", "#farming", "#resume", "#career", "#newskill", "#learning"],
-  "social-media": ["#sns", "#content", "#youtube", "#tiktok", "#instagram", "#blog", "#creator", "#editing", "#vlog"],
+  work: ["#work", "#farm", "#hustle", "#earning", "#jobhunt", "#barista", "#warehouse", "#harvest"],
+  english: ["#english", "#study", "#ielts", "#speaking", "#conversation", "#vocabulary", "#listening", "#reading"],
+  skill: ["#skill", "#coding", "#cooking", "#design", "#learning", "#career", "#newskill", "#portfolio"],
+  adventure: ["#challenge", "#travel", "#roadtrip", "#explore", "#beach", "#nature", "#sunset", "#camping"],
+  chill: ["#chill", "#daily", "#life", "#cooking", "#home", "#sharehouse", "#routine", "#selfcare"],
 };
 export const HASHTAG_MAX = 5;
 
 export const MILESTONES = [30, 100, 200, 365] as const;
 
 export const GRADIENTS = [
-  "from-aussie-gold to-amber-400",
-  "from-ocean-blue to-cyan-400",
-  "from-outback-clay to-orange-400",
-  "from-purple-500 to-pink-400",
-  "from-green-500 to-teal-400",
+  "from-blue-500 to-cyan-400",         // english
+  "from-violet-500 to-purple-400",     // skill
+  "from-emerald-500 to-teal-400",      // adventure
+  "from-orange-500 to-amber-400",      // work
+  "from-stone-400 to-warm-gray-400",   // chill
 ] as const;
 
 /** Weekly XP rewards — escalating per day (index 0 = 1st post, index 6 = 7th) */

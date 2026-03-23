@@ -25,7 +25,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
-import { FOCUS_MODES, MESSAGE_CHAR_LIMIT } from "@/lib/constants";
+import { FOCUS_MODES, MESSAGE_CHAR_LIMIT, resolveMode } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -141,7 +141,7 @@ export default function GroupChatPage() {
   const isMember = isMemberNow;
   const isLeader = group?.creatorId === user?.uid;
   const isFull = !isOfficial && (group?.memberCount || 0) >= 10;
-  const modeInfo = FOCUS_MODES.find((m) => m.id === group?.mode);
+  const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group?.mode || ""));
 
   const userLevel = profile ? calculateLevel(profile.totalXP) : 0;
 

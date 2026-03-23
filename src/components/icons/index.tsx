@@ -105,8 +105,8 @@ export function IconFire({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
   return (
     <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2c0 4-4 6-4 10a6 6 0 0 0 12 0c0-4-4-6-4-10-1 2-3 3-4 3s-3-1-4-3z" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <path d="M12 22c-1.7 0-3-1.3-3-3 0-2 3-4 3-4s3 2 3 4c0 1.7-1.3 3-3 3z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M8.5 14.5A5.5 5.5 0 0 0 12 21a5.5 5.5 0 0 0 3.5-6.5C14.5 11 12 9 12 9s-1 2.5-3.5 5.5z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M12 9c0-3-1.5-5-2.5-6 0 3.5-2.5 6-3.5 8a8 8 0 0 0 12 7c-1-1-2.5-3-3-5" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );
 }
@@ -193,6 +193,37 @@ export function IconSearch({ size, className, strokeWidth }: IconProps) {
 }
 
 // ─── Focus Modes ───
+
+export function IconCoin({ size, className, strokeWidth }: IconProps) {
+  const d = p({ size, className, strokeWidth });
+  return (
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5s-2 .5-2 1.5 1 1.5 2.5 2 2.5 1 2.5 2-1 1.5-2.5 1.5-2-.5-2.5-1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M12 6.5v1M12 16.5v1" stroke="currentColor" strokeWidth={d.strokeWidth} />
+    </svg>
+  );
+}
+
+export function IconSpeaking({ size, className, strokeWidth }: IconProps) {
+  const d = p({ size, className, strokeWidth });
+  return (
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="8" r="3.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M3 20v-1c0-2.8 2.7-5 6.5-5h1c3.8 0 6.5 2.2 6.5 5v1" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <text x="19" y="9" textAnchor="middle" fill="currentColor" fontSize="6" fontWeight="bold" fontFamily="sans-serif" style={{ letterSpacing: "-0.5px" }}>AB</text>
+    </svg>
+  );
+}
+
+export function IconAustralia({ size, className, strokeWidth }: IconProps) {
+  const d = p({ size, className, strokeWidth });
+  return (
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 5.5c1-1 2.5-1.5 4-1.5.8 0 1.8.2 2.5.5s1.5 1 2.5 1.5c1.2.5 2 .3 3 0s2-.5 2.5.5.5 2.5 0 4-1 2.5-1.5 3.5-.5 2-1 3-1.5 1.5-2.5 2-2 .5-3 .5-2-.5-3-1-1.5-1.5-2.5-1.5-2 .5-3 0-1.5-1.5-1.5-3 .5-2.5.5-3.5-.5-2 0-3S5 6.5 6 5.5z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+    </svg>
+  );
+}
 
 export function IconCoffee({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
@@ -324,11 +355,19 @@ export function IconBan({ size, className, strokeWidth }: IconProps) {
 
 export function FocusModeIcon({ modeId, ...props }: IconProps & { modeId: string }) {
   switch (modeId) {
-    case "enjoying": return <IconCoffee {...props} />;
-    case "challenging": return <IconGlobe {...props} />;
-    case "english": return <IconChat {...props} />;
+    // New modes
+    case "work": return <IconCoin {...props} />;
+    case "english": return <IconSpeaking {...props} />;
+    case "skill": return <IconLaptop {...props} />;
+    case "adventure": return <IconAustralia {...props} />;
+    case "chill": return <IconCoffee {...props} />;
+    // Legacy modes
+    case "enjoying": return <IconAustralia {...props} />;
+    case "challenging": return <IconAustralia {...props} />;
+    case "challenge": return <IconAustralia {...props} />;
     case "skills": return <IconLaptop {...props} />;
-    case "social-media": return <IconCamera {...props} />;
+    case "social-media": return <IconCoffee {...props} />;
+    case "daily": return <IconCoffee {...props} />;
     default: return <IconGlobe {...props} />;
   }
 }

@@ -1,70 +1,96 @@
 /**
  * モードごとの公式グループをFirestoreに作成するスクリプト
+ * + 旧モードの公式グループを自動クローズ
  *
  * 実行方法:
  *   npx tsx scripts/seed-official-groups.ts
  *
- * 注意: 一度だけ実行すればOK。グループ名はFirebase Consoleから変更可能。
+ * 注意: 何度実行しても安全（既存チェックあり）
  */
 
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import path from "path";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCRZqyROJXSAYct8qDPTw2tyO9D7bfP2lQ",
-  authDomain: "days-count-aus.firebaseapp.com",
-  projectId: "days-count-aus",
-  storageBucket: "days-count-aus.firebasestorage.app",
-  messagingSenderId: "457409155401",
-  appId: "1:457409155401:web:b1281bb1e98e9944130a98",
-};
+const serviceAccountPath = path.resolve(__dirname, "../days-count-aus-firebase-adminsdk-fbsvc-9f617868ff.json");
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+initializeApp({
+  credential: cert(serviceAccountPath),
+});
 
-const OFFICIAL_GROUPS = [
+const db = getFirestore();
+
+// 新モードの公式グループ
+const NEW_OFFICIAL_GROUPS = [
+  { mode: "work", groupName: "Workers Hub" },
   { mode: "english", groupName: "English Learners" },
-  { mode: "social-media", groupName: "SNS Creators" },
-  { mode: "skills", groupName: "Skill Builders" },
-  { mode: "enjoying", groupName: "Aussie Explorers" },
-  { mode: "challenging", groupName: "Challenge Seekers" },
+  { mode: "skill", groupName: "Skill Builders" },
+  { mode: "challenge", groupName: "Challenge Seekers" },
+  { mode: "adventure", groupName: "Adventurers" },
 ];
 
-async function seed() {
-  for (const g of OFFICIAL_GROUPS) {
-    // 既存チェック
-    const q = query(
-      collection(db, "groups"),
-      where("mode", "==", g.mode),
-      where("isOfficial", "==", true),
-      where("isClosed", "==", false)
-    );
-    const snap = await getDocs(q);
+// 旧モードID（クローズ対象）
+const LEGACY_MODES = ["enjoying", "challenging", "skills", "social-media"];
+
+async function closeLegacyGroups() {
+  console.log("\n--- 旧公式グループのクローズ ---");
+  for (const mode of LEGACY_MODES) {
+    const snap = await db
+      .collection("groups")
+      .where("mode", "==", mode)
+      .where("isOfficial", "==", true)
+      .where("isClosed", "==", false)
+      .get();
+
+    if (snap.empty) {
+      console.log(`⏭ ${mode} — 公式グループなし（スキップ）`);
+      continue;
+    }
+    for (const doc of snap.docs) {
+      await doc.ref.update({ isClosed: true });
+      console.log(`🔒 ${doc.data().groupName} (${mode}) — クローズ完了`);
+    }
+  }
+}
+
+async function seedNewGroups() {
+  console.log("\n--- 新公式グループの作成 ---");
+  for (const g of NEW_OFFICIAL_GROUPS) {
+    const snap = await db
+      .collection("groups")
+      .where("mode", "==", g.mode)
+      .where("isOfficial", "==", true)
+      .where("isClosed", "==", false)
+      .get();
+
     if (!snap.empty) {
       console.log(`⏭ ${g.groupName} (${g.mode}) — 既に存在`);
       continue;
     }
 
-    await addDoc(collection(db, "groups"), {
+    await db.collection("groups").add({
       mode: g.mode,
       groupName: g.groupName,
       creatorId: "SYSTEM",
       memberIds: [],
       memberCount: 0,
-      lastMessageAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
+      lastMessageAt: FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       isClosed: false,
       isOfficial: true,
     });
     console.log(`✅ ${g.groupName} (${g.mode}) — 作成完了`);
   }
+}
 
-  console.log("\n🎉 公式グループの作成が完了しました！");
-  console.log("→ Firebase Console でグループ名を変更できます。");
+async function main() {
+  await closeLegacyGroups();
+  await seedNewGroups();
+  console.log("\n🎉 完了！旧グループをクローズし、新グループを作成しました。");
   process.exit(0);
 }
 
-seed().catch((e) => {
+main().catch((e) => {
   console.error("❌ エラー:", e);
   process.exit(1);
 });

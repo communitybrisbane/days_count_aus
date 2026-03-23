@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP, resolveMode } from "@/lib/constants";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
 import XPToast from "./XPToast";
@@ -84,8 +84,9 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liked, user, profile, onDoubleTap]);
 
-  const modeInfo = FOCUS_MODES.find((m) => m.id === post.mode);
-  const gradientIdx = post.mode ? FOCUS_MODES.findIndex((m) => m.id === post.mode) : 0;
+  const resolvedMode = resolveMode(post.mode || "");
+  const modeInfo = FOCUS_MODES.find((m) => m.id === resolvedMode);
+  const gradientIdx = resolvedMode ? FOCUS_MODES.findIndex((m) => m.id === resolvedMode) : 0;
   const gradient = GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0];
 
   useEffect(() => {
@@ -169,7 +170,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       // Optimistic update
       setLiked(true);
       setLikeCount((c) => c + 1);
-      setRecentLikers((prev) => [{ uid: user.uid, photoURL: profile.photoURL || "" }, ...prev].slice(0, 3));
+      setRecentLikers((prev) => [{ uid: user.uid, photoURL: profile.photoURL || "" }, ...prev.filter((l) => l.uid !== user.uid)].slice(0, 3));
       setLikers((prev) => [{ uid: user.uid, displayName: profile.displayName || "You", photoURL: profile.photoURL || "" }, ...prev.filter((l) => l.uid !== user.uid)]);
       try {
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
@@ -292,7 +293,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           ) : likers.length === 0 ? (
             <p className="text-center text-gray-400 py-8 text-sm">No likes yet</p>
           ) : (
-            likers.map((liker) => (
+            likers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i).map((liker) => (
               <Link
                 key={liker.uid}
                 href={`/user/${liker.uid}`}
@@ -471,7 +472,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             >
               {recentLikers.length > 0 && (
                 <div className="flex items-center -space-x-1.5">
-                  {recentLikers.map((liker) => (
+                  {recentLikers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i).map((liker) => (
                     <Avatar key={liker.uid} photoURL={liker.photoURL} displayName="" uid={liker.uid} size={18} className="ring-1.5 ring-white" />
                   ))}
                 </div>

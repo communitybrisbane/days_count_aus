@@ -6,7 +6,7 @@ import { collection, getDocs, getDoc, doc, query, orderBy, where, limit } from "
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { fetchAdminConfig } from "@/lib/services/users";
 import BottomNav from "@/components/layout/BottomNav";
@@ -139,7 +139,7 @@ export default function GroupsPage() {
               >
                 All
               </button>
-              {FOCUS_MODES.map((m) => (
+              {MAIN_MODE_OPTIONS.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setModeFilter(m.id)}

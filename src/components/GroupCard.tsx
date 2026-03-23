@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { doc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { FOCUS_MODES, MAX_GROUP_MEMBERS } from "@/lib/constants";
+import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
 import { FocusModeIcon } from "@/components/icons";
 import type { Group } from "@/types";
 
@@ -32,7 +32,7 @@ interface GroupCardProps {
 }
 
 export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined }: GroupCardProps) {
-  const modeInfo = FOCUS_MODES.find((m) => m.id === group.mode);
+  const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isFull = !group.isOfficial && group.memberCount >= MAX_GROUP_MEMBERS;
   const isMember = group.memberIds?.includes(currentUserId || "");
 
@@ -71,7 +71,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
           <img src={group.iconUrl} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
         ) : (
           <div className="w-12 h-12 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0">
-            <FocusModeIcon modeId={group.mode || "challenging"} size={26} className="text-forest-mid" />
+            <FocusModeIcon modeId={resolveMode(group.mode || "adventure")} size={26} className="text-forest-mid" />
           </div>
         )}
         <div className="flex-1 min-w-0">
