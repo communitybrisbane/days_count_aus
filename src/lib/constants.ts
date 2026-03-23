@@ -28,11 +28,11 @@ export function resolveMode(mode: string): string {
 
 /** Hashtag suggestions per mode + shared tags */
 export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {
-  work: ["#work", "#farm", "#hustle", "#earning", "#jobhunt", "#barista", "#warehouse", "#harvest"],
-  english: ["#english", "#study", "#ielts", "#speaking", "#conversation", "#vocabulary", "#listening", "#reading"],
-  skill: ["#skill", "#coding", "#cooking", "#design", "#learning", "#career", "#newskill", "#portfolio"],
-  adventure: ["#challenge", "#travel", "#roadtrip", "#explore", "#beach", "#nature", "#sunset", "#camping"],
-  chill: ["#chill", "#daily", "#life", "#cooking", "#home", "#sharehouse", "#routine", "#selfcare"],
+  work: ["#work", "#farm", "#barista", "#warehouse", "#harvest", "#jobhunt", "#resume", "#interview", "#RSA", "#ABN", "#taxreturn", "#payslip", "#kitchenhand", "#cleaner", "#ubereats", "#88days"],
+  english: ["#english", "#study", "#ielts", "#speaking", "#conversation", "#slang", "#accent", "#grammar", "#TOEIC", "#cambly", "#languageexchange", "#pronunciation", "#podcast"],
+  skill: ["#skill", "#coding", "#cooking", "#design", "#portfolio", "#photography", "#barista", "#youtube", "#editing", "#marketing", "#freelance", "#certification", "#gym"],
+  adventure: ["#adventure", "#travel", "#roadtrip", "#beach", "#camping", "#hiking", "#diving", "#surfing", "#wildlife", "#greatbarrierreef", "#uluru", "#byron", "#bluemountains", "#whitsundays"],
+  chill: ["#chill", "#daily", "#cooking", "#sharehouse", "#routine", "#selfcare", "#cafe", "#weekend", "#grocery", "#homesick", "#Netflix", "#flatwhite", "#sunset", "#bbq", "#laundry"],
 };
 export const HASHTAG_MAX = 5;
 

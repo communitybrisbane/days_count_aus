@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
@@ -56,6 +56,18 @@ export default function SettingsPage() {
   // Logout/Delete confirmation modal
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Sync form state when profile loads
+  useEffect(() => {
+    if (!profile) return;
+    setNickname(profile.displayName || "");
+    setRegion(profile.region || "");
+    setGoal(profile.goal || "");
+    setMainMode(profile.mainMode || "");
+    setDepartureDate(profile.departureDate || "");
+    setStatus(profile.status || "pre-departure");
+    setShowRegion(profile.showRegion !== false);
+  }, [profile]);
 
   // Load notification prefs
   useEffect(() => {
@@ -189,10 +201,21 @@ export default function SettingsPage() {
     setReportImagePreview(URL.createObjectURL(file));
   };
 
+  const [reportError, setReportError] = useState("");
+
   const handleReport = async () => {
     if (!user || !reportTarget.trim() || !reportReason.trim() || !reportImage) return;
+    setReportError("");
     try {
-      await submitReport(user.uid, reportTarget.trim(), reportReason.trim(), reportImage);
+      // Resolve username to UID
+      const q = query(collection(db, "users"), where("displayName", "==", reportTarget.trim()));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setReportError("User not found");
+        return;
+      }
+      const targetUid = snap.docs[0].id;
+      await submitReport(user.uid, targetUid, reportReason.trim(), reportImage);
       setReportTarget("");
       setReportReason("");
       setReportImage(null);
@@ -457,8 +480,9 @@ export default function SettingsPage() {
         </button>
         {activeSection === "report" && (
           <div className="px-4 py-3 space-y-2 bg-forest-light/10 border-b border-forest-light/15">
-            <input type="text" placeholder="Target user ID" value={reportTarget} onChange={(e) => setReportTarget(sanitize(e.target.value))}
+            <input type="text" placeholder="Username" value={reportTarget} onChange={(e) => { setReportTarget(sanitize(e.target.value)); setReportError(""); }}
               className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none placeholder-white/30" />
+            {reportError && <p className="text-xs text-red-400">{reportError}</p>}
             <input type="text" placeholder="Reason for report" value={reportReason} onChange={(e) => setReportReason(sanitize(e.target.value))}
               className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none placeholder-white/30" />
             <div>
