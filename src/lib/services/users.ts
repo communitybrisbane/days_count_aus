@@ -189,7 +189,7 @@ export async function fetchAdminConfig() {
   return snap.exists() ? snap.data() : null;
 }
 
-/** Update week streak when 7th post of the week is made */
+/** Update week streak when streak threshold post of the week is made */
 export async function updateWeekStreak(
   uid: string,
   currentWeekStreak?: number,

@@ -53,7 +53,7 @@ export default function PublicProfilePage() {
               const snap = await getDoc(doc(db, "groups", gid));
               if (snap.exists()) {
                 const g = { id: snap.id, ...snap.data() } as Group;
-                if (!g.isOfficial && !g.isClosed) groups.push(g);
+                if (!g.isClosed && (!g.isOfficial || g.iconUrl)) groups.push(g);
               }
             }
             setUserGroups(groups);

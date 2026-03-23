@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { calculateLevel, getDayCount, formatDayCount, timestampToDate } from "@/lib/utils";
+import { calculateLevel } from "@/lib/utils";
 import { fetchUserPosts } from "@/lib/services/posts";
 import { FOCUS_MODES, MAIN_MODE_OPTIONS, GRADIENTS, resolveMode } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
@@ -50,7 +50,7 @@ export default function MyPage() {
         const snap = await getDoc(doc(db, "groups", gid));
         if (snap.exists()) {
           const g = { id: snap.id, ...snap.data() } as Group;
-          if (!g.isOfficial && !g.isClosed) groups.push(g);
+          if (!g.isClosed && (!g.isOfficial || g.iconUrl)) groups.push(g);
         }
       }
       setUserGroups(groups);
@@ -74,72 +74,11 @@ export default function MyPage() {
     setLoadingFollowing(false);
   };
 
-  const handleCopyAIData = async () => {
-    if (!profile || !user) return;
-
-    // Fetch admin prompt template
-    let aiPrompt = "";
-    try {
-      const configSnap = await getDoc(doc(db, "admin_config", "main"));
-      if (configSnap.exists()) {
-        aiPrompt = configSnap.data().ai_prompt_template || "";
-      }
-    } catch (e) {
-      console.error("Failed to fetch AI prompt template:", e);
-    }
-
-    // Last 7 days posts
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recentPosts = posts.filter(
-      (p) => p.createdAt?.toDate?.() && p.createdAt.toDate() >= weekAgo
-    );
-
-    const logs = recentPosts
-      .map((p) => {
-        const date = p.createdAt.toDate().toLocaleDateString("en-AU");
-        const mode = FOCUS_MODES.find((m) => m.id === resolveMode(p.mode))?.description || p.mode;
-        return `- ${date} [${mode}] ${p.content || "None"}`;
-      })
-      .join("\n");
-
-    const modeCounts: Record<string, number> = {};
-    recentPosts.forEach((p) => {
-      modeCounts[p.mode] = (modeCounts[p.mode] || 0) + 1;
-    });
-    const modeCountStr = Object.entries(modeCounts)
-      .map(([k, v]) => `${FOCUS_MODES.find((m) => m.id === resolveMode(k))?.description || k}: ${v}x`)
-      .join(", ");
-
-    const createdAtDate = timestampToDate(profile.createdAt);
-    const dayCount = getDayCount(profile.status || "pre-departure", profile.departureDate || "", profile.returnStartDate, createdAtDate);
-
-    const text = `[Current Goal]
-${profile.goal || "Not set"}
-
-[Activity Log - Last 7 Days]
-${logs || "No posts"}
-
-Categories: ${modeCountStr || "None"}
-XP Earned: ${recentPosts.length * 50}
-Streak: ${profile.currentStreak} days
-Current: ${formatDayCount(dayCount.label, dayCount.number)} / Lv.${calculateLevel(profile.totalXP)}
-
-${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("AI review data copied to clipboard!");
-    } catch {
-      alert("Failed to copy");
-    }
-  };
-
   if (loading || !profile) {
     return <LoadingSpinner fullScreen />;
   }
 
   const level = calculateLevel(profile.totalXP);
-  const isSunday = new Date().getDay() === 0;
 
   const filteredPosts = modeFilter ? posts.filter((p) => resolveMode(p.mode) === modeFilter) : posts;
 
@@ -214,15 +153,6 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
               <p className="text-[11px] text-white/40">Following</p>
             </button>
           </div>
-
-          {isSunday && (
-            <button
-              onClick={handleCopyAIData}
-              className="text-xs bg-forest-mid text-white px-3 py-1.5 rounded-full mt-3"
-            >
-              Copy AI Review Data
-            </button>
-          )}
 
           {/* Groups */}
           {userGroups.length > 0 && (

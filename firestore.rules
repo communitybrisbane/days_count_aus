@@ -212,6 +212,16 @@ service cloud.firestore {
                      && changed().hasOnly(['isClosed'])
                      && request.resource.data.isClosed == true;
 
+      // Leader transfer: change creatorId + remove self from memberIds
+      allow update: if isAuth()
+                     && resource.data.creatorId == request.auth.uid
+                     && request.auth.uid in resource.data.memberIds
+                     && !(request.auth.uid in request.resource.data.memberIds)
+                     && request.resource.data.creatorId in resource.data.memberIds
+                     && request.resource.data.creatorId != request.auth.uid
+                     && changed().hasOnly(['creatorId', 'memberIds', 'memberCount'])
+                     && request.resource.data.memberCount == resource.data.memberCount - 1;
+
       // Member sends message: update lastMessageAt/Text/By
       allow update: if isAuth()
                      && request.auth.uid in resource.data.memberIds

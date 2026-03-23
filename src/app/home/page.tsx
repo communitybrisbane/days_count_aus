@@ -15,11 +15,10 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
 import MilestoneAnimation from "@/components/MilestoneAnimation";
 import BannerCarousel from "@/components/BannerCarousel";
-import { MILESTONES, GOAL_MAX } from "@/lib/constants";
+import { MILESTONES } from "@/lib/constants";
 import { IconEdit } from "@/components/icons";
 import WeeklyChallenge from "@/components/WeeklyChallenge";
-import AsciiWarn from "@/components/AsciiWarn";
-import { useAsciiInput } from "@/hooks/useAsciiInput";
+import WeeklyHistoryModal from "@/components/WeeklyHistoryModal";
 import NotificationToast from "@/components/NotificationToast";
 import type { AdminConfig } from "@/types";
 
@@ -32,16 +31,14 @@ const STATUS_LABELS: Record<string, string> = {
 export default function HomePage() {
   const { user, profile, loading } = useAuthGuard();
   const { refreshProfile } = useAuth();
-  const { showWarn, sanitize } = useAsciiInput();
   const [adminConfig, setAdminConfig] = useState<AdminConfig | null>(null);
   const [weeklyPostCount, setWeeklyPostCount] = useState(0);
   const [showMilestone, setShowMilestone] = useState(false);
   const [milestoneDay, setMilestoneDay] = useState(0);
   const [phasePrompt, setPhasePrompt] = useState<{ message: string; newStatus: string } | null>(null);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
-  const [showGoalInput, setShowGoalInput] = useState(false);
-  const [goalTextDraft, setGoalTextDraft] = useState("");
   const [toast, setToast] = useState<{ title: string; body: string; link?: string } | null>(null);
+  const [showWeeklyHistory, setShowWeeklyHistory] = useState(false);
   const dismissToast = useCallback(() => setToast(null), []);
 
   const dayCount = useDayCount(profile ?? null);
@@ -144,18 +141,6 @@ export default function HomePage() {
     setPhasePrompt(null);
   };
 
-  const handleSaveGoal = async () => {
-    if (!user) return;
-    await updateDoc(doc(db, "users", user.uid), { goal: goalTextDraft.trim() });
-    await refreshProfile();
-    setShowGoalInput(false);
-  };
-
-  const openGoalInput = () => {
-    setGoalTextDraft(profile?.goal || "");
-    setShowGoalInput(true);
-  };
-
   if (loading || !profile) return <LoadingSpinner fullScreen />;
 
   const goalCleared = weeklyGoal > 0 && weeklyPostCount >= weeklyGoal;
@@ -242,59 +227,49 @@ export default function HomePage() {
                   </span>
                 )}
               </div>
-              <button onClick={openGoalInput} className="shrink-0 ml-3 p-1.5 active:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={() => setShowWeeklyHistory(true)} className="shrink-0 ml-3 p-1.5 active:bg-gray-100 rounded-lg transition-colors">
                 <IconEdit size={18} className="text-gray-400" />
               </button>
             </div>
 
-            <WeeklyChallenge
-              weekStreak={profile.weekStreak ?? 0}
-              weeklyPostCount={weeklyPostCount}
-              goalCleared={goalCleared}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ===== 3. XP / Level — Material Row ===== */}
-      <div className="px-5 mt-3">
-        <div className="card-material px-4 py-3 flex items-center gap-3">
-          <span className="text-lg font-black text-forest">Lv.{level}</span>
-          <div className="flex-1">
-            <div className="w-full bg-forest/10 rounded-full h-1.5">
-              <div
-                className="bg-gradient-to-r from-forest-mid to-lime h-1.5 rounded-full transition-all duration-700"
-                style={{ width: `${Math.min(progress, 100)}%` }}
+            <div onClick={() => setShowWeeklyHistory(true)} className="cursor-pointer active:opacity-80">
+              <WeeklyChallenge
+                weekStreak={profile.weekStreak ?? 0}
+                weeklyPostCount={weeklyPostCount}
+                goalCleared={goalCleared}
               />
             </div>
           </div>
-          <span className="text-[11px] text-gray-400 shrink-0 tabular-nums">
-            {xpForLevel(level + 1) - profile.totalXP} XP to next
-          </span>
         </div>
       </div>
 
-      {/* Goal text modal */}
-      {showGoalInput && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-8" onClick={() => setShowGoalInput(false)}>
-          <div className="card-material p-5 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-bold text-forest mb-3">My Goal</p>
-            <label className="text-xs text-gray-500">What are you working towards?</label>
-            <input
-              type="text"
-              maxLength={GOAL_MAX}
-              value={goalTextDraft}
-              onChange={(e) => setGoalTextDraft(sanitize(e.target.value))}
-              placeholder="e.g. Improve my English skills"
-              className="w-full border border-forest/20 rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent-orange"
+      {/* ===== 3. XP / Level ===== */}
+      <div className="px-5 mt-3">
+        <div className="card-material px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-black text-forest tabular-nums">Lv.{level}</span>
+            <span className="text-[11px] text-gray-400 tabular-nums">{profile.totalXP} / {xpForLevel(level + 1)} XP</span>
+          </div>
+          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-accent-orange rounded-full transition-all duration-700"
+              style={{ width: `${Math.min(progress, 100)}%` }}
             />
-            <AsciiWarn show={showWarn} />
-            <div className="mb-4" />
-            <button onClick={handleSaveGoal} className="w-full bg-forest-mid text-white font-bold text-sm py-2.5 rounded-xl">
-              Save
-            </button>
           </div>
         </div>
+      </div>
+
+      {/* Weekly history + Goal edit modal */}
+      {showWeeklyHistory && user && (
+        <WeeklyHistoryModal
+          uid={user.uid}
+          goal={profile?.goal || ""}
+          onClose={() => setShowWeeklyHistory(false)}
+          onSaveGoal={async (newGoal) => {
+            await updateDoc(doc(db, "users", user.uid), { goal: newGoal });
+            await refreshProfile();
+          }}
+        />
       )}
 
       {/* ===== 3. Banner Carousel ===== */}

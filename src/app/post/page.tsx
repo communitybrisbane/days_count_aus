@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, FIRST_POST_BONUS, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX, REGIONS } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
 import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount } from "@/lib/services/posts";
@@ -13,7 +13,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import Avatar from "@/components/Avatar";
-import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconKangaroo, FocusModeIcon } from "@/components/icons";
+import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconKangaroo, IconEdit, FocusModeIcon } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
@@ -30,6 +30,11 @@ export default function PostPage() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [cropSrc, setCropSrc] = useState<string>("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [postRegion, setPostRegion] = useState("");
+  const [showRegionPicker, setShowRegionPicker] = useState(false);
+  const [customDayNumber, setCustomDayNumber] = useState<number | null>(null);
+  const [showDayPicker, setShowDayPicker] = useState(false);
+  const [dateInput, setDateInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [xpGained, setXpGained] = useState(0);
   const [showXP, setShowXP] = useState(false);
@@ -37,13 +42,17 @@ export default function PostPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const imgTapCountRef = useRef(0);
-  const imgTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const dayCount = useDayCount(profile ?? null);
 
   const tagsRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Set defaults from profile
+  useEffect(() => {
+    if (!profile) return;
+    if (!mode && profile.mainMode) setMode(profile.mainMode);
+    if (!postRegion && profile.region) setPostRegion(profile.region);
+  }, [profile, mode, postRegion]);
 
   // Pick up image from BottomNav file picker (sessionStorage)
   useEffect(() => {
@@ -90,7 +99,7 @@ export default function PostPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user || !profile || !mode || !imageBlob) return;
+    if (!user || !profile || !mode) return;
 
     setSubmitting(true);
     try {
@@ -109,11 +118,11 @@ export default function PostPage() {
         mode,
         content: content.trim(),
         phase: profile.status || "pre-departure",
-        dayNumber: dayCount.number,
+        dayNumber: currentDay,
         visibility,
         imageBlob,
         tags,
-        region: profile.region || "",
+        region: postRegion || "",
       });
 
       const now = new Date();
@@ -140,7 +149,7 @@ export default function PostPage() {
           }
         }
 
-        if (weeklyCount === 6) {
+        if (weeklyCount === WEEK_STREAK_THRESHOLD - 1) {
           const { updateWeekStreak } = await import("@/lib/services/users");
           await updateWeekStreak(user.uid, profile.weekStreak, profile.lastCompletedWeekStart);
         }
@@ -183,6 +192,7 @@ export default function PostPage() {
   const gradientIdx = mode ? FOCUS_MODES.findIndex((m) => m.id === mode) : 0;
   const gradient = GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0];
   const todayStr = new Date().toLocaleDateString("en-AU");
+  const currentDay = customDayNumber !== null ? customDayNumber : dayCount.number;
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
@@ -198,6 +208,86 @@ export default function PostPage() {
           onCropComplete={handleCropComplete}
           onCancel={() => setCropSrc("")}
         />
+      )}
+      {/* Region picker modal */}
+      {showRegionPicker && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowRegionPicker(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[50dvh] flex flex-col animate-slide-up">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h3 className="font-bold text-sm">Select Region</h3>
+              <button onClick={() => setShowRegionPicker(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-3 gap-2" style={{ scrollbarWidth: "none" }}>
+              {REGIONS.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => { setPostRegion(r); setShowRegionPicker(false); }}
+                  className={`py-2 px-2 rounded-xl text-xs font-medium text-center transition-all active:scale-[0.97] ${
+                    postRegion === r ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+      {/* Day picker modal — select date to compute day number */}
+      {showDayPicker && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowDayPicker(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl flex flex-col animate-slide-up">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h3 className="font-bold text-sm">Select Date</h3>
+              <button onClick={() => setShowDayPicker(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+            </div>
+            <div className="p-4 flex flex-col gap-3">
+              <input
+                type="date"
+                value={dateInput}
+                onChange={(e) => setDateInput(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange"
+              />
+              {dateInput && (
+                <p className="text-center text-sm text-gray-500">
+                  {(() => {
+                    const dep = profile?.departureDate;
+                    if (!dep) return `D+0`;
+                    const depDate = new Date(dep + "T00:00:00");
+                    const selected = new Date(dateInput + "T00:00:00");
+                    const diff = Math.floor((selected.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24));
+                    if (diff >= 0) return `D+${diff + 1}`;
+                    return `D${diff}`;
+                  })()}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setCustomDayNumber(null); setShowDayPicker(false); }}
+                  className="flex-1 py-2.5 text-xs font-bold text-gray-500 bg-gray-100 rounded-xl"
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => {
+                    const dep = profile?.departureDate;
+                    if (!dep || !dateInput) { setShowDayPicker(false); return; }
+                    const depDate = new Date(dep + "T00:00:00");
+                    const selected = new Date(dateInput + "T00:00:00");
+                    const diff = Math.floor((selected.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24));
+                    setCustomDayNumber(diff >= 0 ? diff + 1 : diff);
+                    setShowDayPicker(false);
+                  }}
+                  className="flex-1 py-2.5 text-xs font-bold text-white bg-accent-orange rounded-xl"
+                >
+                  Set
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
       <input
         ref={fileInputRef}
@@ -265,63 +355,42 @@ export default function PostPage() {
               </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              {profile.region && profile.showRegion !== false && (
-                <span className="text-[10px] bg-forest-mid/10 text-forest-mid px-2 py-0.5 rounded-full font-medium">
-                  {profile.region}
-                </span>
-              )}
-              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-500">
-                {dayCount.number > 0 ? `D+${dayCount.number}` : `D${dayCount.number}`}
-              </span>
+              <button
+                onClick={() => setShowRegionPicker(true)}
+                className="text-[10px] bg-forest-mid/10 text-forest-mid px-2 py-0.5 rounded-full font-medium border border-forest-mid/20 active:bg-forest-mid/20"
+              >
+                {postRegion || "Select region"}
+              </button>
+              <button
+                onClick={() => { setDateInput(new Date().toISOString().slice(0, 10)); setShowDayPicker(true); }}
+                className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-500 border border-gray-200 active:bg-gray-200"
+              >
+                {currentDay > 0 ? `D+${currentDay}` : `D${currentDay}`}
+              </button>
             </div>
           </div>
 
-          {/* Image or gradient card — tappable */}
+          {/* Image area — tappable to select/change */}
           <div
             className="relative cursor-pointer"
-            onClick={() => {
-              if (!imagePreview) {
-                fileInputRef.current?.click();
-                return;
-              }
-              imgTapCountRef.current += 1;
-              if (imgTapCountRef.current === 1) {
-                imgTapTimerRef.current = setTimeout(() => {
-                  if (imgTapCountRef.current === 1) fileInputRef.current?.click();
-                  imgTapCountRef.current = 0;
-                }, 300);
-              } else {
-                if (imgTapTimerRef.current) clearTimeout(imgTapTimerRef.current);
-                imgTapCountRef.current = 0;
-                setImageBlob(null);
-                setImagePreview("");
-              }
-            }}
+            onClick={() => fileInputRef.current?.click()}
           >
             {imagePreview ? (
               <div className="relative group">
                 <img src={imagePreview} alt="" className="w-full aspect-square object-cover" />
                 <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
-                  <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap: change / Double-tap: remove</span>
+                  <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change photo</span>
                 </div>
               </div>
             ) : (
               <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2 relative`}>
-                {content.trim() ? (
-                  <p className="text-white text-center font-medium text-sm leading-relaxed px-6">
-                    {content}
-                  </p>
-                ) : (
-                  <>
-                    <IconCamera size={28} className="text-white/40" />
-                    <p className="text-white/40 text-xs font-medium">Tap to add photo</p>
-                  </>
-                )}
+                <IconCamera size={28} className="text-white/40" />
+                <p className="text-white/40 text-xs font-medium">Tap to add photo (required)</p>
               </div>
             )}
             {visibility === "private" && (
-              <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-2 py-0.5 flex items-center gap-1 text-xs">
-                <IconLock size={12} />
+              <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1 flex items-center gap-1.5 text-xs">
+                <IconLock size={18} />
               </div>
             )}
           </div>
@@ -437,14 +506,18 @@ export default function PostPage() {
         <div className="h-20" />
       </div>
 
-      {/* Fixed bottom Post button */}
-      <div className="shrink-0 px-4 pb-3 pt-2 bg-forest/95 backdrop-blur-md border-t border-forest-light/20" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
+      {/* Fixed bottom Post button — pencil icon only */}
+      <div className="shrink-0 flex justify-end px-4 pb-3 pt-2" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
         <button
-          disabled={!mode || !imageBlob || submitting}
+          disabled={!mode || submitting}
           onClick={handleSubmit}
-          className="w-full py-3.5 text-sm font-bold text-white bg-accent-orange rounded-xl disabled:opacity-40 active:scale-[0.98]"
+          className="w-14 h-14 rounded-full bg-accent-orange text-white shadow-lg flex items-center justify-center disabled:opacity-40 active:scale-[0.93] transition-transform"
         >
-          {submitting ? "Posting..." : <span className="flex items-center justify-center gap-1.5">Post <IconBoomerang size={16} className="text-white" /></span>}
+          {submitting ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+          ) : (
+            <IconEdit size={22} className="text-white" />
+          )}
         </button>
       </div>
     </div>

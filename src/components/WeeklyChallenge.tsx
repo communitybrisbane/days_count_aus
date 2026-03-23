@@ -1,47 +1,68 @@
 "use client";
 
-import { WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX } from "@/lib/constants";
+import { WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD } from "@/lib/constants";
 
+// Rainbow streak colors: 0=gray, 1=red, 2=orange, 3=yellow, 4=green, 5=cyan, 6=blue, 7=purple, 8=pink, 9=gold, 10=rainbow
 const RANK_COLORS = [
-  { bg: "bg-gray-50", border: "border-gray-200/60", text: "text-gray-600" },
-  { bg: "bg-stone-50", border: "border-stone-300/60", text: "text-stone-600" },
-  { bg: "bg-slate-50", border: "border-slate-200/60", text: "text-slate-600" },
-  { bg: "bg-amber-50", border: "border-amber-200/60", text: "text-amber-600" },
-  { bg: "bg-yellow-50", border: "border-yellow-300/60", text: "text-yellow-700" },
-  { bg: "bg-rose-50", border: "border-rose-200/60", text: "text-rose-500" },
-  { bg: "bg-red-50", border: "border-red-200/60", text: "text-red-500" },
-  { bg: "bg-sky-50", border: "border-sky-200/60", text: "text-sky-600" },
-  { bg: "bg-blue-50", border: "border-blue-200/60", text: "text-blue-600" },
-  { bg: "bg-violet-50", border: "border-violet-200/60", text: "text-violet-600" },
-  { bg: "bg-purple-50", border: "border-purple-300/60", text: "text-purple-700" },
+  { bg: "bg-gray-100", border: "border-gray-300/60", text: "text-gray-500" },
+  { bg: "bg-red-50", border: "border-red-300/60", text: "text-red-500" },
+  { bg: "bg-orange-50", border: "border-orange-300/60", text: "text-orange-500" },
+  { bg: "bg-yellow-50", border: "border-yellow-300/60", text: "text-yellow-600" },
+  { bg: "bg-emerald-50", border: "border-emerald-300/60", text: "text-emerald-600" },
+  { bg: "bg-cyan-50", border: "border-cyan-300/60", text: "text-cyan-600" },
+  { bg: "bg-blue-50", border: "border-blue-300/60", text: "text-blue-600" },
+  { bg: "bg-purple-50", border: "border-purple-300/60", text: "text-purple-600" },
+  { bg: "bg-pink-50", border: "border-pink-300/60", text: "text-pink-500" },
+  { bg: "bg-amber-50", border: "border-amber-400/60", text: "text-amber-600" },
+  { bg: "bg-fuchsia-50", border: "border-fuchsia-300/60", text: "text-fuchsia-600" },
 ];
 
 const BAR_GRADIENTS = [
-  "from-sky-300/80 to-cyan-200/80",
-  "from-stone-400/70 to-stone-300/70",
-  "from-slate-300/70 to-slate-200/80",
-  "from-amber-300/70 to-amber-200/80",
-  "from-yellow-400/70 to-yellow-200/80",
-  "from-rose-300/70 to-rose-200/80",
-  "from-red-400/70 to-red-200/80",
-  "from-sky-400/70 to-sky-300/80",
-  "from-blue-400/70 to-blue-300/80",
-  "from-violet-400/70 to-violet-300/80",
-  "from-purple-500/70 to-purple-300/80",
+  "from-gray-300/80 to-gray-200/80",
+  "from-red-400/80 to-red-300/80",
+  "from-orange-400/80 to-orange-300/80",
+  "from-yellow-400/80 to-yellow-300/80",
+  "from-emerald-400/80 to-emerald-300/80",
+  "from-cyan-400/80 to-cyan-300/80",
+  "from-blue-400/80 to-blue-300/80",
+  "from-purple-500/80 to-purple-300/80",
+  "from-pink-400/80 to-pink-300/80",
+  "from-amber-500/80 to-amber-300/80",
+  "from-fuchsia-500 via-blue-500 to-emerald-400",
 ];
 
 const BONUS_TEXT_COLORS = [
-  "text-gray-500", "text-stone-500", "text-slate-500", "text-amber-500",
-  "text-yellow-600", "text-rose-400", "text-red-400", "text-sky-500",
-  "text-blue-500", "text-violet-500", "text-purple-600",
+  "text-gray-500",
+  "text-red-500",
+  "text-orange-500",
+  "text-yellow-600",
+  "text-emerald-600",
+  "text-cyan-600",
+  "text-blue-600",
+  "text-purple-600",
+  "text-pink-500",
+  "text-amber-600",
+  "text-fuchsia-600",
 ];
 
-const DAY_LABELS = ["T", "W", "T", "F", "S", "S", "M"];
 
 interface Props {
   weekStreak: number;
   weeklyPostCount: number;
   goalCleared: boolean;
+}
+
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function getWeekRange(): string {
+  const now = new Date();
+  const day = now.getDay();
+  const daysSinceTuesday = (day + 5) % 7;
+  const tue = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday);
+  const mon = new Date(tue);
+  mon.setDate(mon.getDate() + 6);
+  const fmt = (d: Date) => `${MONTH_ABBR[d.getMonth()]}. ${d.getDate()}`;
+  return `${fmt(tue)} – ${fmt(mon)}`;
 }
 
 export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalCleared }: Props) {
@@ -63,7 +84,21 @@ export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalClear
         </span>
       </div>
 
-      <div className="flex items-end gap-1.5 mb-3">
+      <p className="text-[10px] text-gray-400 text-right mb-2">{getWeekRange()}</p>
+
+      <div className="relative flex items-end gap-1.5 mb-3">
+        {/* Streak threshold dashed line at 5th bar height */}
+        <div
+          className="absolute left-0 right-0 border-t border-dashed border-accent-orange/40 pointer-events-none z-10"
+          style={{ bottom: `${20 + (WEEK_STREAK_THRESHOLD - 1) * 8 + 18}px` }}
+        />
+        <div
+          className="absolute right-0 -top-1 pointer-events-none z-10"
+          style={{ bottom: `${20 + (WEEK_STREAK_THRESHOLD - 1) * 8 + 19}px`, top: "auto" }}
+        >
+          <span className="text-[7px] text-accent-orange/50 font-bold">streak</span>
+        </div>
+
         {WEEKLY_XP.map((baseXp, i) => {
           const filled = i < weeklyPostCount;
           const isNext = i === weeklyPostCount;
@@ -87,8 +122,8 @@ export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalClear
                 }`}
                 style={{ height: `${barHeight}px` }}
               />
-              <span className={`text-[9px] font-medium ${filled ? "text-gray-500" : "text-gray-300"}`}>
-                {DAY_LABELS[i]}
+              <span className={`text-[9px] font-bold tabular-nums ${filled ? "text-gray-500" : "text-gray-300"}`}>
+                {i + 1}
               </span>
             </div>
           );

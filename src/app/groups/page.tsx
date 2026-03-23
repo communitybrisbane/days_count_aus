@@ -24,6 +24,7 @@ export default function GroupsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [modeFilter, setModeFilter] = useState("");
+  const [showActionChoice, setShowActionChoice] = useState(false);
 
   const [leaderNames, setLeaderNames] = useState<Record<string, string>>({});
   const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
@@ -75,21 +76,22 @@ export default function GroupsPage() {
 
   const level = profile ? calculateLevel(profile.totalXP) : 1;
   const canJoinCommunity = level >= GROUP_JOIN_LEVEL;
-  const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
-  const groupCount = profile?.groupIds?.length || 0;
-  const hasMaxGroups = groupCount >= 2;
-
   const userGroups = groups.filter((g) => !g.isOfficial);
+  const isModeGroup = (g: Group) => g.isOfficial && !g.iconUrl;
   const myJoinedGroups = groups.filter((g) =>
-    g.isOfficial
+    isModeGroup(g)
       ? g.mode === profile?.mainMode
       : g.memberIds?.includes(user?.uid || "")
   );
-  const myJoinedNonOfficial = myJoinedGroups.filter((g) => !g.isOfficial);
-  const myJoinedOnly = myJoinedNonOfficial.filter((g) => g.creatorId !== user?.uid);
+  const myJoinedExtra = myJoinedGroups.filter((g) => !isModeGroup(g));
   const hasCreatedGroup = groups.some((g) => !g.isOfficial && g.creatorId === user?.uid);
+  const hasMaxGroups = myJoinedExtra.length >= 2;
+  const canJoinMore = !hasCreatedGroup ? myJoinedExtra.length < 2 : myJoinedExtra.filter((g) => g.creatorId !== user?.uid).length < 1;
+  const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
 
-  let filteredUserGroups = userGroups;
+  // Search shows all groups (official + user-created), excluding already joined
+  const searchableGroups = groups.filter((g) => !g.isClosed && !isModeGroup(g) && !myJoinedGroups.some((j) => j.id === g.id));
+  let filteredUserGroups = searchableGroups;
   if (modeFilter) {
     filteredUserGroups = filteredUserGroups.filter((g) => g.mode === modeFilter);
   }
@@ -111,8 +113,8 @@ export default function GroupsPage() {
 
       {/* Search panel — community only */}
       {showSearch && (
-        <div className="bg-forest/90 border-b border-forest-light/20">
-          <div className="px-4 pb-3 pt-2 space-y-2">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-4 pb-3 pt-2 space-y-2 shrink-0 bg-forest/90 border-b border-forest-light/20">
             <div className="flex items-center gap-2">
               <input
                 type="text"
@@ -129,33 +131,46 @@ export default function GroupsPage() {
                 Cancel
               </button>
             </div>
-            {/* Mode filter */}
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
-              <button
-                onClick={() => setModeFilter("")}
-                className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                  !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                All
-              </button>
-              {MAIN_MODE_OPTIONS.map((m) => (
+            {/* Mode filter — 2-row grid like explore */}
+            <div className="space-y-1.5">
+              <div className="flex gap-1.5">
                 <button
-                  key={m.id}
-                  onClick={() => setModeFilter(m.id)}
-                  className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${
-                    modeFilter === m.id
-                      ? "bg-accent-orange text-white"
-                      : "bg-white text-forest-mid"
+                  onClick={() => setModeFilter("")}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
                   }`}
                 >
-                  <FocusModeIcon modeId={m.id} size={14} className="inline-block align-middle" /> {m.description}
+                  All
                 </button>
-              ))}
+                {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setModeFilter(m.id)}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      modeFilter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
+                    }`}
+                  >
+                    <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setModeFilter(m.id)}
+                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      modeFilter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
+                    }`}
+                  >
+                    <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-3">
             {loadingGroups && <LoadingSpinner size="sm" />}
             {!loadingGroups && filteredUserGroups.length === 0 && (
               <p className="text-center text-white/40 py-4 text-sm">No matching communities found</p>
@@ -166,8 +181,9 @@ export default function GroupsPage() {
                 group={group}
                 currentUserId={user?.uid}
                 leaderName={leaderNames[group.creatorId]}
-                canJoin={canJoinCommunity && !hasMaxGroups}
+                canJoin={canJoinCommunity && canJoinMore}
                 onJoined={handleJoined}
+                showGoal
               />
             ))}
           </div>
@@ -181,52 +197,70 @@ export default function GroupsPage() {
             <div className="p-4"><LoadingSpinner size="sm" /></div>
           ) : (
             <>
-              {/* Live Session */}
+              {/* Study Meeting */}
               {liveSession && (
-                <div className="px-4 pt-2">
-                  <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${
-                    liveSession.url
-                      ? "border-forest-mid/30 ring-2 ring-ocean-blue/20 shadow-ocean-blue/10"
-                      : "border-gray-100"
-                  }`}>
-                    <div className="px-4 py-3 flex items-center justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${liveSession.url ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-                          <p className={`font-bold text-sm truncate ${liveSession.url ? "text-forest-mid" : "text-gray-600"}`}>
-                            {liveSession.label || "Live Session"}
-                          </p>
-                          {liveSession.url && (
-                            <span className="text-[10px] font-bold text-white bg-forest-mid px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                <div className="px-4 pt-4">
+                  <p className="text-xs font-bold text-white/50 mb-2 px-1">count.study room</p>
+                  {liveSession.url ? (
+                    <a
+                      href={liveSession.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block bg-gradient-to-br from-forest-mid to-forest rounded-2xl p-4 shadow-lg border border-forest-light/20 active:scale-[0.98] transition-transform"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden">
+                          <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm text-white truncate">
+                              {liveSession.label || "Study Session"}
+                            </p>
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white" />
                               LIVE
                             </span>
-                          )}
+                          </div>
+                          <p className="text-xs text-white/60 mt-0.5">Tap to join the meeting</p>
                         </div>
-                        <p className={`text-xs mt-0.5 ml-[18px] ${liveSession.url ? "text-gray-600" : "text-gray-400"}`}>
-                          {liveSession.url ? "Session in progress — join now!" : liveSession.description || "Next session TBD"}
-                        </p>
+                        <div className="shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
-                      {liveSession.url ? (
-                        <a
-                          href={liveSession.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-forest-mid text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md shrink-0 ml-3 active:scale-[0.97]"
-                        >
-                          Join
-                        </a>
-                      ) : (
-                        <span className="text-sm font-bold text-gray-300 px-4 py-2 rounded-xl border border-gray-200 shrink-0 ml-3">
-                          Join
+                    </a>
+                  ) : (
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden opacity-40">
+                          <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-white/40">
+                            {liveSession.label || "Study Session"}
+                          </p>
+                          <p className="text-xs text-white/25 mt-0.5">
+                            {liveSession.description || "No session scheduled"}
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold text-white/20 px-3 py-1.5 rounded-full border border-white/10 shrink-0">
+                          Offline
                         </span>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
-              {/* All joined groups — sorted by lastMessageAt */}
-              <div className="flex flex-col px-4 py-1 gap-1.5">
+              {/* Group Chat section */}
+              <div className="px-4 pt-4">
+                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat</p>
+              </div>
+              <div className="flex flex-col px-4 gap-3">
                 {myJoinedGroups.map((group) => (
                   <GroupCard
                     key={group.id}
@@ -236,8 +270,8 @@ export default function GroupsPage() {
                   />
                 ))}
 
-                {/* Join suggest — only when not joined any non-official group (excludes own created) */}
-                {myJoinedOnly.length === 0 && (
+                {/* Add Community — single button (shown when user can still join or create) */}
+                {(!hasMaxGroups || (canCreateCommunity && !hasCreatedGroup)) && (
                   !canJoinCommunity ? (
                     <div className="card-material border-0 p-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -245,7 +279,7 @@ export default function GroupsPage() {
                           <IconLock size={18} className="text-forest-mid" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-gray-700">Join Communities</p>
+                          <p className="text-sm font-bold text-gray-700">Communities</p>
                           <p className="text-[10px] text-gray-400">Unlocks at Lv.{GROUP_JOIN_LEVEL}</p>
                         </div>
                       </div>
@@ -258,73 +292,92 @@ export default function GroupsPage() {
                       <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_JOIN_LEVEL}</p>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-2xl border border-forest-mid/20 p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
-                          <IconUsers size={18} className="text-forest-mid" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-forest-mid">Join Communities</p>
-                          <p className="text-[10px] text-gray-400">Search to find and join communities</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setShowSearch(true)}
-                        className="w-full py-2 text-xs font-bold text-white bg-forest-mid rounded-full"
-                      >
-                        Search Communities
-                      </button>
-                    </div>
-                  )
-                )}
-
-                {/* Create suggest — only when no created groups */}
-                {!hasCreatedGroup && (
-                  !canCreateCommunity ? (
-                    <div className="card-material border-0 p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-accent-orange/10 flex items-center justify-center shrink-0">
-                          <IconLock size={18} className="text-accent-orange" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-gray-700">Create Community</p>
-                          <p className="text-[10px] text-gray-400">Unlocks at Lv.{GROUP_CREATE_LEVEL}</p>
-                        </div>
-                      </div>
-                      <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-accent-orange h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((level / GROUP_CREATE_LEVEL) * 100, 100)}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_CREATE_LEVEL}</p>
-                    </div>
-                  ) : (
-                    <Link href="/groups/create" className="block bg-white rounded-2xl border border-accent-orange/20 p-4">
-                      <div className="flex items-center gap-3 mb-2">
+                    <button
+                      onClick={() => setShowActionChoice(true)}
+                      className="w-full bg-white rounded-2xl border border-forest-mid/20 p-4 text-left active:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-accent-orange/10 flex items-center justify-center shrink-0">
                           <span className="text-accent-orange font-bold text-lg">+</span>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-accent-orange">Create Community</p>
-                          <p className="text-[10px] text-gray-400">Start your own community as a leader</p>
+                          <p className="text-sm font-bold text-forest-mid">Find or Create Community</p>
+                          <p className="text-[10px] text-gray-400">Join an existing group or start your own</p>
                         </div>
                       </div>
-                      <div className="w-full py-2 text-xs font-bold text-white bg-accent-orange rounded-full text-center">
-                        Create Now
-                      </div>
-                    </Link>
+                    </button>
                   )
                 )}
               </div>
 
-              {/* Banner — fixed above footer */}
-              <div className="px-4 pb-1 mt-auto">
+              {/* Banner */}
+              <div className="px-4 pt-4 pb-2">
                 <BannerCarousel location="community" />
               </div>
             </>
           )}
         </div>
+      )}
+
+      {/* Action choice modal */}
+      {showActionChoice && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowActionChoice(false)} />
+          <div className="fixed inset-x-0 z-50 bg-white rounded-t-2xl" style={{ bottom: "4rem" }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h3 className="font-bold text-sm">What would you like to do?</h3>
+              <button onClick={() => setShowActionChoice(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {/* Join */}
+              <button
+                onClick={() => { setShowActionChoice(false); setShowSearch(true); }}
+                disabled={!canJoinMore}
+                className={`w-full flex items-center gap-3 p-4 rounded-xl text-left ${canJoinMore ? "bg-gray-50 active:bg-gray-100" : "bg-gray-50 opacity-40"}`}
+              >
+                <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
+                  <IconSearch size={18} className="text-forest-mid" />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${canJoinMore ? "text-gray-800" : "text-gray-400"}`}>Join a Community</p>
+                  <p className="text-[10px] text-gray-400">
+                    {canJoinMore ? "Search and join an existing community" : "You've reached the join limit"}
+                  </p>
+                </div>
+              </button>
+
+              {/* Create */}
+              {canCreateCommunity && !hasCreatedGroup ? (
+                <Link
+                  href="/groups/create"
+                  onClick={() => setShowActionChoice(false)}
+                  className="w-full flex items-center gap-3 p-4 bg-gray-50 rounded-xl text-left active:bg-gray-100"
+                >
+                  <div className="w-10 h-10 rounded-full bg-accent-orange/10 flex items-center justify-center shrink-0">
+                    <span className="text-accent-orange font-bold text-lg">+</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">Create a Community</p>
+                    <p className="text-[10px] text-gray-400">Start your own group as a leader</p>
+                  </div>
+                </Link>
+              ) : (
+                <div className="w-full flex items-center gap-3 p-4 bg-gray-50 rounded-xl opacity-40">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                    <IconLock size={18} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-400">Create a Community</p>
+                    <p className="text-[10px] text-gray-400">
+                      {hasCreatedGroup ? "You already lead a group (max 1)" : `Unlocks at Lv.${GROUP_CREATE_LEVEL}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       <BottomNav />

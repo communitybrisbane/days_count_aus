@@ -6,10 +6,11 @@ import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getD
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GROUP_NAME_MAX } from "@/lib/constants";
+import { FOCUS_MODES, GROUP_NAME_MAX, GROUP_CREATE_LEVEL } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
+import ImageCropper from "@/components/ImageCropper";
 import { compressImage } from "@/lib/imageUtils";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
@@ -25,7 +26,9 @@ export default function CreateGroupPage() {
   const [goal, setGoal] = useState("");
   const [iconBlob, setIconBlob] = useState<Blob | null>(null);
   const [iconPreview, setIconPreview] = useState("");
+  const [cropSrc, setCropSrc] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   // Group name uniqueness check
   useEffect(() => {
@@ -40,10 +43,10 @@ export default function CreateGroupPage() {
     return () => clearTimeout(timer);
   }, [groupName]);
 
-  if (!profile || calculateLevel(profile.totalXP) < 5) {
+  if (!profile || calculateLevel(profile.totalXP) < GROUP_CREATE_LEVEL) {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
-        <p className="text-white/60">Reach Lv.5 to create a group</p>
+        <p className="text-white/60">Reach Lv.{GROUP_CREATE_LEVEL} to create a group</p>
         <button onClick={() => router.back()} className="mt-4 text-accent-orange">
           Back
         </button>
@@ -79,24 +82,31 @@ export default function CreateGroupPage() {
     );
   }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const blob = await compressImage(file, { maxSize: 256, maxFileSize: 100 * 1024 });
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = (blob: Blob) => {
     setIconBlob(blob);
     setIconPreview(URL.createObjectURL(blob));
+    setCropSrc("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !groupName.trim() || !mode || groupNameError) return;
+    if (!user || !groupName.trim() || !mode || !iconBlob || !goal.trim() || groupNameError) return;
 
     setSubmitting(true);
     try {
-      // Check group limit
+      // Check group limit: max 2 groups excluding mode group (mode group + 2 others = 3 total)
       const currentGroupIds = profile?.groupIds || [];
-      if (currentGroupIds.length >= 2) {
-        alert("You can join up to 2 groups (+ official). Please leave one first.");
+      if (currentGroupIds.length >= 3) {
+        alert("Max 2 groups. Please leave one first.");
         setSubmitting(false);
         return;
       }
@@ -146,14 +156,71 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <div className="min-h-dvh p-6">
-      <h1 className="text-2xl font-bold mb-6 text-white/90">Create Community</h1>
+    <div className="min-h-dvh">
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setCropSrc("")}
+        />
+      )}
+      <div className="flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 4L7 10L13 16" />
+          </svg>
+        </button>
+        <h1 className="text-sm font-bold text-white/90">Create Community</h1>
+      </div>
+
+      {!agreed ? (
+        <div className="p-6 space-y-6">
+          <div className="bg-forest-light/10 border border-forest-light/20 rounded-2xl p-5 space-y-4">
+            <h2 className="text-base font-bold text-white/90">Leader Guidelines</h2>
+
+            <div className="space-y-3 text-sm text-white/70">
+              <div className="flex gap-3">
+                <span className="text-accent-orange font-bold shrink-0">1.</span>
+                <p><span className="font-bold text-white/80">You are the leader.</span> You manage the group, set the tone, and keep things running.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-accent-orange font-bold shrink-0">2.</span>
+                <p><span className="font-bold text-white/80">Kick members</span> who break the rules or disrupt the group. You have full control.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-accent-orange font-bold shrink-0">3.</span>
+                <p><span className="font-bold text-white/80">Max 10 members</span> per group. Quality over quantity.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-accent-orange font-bold shrink-0">4.</span>
+                <p><span className="font-bold text-white/80">Set clear goals & rules.</span> Members join based on what you write.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-accent-orange font-bold shrink-0">5.</span>
+                <p><span className="font-bold text-white/80">1 group per leader.</span> You can lead 1 and join 1 other.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-accent-orange font-bold shrink-0">6.</span>
+                <p><span className="font-bold text-white/80">Closing the group</span> removes it for everyone. This cannot be undone.</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setAgreed(true)}
+            className="w-full bg-accent-orange text-white font-bold py-3 rounded-full active:scale-[0.98]"
+          >
+            I understand, let&apos;s create
+          </button>
+        </div>
+      ) : (
+      <div className="p-6">
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Group Icon */}
         <div className="flex flex-col items-center">
           <label className="block text-sm font-medium text-white/80 mb-2">
-            Group Icon
+            Group Icon <span className="text-red-400">*</span>
           </label>
           <button
             type="button"
@@ -232,7 +299,7 @@ export default function CreateGroupPage() {
         {/* Goal / Memo */}
         <div>
           <label className="block text-sm font-medium text-white/80 mb-1">
-            Goal / Rules
+            Goal / Rules <span className="text-red-400">*</span>
           </label>
           <textarea
             value={goal}
@@ -247,12 +314,14 @@ export default function CreateGroupPage() {
 
         <button
           type="submit"
-          disabled={submitting || !groupName.trim() || !mode || !!groupNameError}
+          disabled={submitting || !groupName.trim() || !mode || !iconBlob || !goal.trim() || !!groupNameError}
           className="w-full bg-accent-orange text-white font-bold py-3 rounded-full disabled:opacity-50"
         >
           {submitting ? "Creating..." : "Create"}
         </button>
       </form>
+      </div>
+      )}
     </div>
   );
 }

@@ -216,11 +216,26 @@ export function IconSpeaking({ size, className, strokeWidth }: IconProps) {
   );
 }
 
-export function IconAustralia({ size, className, strokeWidth }: IconProps) {
+export function IconKangarooLine({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
   return (
     <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 5.5c1-1 2.5-1.5 4-1.5.8 0 1.8.2 2.5.5s1.5 1 2.5 1.5c1.2.5 2 .3 3 0s2-.5 2.5.5.5 2.5 0 4-1 2.5-1.5 3.5-.5 2-1 3-1.5 1.5-2.5 2-2 .5-3 .5-2-.5-3-1-1.5-1.5-2.5-1.5-2 .5-3 0-1.5-1.5-1.5-3 .5-2.5.5-3.5-.5-2 0-3S5 6.5 6 5.5z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      {/* Head */}
+      <path d="M10 3.5C10 2.5 10.5 2 11.5 2S13 2.5 13 3.5 12.5 5.5 11.5 6 10 4.5 10 3.5z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      {/* Ear */}
+      <path d="M12.5 2.5L14 1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      {/* Eye */}
+      <circle cx="11" cy="3.5" r="0.4" fill="currentColor" stroke="none" />
+      {/* Body */}
+      <path d="M11 6c-1 1-2 3-2 5.5s.5 4 1 5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M12 6c1.5 1.5 3 4 3 6.5s-.5 4-1.5 5.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      {/* Front legs */}
+      <path d="M10 10c-1 .5-2 1.5-2.5 3" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      {/* Tail */}
+      <path d="M10 16.5c-1.5 1-3 1.5-4.5 1" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      {/* Back feet */}
+      <path d="M10 16.5c0 1 .5 3 .5 4.5.5.5 2 .5 2.5 0" stroke="currentColor" strokeWidth={d.strokeWidth} />
+      <path d="M13.5 18c0 1 .5 2 .5 3.5.5.5 2 .5 2.5-.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );
 }
@@ -359,12 +374,12 @@ export function FocusModeIcon({ modeId, ...props }: IconProps & { modeId: string
     case "work": return <IconCoin {...props} />;
     case "english": return <IconSpeaking {...props} />;
     case "skill": return <IconLaptop {...props} />;
-    case "adventure": return <IconAustralia {...props} />;
+    case "adventure": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
     case "chill": return <IconCoffee {...props} />;
     // Legacy modes
-    case "enjoying": return <IconAustralia {...props} />;
-    case "challenging": return <IconAustralia {...props} />;
-    case "challenge": return <IconAustralia {...props} />;
+    case "enjoying": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
+    case "challenging": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
+    case "challenge": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
     case "skills": return <IconLaptop {...props} />;
     case "social-media": return <IconCoffee {...props} />;
     case "daily": return <IconCoffee {...props} />;

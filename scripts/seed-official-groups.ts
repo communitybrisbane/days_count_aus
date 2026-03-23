@@ -22,15 +22,15 @@ const db = getFirestore();
 
 // 新モードの公式グループ
 const NEW_OFFICIAL_GROUPS = [
-  { mode: "work", groupName: "Workers Hub" },
   { mode: "english", groupName: "English Learners" },
   { mode: "skill", groupName: "Skill Builders" },
-  { mode: "challenge", groupName: "Challenge Seekers" },
-  { mode: "adventure", groupName: "Adventurers" },
+  { mode: "adventure", groupName: "Challenge Seekers" },
+  { mode: "work", groupName: "Workers Hub" },
+  { mode: "chill", groupName: "Chill Vibes" },
 ];
 
 // 旧モードID（クローズ対象）
-const LEGACY_MODES = ["enjoying", "challenging", "skills", "social-media"];
+const LEGACY_MODES = ["enjoying", "challenging", "skills", "social-media", "challenge"];
 
 async function closeLegacyGroups() {
   console.log("\n--- 旧公式グループのクローズ ---");

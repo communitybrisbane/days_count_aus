@@ -39,6 +39,7 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
   const [searchTag, setSearchTag] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
   const snapContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
@@ -228,60 +229,22 @@ export default function ExplorePage() {
         className="shrink-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        {/* Filter chips */}
-        <div className="px-4 pt-3 pb-2 space-y-1.5">
-          {/* Row 1: All + English, Skill, Adventure */}
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => { setFilter(""); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
-                !filter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-              }`}
-            >
-              All
-            </button>
-            {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
-              <button
-                key={m.id}
-                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
-                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                <FocusModeIcon modeId={m.id} size={14} /> {m.label}
-              </button>
-            ))}
-          </div>
-          {/* Row 2: Work, Chill */}
-          <div className="flex gap-1.5">
-            {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
-              <button
-                key={m.id}
-                onClick={() => { setFilter(m.id); setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
-                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                <FocusModeIcon modeId={m.id} size={14} /> {m.label}
-              </button>
-            ))}
-          </div>
-        </div>
         {/* Search bar */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pt-3 pb-2">
           <div className="flex items-center gap-2 bg-forest-light/20 rounded-full px-3 py-2">
             <IconSearch size={16} className="text-white/40 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchInput(sanitize(e.target.value))}
+              onFocus={() => setSearchFocused(true)}
               placeholder="Search by city, username, or #tag..."
               className="flex-1 bg-transparent text-sm outline-none placeholder-white/30 text-white"
             />
             {showWarn && <span className="text-red-400 text-[10px] font-bold shrink-0">English only</span>}
-            {searchQuery && (
+            {(searchQuery || filter || searchFocused) && (
               <button
-                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
+                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); setFilter(""); setSearchFocused(false); }}
                 className="text-white/40 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
               >
                 &times;
@@ -289,6 +252,45 @@ export default function ExplorePage() {
             )}
           </div>
         </div>
+        {/* Mode filter chips — shown on search focus or when filter active */}
+        {(searchFocused || filter) && (
+          <div className="px-4 pb-2 space-y-1.5">
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => { setFilter(""); }}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
+                  !filter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
+                }`}
+              >
+                All
+              </button>
+              {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { setFilter(m.id); setSearchFocused(false); }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
+                  }`}
+                >
+                  <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => { setFilter(m.id); setSearchFocused(false); }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
+                  }`}
+                >
+                  <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide" ref={scrollAreaRef}>

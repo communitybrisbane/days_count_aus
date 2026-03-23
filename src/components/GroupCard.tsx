@@ -29,9 +29,10 @@ interface GroupCardProps {
   leaderName?: string;
   canJoin?: boolean;
   onJoined?: () => void;
+  showGoal?: boolean;
 }
 
-export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined }: GroupCardProps) {
+export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal }: GroupCardProps) {
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isFull = !group.isOfficial && group.memberCount >= MAX_GROUP_MEMBERS;
   const isMember = group.memberIds?.includes(currentUserId || "");
@@ -92,7 +93,10 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
               <span className="ml-auto shrink-0">{formatTime(group.lastMessageAt)}</span>
             )}
           </div>
-          {group.lastMessageText && (
+          {showGoal && group.goal && (
+            <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{group.goal}</p>
+          )}
+          {!showGoal && group.lastMessageText && (
             <p className="text-xs text-gray-400 mt-0.5 truncate">{group.lastMessageText}</p>
           )}
         </div>

@@ -37,20 +37,66 @@ export async function fetchTotalLikesAndWeekly(uid: string) {
     totalLikes += d.data().likeCount || 0;
   });
 
-  // Weekly reset: Tuesday 00:00 local time
+  // Weekly reset: Tuesday 00:00 local time — count unique days
   const now = new Date();
   const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, ...
   const daysSinceTuesday = (day + 5) % 7; // Tue=0, Wed=1, ..., Mon=6
   const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
-  const weeklyPostCount = snap.docs.filter((d) => {
+  const daysSet = new Set<string>();
+  snap.docs.forEach((d) => {
     const ca = d.data().createdAt;
-    return ca?.toDate && ca.toDate() >= tuesdayStart;
-  }).length;
+    if (ca?.toDate && ca.toDate() >= tuesdayStart) {
+      daysSet.add(ca.toDate().toISOString().slice(0, 10));
+    }
+  });
+  const weeklyPostCount = daysSet.size;
 
   return { totalLikes, weeklyPostCount };
 }
 
-/** Get weekly post count for XP calculation (Tuesday reset) */
+/** Get post counts per week for the past N weeks (Tuesday reset), with mode breakdown */
+export async function fetchWeeklyHistory(uid: string, weeks: number = 12): Promise<{ weekStart: Date; count: number; uniqueDays: number; modes: Record<string, number> }[]> {
+  const now = new Date();
+  const day = now.getDay();
+  const daysSinceTuesday = (day + 5) % 7;
+  const currentTuesday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
+
+  const oldestTuesday = new Date(currentTuesday);
+  oldestTuesday.setDate(oldestTuesday.getDate() - (weeks - 1) * 7);
+
+  const q = query(
+    collection(db, "posts"),
+    where("userId", "==", uid),
+    where("status", "==", "active"),
+    where("createdAt", ">=", Timestamp.fromDate(oldestTuesday)),
+    orderBy("createdAt", "desc"),
+  );
+  const snap = await getDocs(q);
+
+  const result: { weekStart: Date; count: number; uniqueDays: number; modes: Record<string, number> }[] = [];
+  for (let i = 0; i < weeks; i++) {
+    const ws = new Date(currentTuesday);
+    ws.setDate(ws.getDate() - i * 7);
+    const we = new Date(ws);
+    we.setDate(we.getDate() + 7);
+    const weekPosts = snap.docs.filter((d) => {
+      const ca = d.data().createdAt;
+      if (!ca?.toDate) return false;
+      const t = ca.toDate();
+      return t >= ws && t < we;
+    });
+    const daySet = new Set(weekPosts.map((d) => d.data().createdAt.toDate().toISOString().slice(0, 10)));
+    const modes: Record<string, number> = {};
+    weekPosts.forEach((d) => {
+      const mode = d.data().mode || "chill";
+      modes[mode] = (modes[mode] || 0) + 1;
+    });
+    result.unshift({ weekStart: ws, count: weekPosts.length, uniqueDays: daySet.size, modes });
+  }
+  return result;
+}
+
+/** Get weekly unique posting days for XP calculation (Tuesday reset) */
 export async function getWeeklyPostCount(uid: string): Promise<number> {
   const now = new Date();
   const day = now.getDay();
@@ -65,10 +111,14 @@ export async function getWeeklyPostCount(uid: string): Promise<number> {
     limit(10)
   );
   const snap = await getDocs(q);
-  return snap.docs.filter((d) => {
+  const daysSet = new Set<string>();
+  snap.docs.forEach((d) => {
     const ca = d.data().createdAt;
-    return ca?.toDate && ca.toDate() >= tuesdayStart;
-  }).length;
+    if (ca?.toDate && ca.toDate() >= tuesdayStart) {
+      daysSet.add(ca.toDate().toISOString().slice(0, 10));
+    }
+  });
+  return daysSet.size;
 }
 
 interface CreatePostInput {
