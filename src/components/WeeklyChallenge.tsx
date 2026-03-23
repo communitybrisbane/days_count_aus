@@ -1,6 +1,6 @@
 "use client";
 
-import { WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD } from "@/lib/constants";
+import { WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX } from "@/lib/constants";
 import { getCurrentTuesday } from "@/lib/utils";
 
 // Rainbow streak colors: 0=gray, 1=red, 2=orange, 3=yellow, 4=green, 5=cyan, 6=blue, 7=purple, 8=pink, 9=gold, 10=rainbow
@@ -84,19 +84,7 @@ export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalClear
 
       <p className="text-[10px] text-gray-400 text-right mb-2">{getWeekRange()}</p>
 
-      <div className="relative flex items-end gap-1.5 mb-3">
-        {/* Streak threshold dashed line at 5th bar height */}
-        <div
-          className="absolute left-0 right-0 border-t border-dashed border-accent-orange/40 pointer-events-none z-10"
-          style={{ bottom: `${20 + (WEEK_STREAK_THRESHOLD - 1) * 8 + 18}px` }}
-        />
-        <div
-          className="absolute right-0 -top-1 pointer-events-none z-10"
-          style={{ bottom: `${20 + (WEEK_STREAK_THRESHOLD - 1) * 8 + 19}px`, top: "auto" }}
-        >
-          <span className="text-[7px] text-accent-orange/50 font-bold">streak</span>
-        </div>
-
+      <div className="flex items-end gap-1.5 mb-3">
         {WEEKLY_XP.map((baseXp, i) => {
           const filled = i < weeklyPostCount;
           const isNext = i === weeklyPostCount;
