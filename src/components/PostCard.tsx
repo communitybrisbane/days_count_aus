@@ -314,9 +314,9 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
               <IconLock size={14} />
             </div>
           )}
-          {authorProfile?.region && authorProfile.showRegion !== false && (
+          {(post.region || authorProfile?.region) && authorProfile?.showRegion !== false && (
             <div className="absolute top-1.5 right-1.5 bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded-full">
-              {authorProfile.region}
+              {post.region || authorProfile?.region}
             </div>
           )}
           <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black/40 to-transparent" />
@@ -395,9 +395,9 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {authorProfile?.region && authorProfile.showRegion !== false && (
+          {(post.region || authorProfile?.region) && authorProfile?.showRegion !== false && (
             <span className="text-[10px] bg-forest-mid/10 text-forest-mid px-2 py-0.5 rounded-full font-medium">
-              {authorProfile.region}
+              {post.region || authorProfile?.region}
             </span>
           )}
           {post.phase && (

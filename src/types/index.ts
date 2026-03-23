@@ -15,6 +15,7 @@ export interface Post {
   createdAt: Timestamp;
   editableUntil: Timestamp;
   tags?: string[];
+  region?: string;
 }
 
 export interface Group {

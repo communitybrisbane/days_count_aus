@@ -80,6 +80,7 @@ interface CreatePostInput {
   visibility: "public" | "private";
   imageBlob: Blob | null;
   tags?: string[];
+  region?: string;
 }
 
 export async function createPost(input: CreatePostInput): Promise<string> {
@@ -97,6 +98,7 @@ export async function createPost(input: CreatePostInput): Promise<string> {
     status: "active",
     reportCount: 0,
     tags: input.tags || [],
+    region: input.region || "",
     createdAt: serverTimestamp(),
     editableUntil: Timestamp.fromDate(editDeadline),
   });

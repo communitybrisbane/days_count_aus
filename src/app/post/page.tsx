@@ -113,6 +113,7 @@ export default function PostPage() {
         visibility,
         imageBlob,
         tags,
+        region: profile.region || "",
       });
 
       const now = new Date();
