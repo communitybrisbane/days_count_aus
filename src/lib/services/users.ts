@@ -24,6 +24,7 @@ import {
   User,
 } from "firebase/auth";
 import { db, storage } from "@/lib/firebase";
+import { getCurrentTuesday } from "@/lib/utils";
 import type { UserProfile, NotificationPrefs } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
 import { POST_IMAGE_SIZE } from "@/lib/constants";
@@ -195,10 +196,7 @@ export async function updateWeekStreak(
   currentWeekStreak?: number,
   lastCompletedWeekStart?: string
 ): Promise<void> {
-  const now = new Date();
-  const day = now.getDay();
-  const daysSinceTuesday = (day + 5) % 7;
-  const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday);
+  const tuesdayStart = getCurrentTuesday();
   const currentTuesday = tuesdayStart.toISOString().slice(0, 10);
 
   // Check if last completed week was the previous Tuesday (consecutive)

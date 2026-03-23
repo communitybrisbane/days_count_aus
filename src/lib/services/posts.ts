@@ -18,6 +18,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { POST_EDIT_WINDOW_MS } from "@/lib/constants";
+import { getCurrentTuesday } from "@/lib/utils";
 import type { Post } from "@/types";
 
 export async function fetchUserPosts(uid: string, isOwn = false): Promise<Post[]> {
@@ -38,10 +39,7 @@ export async function fetchTotalLikesAndWeekly(uid: string) {
   });
 
   // Weekly reset: Tuesday 00:00 local time — count unique days
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, 2=Tue, ...
-  const daysSinceTuesday = (day + 5) % 7; // Tue=0, Wed=1, ..., Mon=6
-  const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
+  const tuesdayStart = getCurrentTuesday();
   const daysSet = new Set<string>();
   snap.docs.forEach((d) => {
     const ca = d.data().createdAt;
@@ -56,11 +54,7 @@ export async function fetchTotalLikesAndWeekly(uid: string) {
 
 /** Get post counts per week for the past N weeks (Tuesday reset), with mode breakdown */
 export async function fetchWeeklyHistory(uid: string, weeks: number = 12): Promise<{ weekStart: Date; count: number; uniqueDays: number; modes: Record<string, number> }[]> {
-  const now = new Date();
-  const day = now.getDay();
-  const daysSinceTuesday = (day + 5) % 7;
-  const currentTuesday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
-
+  const currentTuesday = getCurrentTuesday();
   const oldestTuesday = new Date(currentTuesday);
   oldestTuesday.setDate(oldestTuesday.getDate() - (weeks - 1) * 7);
 
@@ -98,10 +92,7 @@ export async function fetchWeeklyHistory(uid: string, weeks: number = 12): Promi
 
 /** Get weekly unique posting days for XP calculation (Tuesday reset) */
 export async function getWeeklyPostCount(uid: string): Promise<number> {
-  const now = new Date();
-  const day = now.getDay();
-  const daysSinceTuesday = (day + 5) % 7;
-  const tuesdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
+  const tuesdayStart = getCurrentTuesday();
 
   const q = query(
     collection(db, "posts"),

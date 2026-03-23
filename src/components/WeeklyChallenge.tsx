@@ -1,6 +1,7 @@
 "use client";
 
 import { WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD } from "@/lib/constants";
+import { getCurrentTuesday } from "@/lib/utils";
 
 // Rainbow streak colors: 0=gray, 1=red, 2=orange, 3=yellow, 4=green, 5=cyan, 6=blue, 7=purple, 8=pink, 9=gold, 10=rainbow
 const RANK_COLORS = [
@@ -55,10 +56,7 @@ interface Props {
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function getWeekRange(): string {
-  const now = new Date();
-  const day = now.getDay();
-  const daysSinceTuesday = (day + 5) % 7;
-  const tue = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday);
+  const tue = getCurrentTuesday();
   const mon = new Date(tue);
   mon.setDate(mon.getDate() + 6);
   const fmt = (d: Date) => `${MONTH_ABBR[d.getMonth()]}. ${d.getDate()}`;

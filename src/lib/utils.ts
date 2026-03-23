@@ -79,6 +79,14 @@ export function getDayCount(
   return { label: "D", number: 0 };
 }
 
+/** Get the most recent Tuesday 00:00 local time */
+export function getCurrentTuesday(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const daysSinceTuesday = (day + 5) % 7;
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
+}
+
 /** Format day count for display */
 export function formatDayCount(label: string, number: number): string {
   if (label === "D" && number < 0) {

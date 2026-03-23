@@ -92,15 +92,6 @@ export function IconGroup({ size, className, strokeWidth }: IconProps) {
 
 // ─── Interaction ───
 
-export function IconHeart({ size, className, strokeWidth, filled }: IconProps & { filled?: boolean }) {
-  const d = p({ size, className, strokeWidth });
-  return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth={d.strokeWidth} />
-    </svg>
-  );
-}
-
 export function IconFire({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
   return (
@@ -148,16 +139,6 @@ export function IconCamera({ size, className, strokeWidth }: IconProps) {
     <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth={d.strokeWidth} />
-    </svg>
-  );
-}
-
-export function IconPin({ size, className, strokeWidth }: IconProps) {
-  const d = p({ size, className, strokeWidth });
-  return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );
 }
@@ -216,30 +197,6 @@ export function IconSpeaking({ size, className, strokeWidth }: IconProps) {
   );
 }
 
-export function IconKangarooLine({ size, className, strokeWidth }: IconProps) {
-  const d = p({ size, className, strokeWidth });
-  return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      {/* Head */}
-      <path d="M10 3.5C10 2.5 10.5 2 11.5 2S13 2.5 13 3.5 12.5 5.5 11.5 6 10 4.5 10 3.5z" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      {/* Ear */}
-      <path d="M12.5 2.5L14 1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      {/* Eye */}
-      <circle cx="11" cy="3.5" r="0.4" fill="currentColor" stroke="none" />
-      {/* Body */}
-      <path d="M11 6c-1 1-2 3-2 5.5s.5 4 1 5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <path d="M12 6c1.5 1.5 3 4 3 6.5s-.5 4-1.5 5.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      {/* Front legs */}
-      <path d="M10 10c-1 .5-2 1.5-2.5 3" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      {/* Tail */}
-      <path d="M10 16.5c-1.5 1-3 1.5-4.5 1" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      {/* Back feet */}
-      <path d="M10 16.5c0 1 .5 3 .5 4.5.5.5 2 .5 2.5 0" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <path d="M13.5 18c0 1 .5 2 .5 3.5.5.5 2 .5 2.5-.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-    </svg>
-  );
-}
-
 export function IconCoffee({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
   return (
@@ -247,15 +204,6 @@ export function IconCoffee({ size, className, strokeWidth }: IconProps) {
       <path d="M18 8h1a4 4 0 0 1 0 8h-1" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <path d="M6 1v3M10 1v3M14 1v3" stroke="currentColor" strokeWidth={d.strokeWidth} />
-    </svg>
-  );
-}
-
-export function IconChat({ size, className, strokeWidth }: IconProps) {
-  const d = p({ size, className, strokeWidth });
-  return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );
 }
@@ -305,31 +253,6 @@ export function IconTrophy({ size, className, strokeWidth }: IconProps) {
       <path d="M12 16v3" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <path d="M8 22h8" stroke="currentColor" strokeWidth={d.strokeWidth} />
       <path d="M9 19h6" stroke="currentColor" strokeWidth={d.strokeWidth} />
-    </svg>
-  );
-}
-
-// ─── Stats ───
-
-export function IconGrid({ size, className, strokeWidth }: IconProps) {
-  const d = p({ size, className, strokeWidth });
-  return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-    </svg>
-  );
-}
-
-export function IconList({ size, className, strokeWidth }: IconProps) {
-  const d = p({ size, className, strokeWidth });
-  return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="4" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <rect x="3" y="10" width="18" height="4" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
-      <rect x="3" y="17" width="18" height="4" rx="1.5" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );
 }
