@@ -29,7 +29,7 @@ import { FOCUS_MODES, MESSAGE_CHAR_LIMIT } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
-import { FocusModeIcon, IconHeart, IconCamera, IconEdit } from "@/components/icons";
+import { FocusModeIcon, IconKangaroo, IconCamera, IconEdit } from "@/components/icons";
 import type { Group } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
@@ -445,7 +445,7 @@ export default function GroupChatPage() {
                   <div className="flex items-center gap-2 mt-0.5">
                     <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
                       <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
-                        <IconHeart size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
+                        <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
                       </span>
                     </button>
                     {timeStr && <span className="text-[10px] text-white/30">{timeStr}</span>}
@@ -482,7 +482,7 @@ export default function GroupChatPage() {
                 <div className="flex items-center gap-2 mt-0.5">
                   <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
                     <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
-                      <IconHeart size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
+                      <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
                     </span>
                   </button>
                   {timeStr && <span className="text-[10px] text-white/30">{timeStr}</span>}

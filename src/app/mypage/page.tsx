@@ -13,8 +13,8 @@ import Avatar from "@/components/Avatar";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { IconSettings, IconHeart, IconLock, FocusModeIcon } from "@/components/icons";
-import type { Post } from "@/types";
+import { IconSettings, IconKangaroo, IconLock, FocusModeIcon } from "@/components/icons";
+import type { Post, Group } from "@/types";
 import { NO_SCROLLBAR_STYLE } from "@/types";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
@@ -24,6 +24,7 @@ export default function MyPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
   const [showFollowing, setShowFollowing] = useState(false);
@@ -40,6 +41,21 @@ export default function MyPage() {
       setLoadingPosts(false);
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!profile?.groupIds?.length) { setUserGroups([]); return; }
+    (async () => {
+      const groups: Group[] = [];
+      for (const gid of profile.groupIds!) {
+        const snap = await getDoc(doc(db, "groups", gid));
+        if (snap.exists()) {
+          const g = { id: snap.id, ...snap.data() } as Group;
+          if (!g.isOfficial && !g.isClosed) groups.push(g);
+        }
+      }
+      setUserGroups(groups);
+    })();
+  }, [profile?.groupIds]);
 
   const handleOpenFollowing = async () => {
     setShowFollowing(true);
@@ -205,6 +221,34 @@ ${aiPrompt ? `[AI Prompt]\n${aiPrompt}` : ""}`;
             >
               Copy AI Review Data
             </button>
+          )}
+
+          {/* Groups */}
+          {userGroups.length > 0 && (
+            <div className="flex gap-3 mt-4 w-full justify-center">
+              {userGroups.map((g) => {
+                const modeInfo = FOCUS_MODES.find((m) => m.id === g.mode);
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => router.push(`/groups/${g.id}`)}
+                    className="flex flex-col items-center gap-1.5 bg-forest-light/20 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/30 transition-colors"
+                  >
+                    {g.iconUrl ? (
+                      <img src={g.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : modeInfo ? (
+                      <div className="w-10 h-10 rounded-full bg-forest-mid/40 flex items-center justify-center">
+                        <FocusModeIcon modeId={modeInfo.id} size={20} className="text-white" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-forest-mid/40" />
+                    )}
+                    <p className="text-xs font-bold text-white/80 truncate w-full text-center">{g.groupName}</p>
+                    <p className="text-[10px] text-white/40">{g.memberCount}/10</p>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

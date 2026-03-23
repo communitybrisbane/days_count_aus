@@ -327,16 +327,6 @@ export default function GroupsPage() {
         </div>
       )}
 
-      {/* FAB — Lv.15+ create button */}
-      {!showSearch && canCreateCommunity && (
-        <Link
-          href="/groups/create"
-          className="fixed bottom-20 right-4 z-30 bg-gradient-to-br from-accent-orange to-accent-orange-dark text-white shadow-long rounded-full px-5 py-3 text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-transform"
-        >
-          + Create
-        </Link>
-      )}
-
       <BottomNav />
     </div>
   );

@@ -12,6 +12,28 @@ function p(props: IconProps) {
   return { ...defaults, ...props };
 }
 
+// ─── Kangaroo Like Icon (from app design PNG) ───
+
+export function IconKangaroo({ size = 24, filled, className = "" }: { size?: number; filled?: boolean; className?: string }) {
+  return (
+    <img
+      src="/icons/kangaroo-like.png"
+      alt=""
+      width={size}
+      height={size}
+      className={className}
+      draggable={false}
+      style={{
+        width: size,
+        height: size,
+        objectFit: "contain",
+        filter: filled ? "none" : "grayscale(1) opacity(0.45)",
+        transition: "filter 0.2s ease",
+      }}
+    />
+  );
+}
+
 // ─── Navigation (unified: 24x24, stroke-only, thick rounded) ───
 
 export function IconHome({ size, className, strokeWidth }: IconProps) {
@@ -35,10 +57,10 @@ export function IconDiary({ size, className, strokeWidth }: IconProps) {
   );
 }
 
-export function IconBoomerang({ size, className, strokeWidth }: IconProps) {
+export function IconBoomerang({ size, className, strokeWidth, filled }: IconProps & { filled?: boolean }) {
   const d = p({ size, className, strokeWidth });
   return (
-    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} className={d.className} strokeLinecap="round" strokeLinejoin="round">
       <path d="M4.5 4.5c0 0 1.5-1.5 5-1.5 2.5 0 4.5 1 5.5 2.5s1.5 3.5 1 5.5M4.5 4.5c0 0-1.5 1.5-1.5 5 0 2.5 1 4.5 2.5 5.5s3.5 1.5 5.5 1M4.5 4.5l2 2M13 14c-1 .5-2.5.5-3.5 0s-2-1.5-2-3" stroke="currentColor" strokeWidth={d.strokeWidth} />
     </svg>
   );

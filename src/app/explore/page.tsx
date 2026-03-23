@@ -102,7 +102,11 @@ export default function ExplorePage() {
         if (reset) {
           setPosts(newPosts);
         } else {
-          setPosts((prev) => [...prev, ...newPosts]);
+          setPosts((prev) => {
+            const existing = new Set(prev.map((p) => p.id));
+            const unique = newPosts.filter((p) => !existing.has(p.id));
+            return [...prev, ...unique];
+          });
         }
 
         lastDocRef.current = snap.docs[snap.docs.length - 1] || null;

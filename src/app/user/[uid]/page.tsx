@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { fetchUserPosts } from "@/lib/services/posts";
 import { fetchUserProfile, blockUser, unblockUser } from "@/lib/services/users";
 import { FOCUS_MODES, GRADIENTS } from "@/lib/constants";
@@ -13,7 +15,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
 import { FocusModeIcon, IconBan, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
-import type { Post, UserProfile } from "@/types";
+import type { Post, UserProfile, Group } from "@/types";
 import { NO_SCROLLBAR_STYLE } from "@/types";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 
@@ -26,6 +28,7 @@ export default function PublicProfilePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [followingCount, setFollowingCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
@@ -41,7 +44,21 @@ export default function PublicProfilePage() {
           fetchUserProfile(uid),
           fetchUserPosts(uid, isOwn),
         ]);
-        if (profile) setUserData(profile);
+        if (profile) {
+          setUserData(profile);
+          // Fetch user groups (non-official only)
+          if (profile.groupIds?.length) {
+            const groups: Group[] = [];
+            for (const gid of profile.groupIds) {
+              const snap = await getDoc(doc(db, "groups", gid));
+              if (snap.exists()) {
+                const g = { id: snap.id, ...snap.data() } as Group;
+                if (!g.isOfficial && !g.isClosed) groups.push(g);
+              }
+            }
+            setUserGroups(groups);
+          }
+        }
         setPosts(allPosts);
         try {
           const ids = await getFollowingIds(uid);
@@ -193,6 +210,34 @@ export default function PublicProfilePage() {
                   <IconBan size={14} />
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Groups */}
+          {userGroups.length > 0 && (
+            <div className="flex gap-3 mt-4 w-full justify-center">
+              {userGroups.map((g) => {
+                const modeInfo = FOCUS_MODES.find((m) => m.id === g.mode);
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => router.push(`/groups/${g.id}`)}
+                    className="flex flex-col items-center gap-1.5 bg-forest-light/20 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/30 transition-colors"
+                  >
+                    {g.iconUrl ? (
+                      <img src={g.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : modeInfo ? (
+                      <div className="w-10 h-10 rounded-full bg-forest-mid/40 flex items-center justify-center">
+                        <FocusModeIcon modeId={modeInfo.id} size={20} className="text-white" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-forest-mid/40" />
+                    )}
+                    <p className="text-xs font-bold text-white/80 truncate w-full text-center">{g.groupName}</p>
+                    <p className="text-[10px] text-white/40">{g.memberCount}/10</p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

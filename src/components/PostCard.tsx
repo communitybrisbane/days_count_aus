@@ -22,7 +22,7 @@ import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
 import XPToast from "./XPToast";
-import { FocusModeIcon, IconHeart, IconLock, IconEdit, IconTrash, IconFlag, IconBan } from "./icons";
+import { FocusModeIcon, IconKangaroo, IconLock, IconEdit, IconTrash, IconFlag, IconBan } from "./icons";
 import { reportPost } from "@/lib/services/posts";
 import { blockUser } from "@/lib/services/users";
 import type { Post } from "@/types";
@@ -59,6 +59,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   const [showLikers, setShowLikers] = useState(false);
   const [likers, setLikers] = useState<{ uid: string; displayName: string; photoURL: string }[]>([]);
   const [loadingLikers, setLoadingLikers] = useState(false);
+  const [recentLikers, setRecentLikers] = useState<{ uid: string; photoURL: string }[]>([]);
   const lastTapRef = useRef(0);
   const imageRef = useRef<HTMLDivElement>(null);
   const likingRef = useRef(false);
@@ -113,6 +114,26 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
     checkLike();
   }, [user, post.id]);
 
+  // Fetch recent likers for avatar preview (max 3)
+  useEffect(() => {
+    if (post.likeCount === 0) return;
+    async function fetchRecentLikers() {
+      try {
+        const q = query(collection(db, "posts", post.id, "likes"), orderBy("createdAt", "desc"), limit(3));
+        const snap = await getDocs(q);
+        const profiles: { uid: string; photoURL: string }[] = [];
+        for (const likeDoc of snap.docs) {
+          const userSnap = await getDoc(doc(db, "users", likeDoc.id));
+          if (userSnap.exists()) {
+            profiles.push({ uid: likeDoc.id, photoURL: userSnap.data().photoURL || "" });
+          }
+        }
+        setRecentLikers(profiles);
+      } catch { /* ignore */ }
+    }
+    fetchRecentLikers();
+  }, [post.id, post.likeCount]);
+
   useEffect(() => {
     if (post.editableUntil) {
       const deadline = post.editableUntil.toDate();
@@ -134,6 +155,8 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       // Optimistic update
       setLiked(false);
       setLikeCount((c) => c - 1);
+      setRecentLikers((prev) => prev.filter((l) => l.uid !== user.uid));
+      setLikers((prev) => prev.filter((l) => l.uid !== user.uid));
       try {
         await deleteDoc(likeRef);
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(-1) });
@@ -146,6 +169,8 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       // Optimistic update
       setLiked(true);
       setLikeCount((c) => c + 1);
+      setRecentLikers((prev) => [{ uid: user.uid, photoURL: profile.photoURL || "" }, ...prev].slice(0, 3));
+      setLikers((prev) => [{ uid: user.uid, displayName: profile.displayName || "You", photoURL: profile.photoURL || "" }, ...prev.filter((l) => l.uid !== user.uid)]);
       try {
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
@@ -238,24 +263,15 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
     ? post.createdAt.toDate().toLocaleDateString("en-AU")
     : "";
 
-  // Heart animation component
-  const HeartAnimation = ({ size, withParticles }: { size: number; withParticles: boolean }) => (
+  // Like pop animation — kangaroo only, no particles
+  const HeartAnimation = ({ size }: { size: number }) => (
     <div
       className="absolute pointer-events-none z-10"
       style={{ left: heartPos?.x ?? "50%", top: heartPos?.y ?? "50%", transform: "translate(-50%, -50%)" }}
     >
       <div className="animate-like-burst">
-        <IconHeart size={size} filled className="text-red-500 drop-shadow-lg" />
+        <IconKangaroo size={size} filled className="drop-shadow-lg" />
       </div>
-      {withParticles && [...Array(6)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute animate-like-particle"
-          style={{ animationDelay: `${i * 0.05}s`, transform: `rotate(${i * 60}deg) translateY(-20px)` }}
-        >
-          <IconHeart size={Math.round(size / 4)} filled className="text-red-400/80" />
-        </div>
-      ))}
     </div>
   );
 
@@ -308,7 +324,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
               </p>
             </div>
           )}
-          {showDoubleTapHeart && <HeartAnimation size={48} withParticles />}
+          {showDoubleTapHeart && <HeartAnimation size={48} />}
           {post.visibility === "private" && (
             <div className="absolute top-1.5 left-1.5 bg-black/50 text-white rounded-full px-2 py-1">
               <IconLock size={14} />
@@ -324,9 +340,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             onClick={(e) => { e.stopPropagation(); handleLike(); }}
             className="absolute bottom-1.5 left-2 flex items-center gap-1"
           >
-            <span className={liked ? "text-red-500" : "text-white/80"}>
-              <IconHeart size={14} filled={liked} />
-            </span>
+            <IconKangaroo size={14} filled={liked} />
             <span className="text-[10px] text-white/80">{likeCount}</span>
           </button>
         </div>
@@ -419,7 +433,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             </p>
           </div>
         )}
-        {showDoubleTapHeart && <HeartAnimation size={64} withParticles />}
+        {showDoubleTapHeart && <HeartAnimation size={64} />}
         {post.visibility === "private" && (
           <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-2 py-0.5 flex items-center gap-1 text-xs">
             <IconLock size={12} />
@@ -444,20 +458,29 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       {/* Actions */}
       {showActions && (
         <div className="flex items-center justify-between px-3 pb-3">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleLike}
-              className="flex items-center gap-1 text-sm"
+              className="flex items-center text-sm"
             >
-              <span className={liked ? "text-red-500" : "text-gray-400"}>
-                <IconHeart size={18} filled={liked} />
-              </span>
+              <IconKangaroo size={20} filled={liked} />
             </button>
             <button
               onClick={handleOpenLikers}
-              className="text-gray-500 text-sm"
+              className="flex items-center gap-1.5"
             >
-              {likeCount}
+              {recentLikers.length > 0 && (
+                <div className="flex items-center -space-x-1.5">
+                  {recentLikers.map((liker) => (
+                    <Avatar key={liker.uid} photoURL={liker.photoURL} displayName="" uid={liker.uid} size={18} className="ring-1.5 ring-white" />
+                  ))}
+                </div>
+              )}
+              {likeCount > 0 && (
+                <span className="text-xs text-gray-500 font-medium">
+                  {likeCount} {likeCount === 1 ? "like" : "likes"}
+                </span>
+              )}
             </button>
           </div>
 
