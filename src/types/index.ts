@@ -32,11 +32,13 @@ export interface Group {
   lastMessageAt?: Timestamp;
   lastMessageText?: string;
   lastMessageBy?: string;
+  joinType?: "open" | "friends";
 }
 
 export interface UserProfile {
   uid: string;
   displayName: string;
+  displayNameLower?: string;
   photoURL: string;
   totalXP: number;
   mainMode: string;

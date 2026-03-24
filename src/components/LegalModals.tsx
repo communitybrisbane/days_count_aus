@@ -1,58 +1,92 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useEffect, useState } from "react";
+import { fetchLegalDoc, type LegalDoc } from "@/lib/services/users";
 
 interface LegalModalProps {
   onClose: () => void;
 }
 
-// ─── Shared modal shell ───
-function LegalModalShell({ onClose, title, docId, fallback }: LegalModalProps & { title: string; docId: string; fallback: string }) {
-  const [html, setHtml] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+type Lang = "ja" | "en";
+
+// ─── Shared fullscreen modal shell with language toggle ───
+function LegalModalShell({
+  onClose,
+  titleJa,
+  titleEn,
+  docId,
+  fallbackJa,
+  fallbackEn,
+}: LegalModalProps & {
+  titleJa: string;
+  titleEn: string;
+  docId: "terms" | "privacy" | "legal_notice";
+  fallbackJa: string;
+  fallbackEn: string;
+}) {
+  const [lang, setLang] = useState<Lang>("en");
+  const [content, setContent] = useState<LegalDoc | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, "legal_docs", docId));
-        if (snap.exists() && snap.data()?.content) {
-          setHtml(snap.data().content as string);
-        }
-      } catch {
-        // fallback to hardcoded
-      } finally {
-        setLoading(false);
-      }
-    })();
+    let cancelled = false;
+    fetchLegalDoc(docId)
+      .then((doc) => { if (!cancelled) setContent(doc); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoaded(true); });
+    return () => { cancelled = true; };
   }, [docId]);
 
+  const title = lang === "ja" ? titleJa : titleEn;
+  const body = lang === "ja"
+    ? content?.contentJa || fallbackJa
+    : content?.contentEn || fallbackEn;
+
   return (
-    <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <div className="fixed inset-4 z-50 bg-white rounded-2xl flex flex-col max-w-md mx-auto max-h-[80vh]">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h3 className="font-bold text-sm">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 text-lg">&times;</button>
+    <div className="fixed inset-0" style={{ zIndex: 9999 }}>
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-white flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+          <h3 className="font-bold text-sm text-gray-800 truncate flex-1">{title}</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 text-xl shrink-0 ml-2">&times;</button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 text-xs text-gray-600 leading-relaxed space-y-3" style={{ scrollbarWidth: "none" }}>
-          {loading ? (
-            <p className="text-center text-gray-400 py-8">Loading...</p>
-          ) : html ? (
-            <div dangerouslySetInnerHTML={{ __html: html }} />
+
+        {/* Language toggle */}
+        <div className="flex gap-1 px-4 py-2 border-b border-gray-50 shrink-0">
+          {(["en", "ja"] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                lang === l
+                  ? "bg-gray-800 text-white"
+                  : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {l === "ja" ? "JP" : "EN"}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 text-xs text-gray-600 leading-relaxed space-y-3" style={{ scrollbarWidth: "none" }}>
+          {!loaded ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+            </div>
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: fallback }} />
+            <div dangerouslySetInnerHTML={{ __html: body }} />
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
-// ─── Fallback content (current hardcoded) ───
+// ─── Japanese fallback content ───
 
-const TERMS_FALLBACK = `
+const TERMS_JA = `
 <p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年3月24日</p>
 <p class="font-bold text-sm text-gray-800">第1条（利用規約の同意）</p>
 <p>Days Count in AUS（以下「本アプリ」）をご利用いただくことで、本利用規約に同意したものとみなします。同意いただけない場合は、本アプリのご利用をお控えください。</p>
@@ -137,7 +171,92 @@ const TERMS_FALLBACK = `
 <p>Instagram: <b>@count_taku</b></p>
 `;
 
-const PRIVACY_FALLBACK = `
+const TERMS_EN = `
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: March 24, 2026</p>
+<p class="font-bold text-sm text-gray-800">Article 1 (Acceptance of Terms)</p>
+<p>By using Days Count in AUS (hereinafter "the App"), you are deemed to have agreed to these Terms of Service. If you do not agree, please refrain from using the App.</p>
+<p class="font-bold text-sm text-gray-800">Article 2 (Service Overview)</p>
+<p>The App is a free Progressive Web App (PWA) operated by Count. (Operator: Takuma Takeo, hereinafter "the Operator"), designed for Working Holiday participants in Australia to record their daily experiences, growth, and community activities. All features are provided free of charge.</p>
+<p class="font-bold text-sm text-gray-800">Article 3 (Account Registration)</p>
+<p>・Login via a Google account is required.</p>
+<p>・Each person is limited to one account. Creating multiple accounts is prohibited.</p>
+<p>・You are responsible for all activities on your account.</p>
+<p>・Nicknames must be 1–15 characters using alphanumeric characters (a-z, 0-9, _) and must be unique.</p>
+<p>・The App is intended for users aged 18 and older. Users under 18 are not permitted. By registering, you represent that you are at least 18 years old.</p>
+<p class="font-bold text-sm text-gray-800">Article 4 (User Content)</p>
+<p>・Copyright of posted content (text and images) belongs to the user.</p>
+<p>・By making a public post, you grant other users a non-exclusive, royalty-free right to view it within the App.</p>
+<p>・The Operator may use public posts free of charge and without time limitation for the purpose of promoting, advertising, and marketing the App (including on social media, websites, and advertising materials). The poster's nickname and profile picture may be displayed in such use.</p>
+<p>・Posts can be edited within 5 minutes of creation and deleted at any time. However, promotional use of content obtained by the Operator before deletion may continue.</p>
+<p>・Private posts are visible only to the account owner. Private posts will not be used for promotional purposes.</p>
+<p>・If you do not wish your public posts to be used for promotional purposes, please contact us. We will cease promotional use of the relevant content.</p>
+<p>・Uploaded images are automatically compressed and EXIF data (including location information) is removed.</p>
+<p class="font-bold text-sm text-gray-800">Article 5 (Prohibited Activities)</p>
+<p>Users must not engage in the following activities:</p>
+<p>・Posting offensive, insulting, defamatory, or illegal content</p>
+<p>・Harassment, bullying, or threatening other users</p>
+<p>・Impersonating other users or creating fake accounts</p>
+<p>・Manipulating XP, streaks, or levels (through automation, exploiting bugs, etc.)</p>
+<p>・Accessing or modifying databases or APIs beyond normal usage</p>
+<p>・Using the App for commercial advertising, spam, or solicitation</p>
+<p>・Systematic collection or scraping of data from the App</p>
+<p class="font-bold text-sm text-gray-800">Article 6 (Content Moderation)</p>
+<p>・Posts are subject to automated screening for prohibited content. Violating posts may be hidden without prior notice.</p>
+<p>・Users can report posts or other users. Posts that receive 3 or more reports will be automatically hidden.</p>
+<p>・Posts that have been hidden for more than 30 days may be permanently deleted.</p>
+<p class="font-bold text-sm text-gray-800">Article 7 (Communities)</p>
+<p>・Users at Lv.13 or above can join communities, and users at Lv.20 or above can create them.</p>
+<p>・Each user can join up to 2 communities (excluding official communities).</p>
+<p>・Each community has a maximum of 10 members.</p>
+<p>・The leader is responsible for managing the community. If the leader leaves, the community will be disbanded.</p>
+<p>・Messages are limited to 100 characters.</p>
+<p>・The Operator assumes no responsibility for disputes between users in group chats (including defamation, fraud, or leaks of personal information). Users shall resolve such matters among themselves.</p>
+<p>・The Operator may take measures such as deleting messages or suspending accounts for users or messages deemed malicious through reports or other means.</p>
+<p class="font-bold text-sm text-gray-800">Article 8 (XP, Levels, and Streaks)</p>
+<p>・XP can be earned through posting and receiving likes. XP and levels have no monetary value.</p>
+<p>・Streaks are reset if no post is made within 48 hours. A warning notification is sent 6 hours before the deadline (if notifications are enabled).</p>
+<p>・There is no limit on sending likes, but XP earned from sending likes is capped at 5 times per day.</p>
+<p class="font-bold text-sm text-gray-800">Article 9 (Advertisements)</p>
+<p>・Sponsor and third-party advertisements may be displayed within the App.</p>
+<p>・While the Operator manages ad content, the Operator makes no guarantees regarding advertisers' products or services.</p>
+<p>・Ad links lead to external sites, which are governed by their own terms of service and privacy policies.</p>
+<p class="font-bold text-sm text-gray-800">Article 10 (External Links and Services)</p>
+<p>・The App may contain links to Zoom and other external services.</p>
+<p>・Use of external services is subject to their respective terms of service. The Operator assumes no responsibility for the content, safety, or availability of external services.</p>
+<p>・The Operator is not responsible for issues arising from external links (including leaks of personal information, fraud, or damages).</p>
+<p>・The Operator is not involved in and assumes no responsibility for disputes between users on external services (including Zoom calls).</p>
+<p class="font-bold text-sm text-gray-800">Article 11 (Push Notifications)</p>
+<p>・Push notifications are optional. They can be enabled or disabled at any time through your browser settings.</p>
+<p>・Notifications are used for streak warnings, like notifications, and other App-related announcements.</p>
+<p class="font-bold text-sm text-gray-800">Article 12 (Blocking and Reporting)</p>
+<p>・You can block any user. Posts from blocked users will not appear in your feed.</p>
+<p>・Reports require a reason and a screenshot. False reports may result in account suspension.</p>
+<p class="font-bold text-sm text-gray-800">Article 13 (Account Suspension and Deletion)</p>
+<p>・The Operator reserves the right to suspend or delete accounts that violate these Terms without prior notice.</p>
+<p>・Users can delete their account at any time from the Settings page. Deletion is permanent and cannot be undone.</p>
+<p class="font-bold text-sm text-gray-800">Article 14 (Service Termination)</p>
+<p>・The Operator may suspend or terminate the App without prior notice.</p>
+<p>・After service termination, user data (posts, profiles, images, etc.) will be deleted and cannot be recovered.</p>
+<p>・The Operator is not liable for damages incurred by users due to service termination, except in cases of intentional misconduct or gross negligence.</p>
+<p class="font-bold text-sm text-gray-800">Article 15 (Disclaimer)</p>
+<p>The App is provided "as is" without any express or implied warranties. We do not guarantee uninterrupted operation, error-free performance, or complete security. The Operator is not liable for data loss due to system failures, except in cases of intentional misconduct or gross negligence.</p>
+<p class="font-bold text-sm text-gray-800">Article 16 (Limitation of Liability)</p>
+<p>Except in cases of intentional misconduct or gross negligence, the Operator is not liable for any indirect, incidental, special, or consequential damages arising from the use or inability to use the App.</p>
+<p class="font-bold text-sm text-gray-800">Article 17 (Force Majeure)</p>
+<p>The Operator is not liable if the provision of the App becomes difficult due to natural disasters, war, terrorism, riots, enactment or amendment of laws, communication line failures, or other causes beyond the Operator's control.</p>
+<p class="font-bold text-sm text-gray-800">Article 18 (Intellectual Property Rights)</p>
+<p>Intellectual property rights related to the App's UI, design, logo, source code, and other components belong to the Operator. Users may not reproduce, modify, or redistribute these without the Operator's prior written consent.</p>
+<p class="font-bold text-sm text-gray-800">Article 19 (Governing Law and Jurisdiction)</p>
+<p>These Terms are governed by and construed in accordance with the laws of Japan. Any disputes arising from these Terms shall be subject to the exclusive jurisdiction of the Fukuoka District Court as the court of first instance.</p>
+<p class="font-bold text-sm text-gray-800">Article 20 (Changes to Terms)</p>
+<p>The Operator may modify these Terms at any time. Significant changes will be notified within the App. Continued use after changes constitutes acceptance of the modified Terms.</p>
+<p class="font-bold text-sm text-gray-800">Article 21 (Contact)</p>
+<p>If you have any questions, please contact us at:</p>
+<p>Email: <b>communirybrisbane@gmail.com</b></p>
+<p>Instagram: <b>@count_taku</b></p>
+`;
+
+const PRIVACY_JA = `
 <p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年3月24日</p>
 <p class="font-bold text-sm text-gray-800">第1条（運営者）</p>
 <p>Days Count in AUS（以下「本アプリ」）は、Count.（運営者: 岳尾拓馬、以下「運営者」）が運営しています。</p>
@@ -208,7 +327,78 @@ const PRIVACY_FALLBACK = `
 <p>Instagram: <b>@count_taku</b></p>
 `;
 
-const LEGAL_NOTICE_FALLBACK = `
+const PRIVACY_EN = `
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: March 24, 2026</p>
+<p class="font-bold text-sm text-gray-800">Article 1 (Operator)</p>
+<p>Days Count in AUS (hereinafter "the App") is operated by Count. (Operator: Takuma Takeo, hereinafter "the Operator").</p>
+<p class="font-bold text-sm text-gray-800">Article 2 (Information We Collect)</p>
+<p>The App collects the following information:</p>
+<p><b>a) Account information (obtained via Google login):</b></p>
+<p>・Google account UID (unique identifier)</p>
+<p>・Display name and profile picture (used as initial values, changeable)</p>
+<p>*We do not store your email address or Google password.</p>
+<p><b>b) Profile information entered by the user:</b></p>
+<p>・Nickname, region, goal, focus mode, departure/arrival dates, profile picture</p>
+<p><b>c) User-generated content:</b></p>
+<p>・Posts (text up to 400 characters, images compressed to max 300KB)</p>
+<p>・Group messages (max 100 characters), message reactions</p>
+<p>・Likes, follows, blocks, reports</p>
+<p><b>d) Automatically collected data:</b></p>
+<p>・XP, level, streak count, activity timestamps</p>
+<p>・Push notification token (if notifications are enabled)</p>
+<p>・Basic usage statistics via Firebase Analytics (page views, session duration, device information)</p>
+<p class="font-bold text-sm text-gray-800">Article 3 (Purpose of Use)</p>
+<p>・Providing and operating the App's features (posts, groups, explore, streaks, leveling)</p>
+<p>・Displaying public profile information to other users (nickname, photo, level, region, focus mode)</p>
+<p>・Calculating XP, levels, and streaks</p>
+<p>・Sending push notifications (streak warnings, like notifications; only when enabled)</p>
+<p>・Content moderation and ensuring compliance with community guidelines</p>
+<p>・Improving the App based on aggregated usage statistics</p>
+<p>・Using public posts for App promotion, advertising, and marketing</p>
+<p class="font-bold text-sm text-gray-800">Article 4 (Image Processing)</p>
+<p>All uploaded images are processed on the client side before submission:</p>
+<p>・Resized to appropriate dimensions (posts: max 1024px, avatars: 512px, group icons: 256px)</p>
+<p>・Compressed to JPEG format</p>
+<p>・<b>EXIF data (including GPS location, camera info, timestamps) is automatically removed</b>, protecting your location privacy.</p>
+<p class="font-bold text-sm text-gray-800">Article 5 (Data Storage and Security)</p>
+<p>・All data is stored on Firebase (Firestore and Cloud Storage) on Google Cloud Platform.</p>
+<p>・Firebase Security Rules enforce access controls based on user permissions.</p>
+<p>・Sensitive data (push notification tokens, block lists) is stored in private subcollections accessible only to the account owner.</p>
+<p>・The App is hosted on Vercel.</p>
+<p>・Data is retained as long as the account is active.</p>
+<p>・Data may be stored on Google Cloud Platform (including overseas servers such as those in the United States). Data is managed in accordance with Google's security standards and data protection policies.</p>
+<p class="font-bold text-sm text-gray-800">Article 6 (Data Sharing)</p>
+<p>The Operator does <b>not</b> sell, trade, or share users' personal information with third parties, except in the following cases:</p>
+<p>・Public posts and profile information (nickname, photo, level, region) are visible to other users.</p>
+<p>・Private posts are visible only to the account owner.</p>
+<p>・Firebase Analytics data is processed by Google in aggregated form (individuals cannot be identified).</p>
+<p>・When disclosure is required by law</p>
+<p class="font-bold text-sm text-gray-800">Article 7 (Third-Party Services)</p>
+<p>The App uses the following third-party services:</p>
+<p>・<b>Google Firebase:</b> Authentication, database, file storage, push notifications, analytics, Cloud Functions</p>
+<p>・<b>Vercel:</b> App hosting and deployment</p>
+<p>・<b>Sponsor ads:</b> Sponsor advertisements may be displayed within the App. No personal user information is shared with advertisers.</p>
+<p>We do not use ad networks, tracking pixels, or other third-party analytics.</p>
+<p class="font-bold text-sm text-gray-800">Article 8 (Your Rights)</p>
+<p>・<b>Access:</b> You can view all your data (profile, posts, groups) within the App.</p>
+<p>・<b>Correction:</b> You can edit your profile and posts at any time.</p>
+<p>・<b>Deletion:</b> You can delete your account from the Settings page. Deletion permanently removes all data (profile, posts, groups, images) and cannot be undone.</p>
+<p>・<b>Opt out of notifications:</b> You can disable push notifications at any time through your browser settings.</p>
+<p>・<b>Opt out of promotional use:</b> If you do not wish your public posts to be used for promotion, please contact us.</p>
+<p>・<b>Withdrawal of consent:</b> To withdraw consent for the handling of your personal information, please delete your account from the Settings page. Account deletion permanently removes all data and constitutes withdrawal of consent.</p>
+<p class="font-bold text-sm text-gray-800">Article 9 (Age Restriction)</p>
+<p>The App is not intended for users under 18 years of age. If we become aware that information has been collected from a user under 18, we will promptly delete the relevant account.</p>
+<p class="font-bold text-sm text-gray-800">Article 10 (Data Breach)</p>
+<p>In the event of a data breach that may affect users' personal information, we will notify affected users within the App as promptly as reasonably possible.</p>
+<p class="font-bold text-sm text-gray-800">Article 11 (Changes to This Policy)</p>
+<p>The Operator may update this Privacy Policy at any time. Significant changes will be notified within the App. Continued use after changes constitutes acceptance of the updated policy.</p>
+<p class="font-bold text-sm text-gray-800">Article 12 (Contact)</p>
+<p>For privacy-related inquiries, please contact us at:</p>
+<p>Email: <b>communirybrisbane@gmail.com</b></p>
+<p>Instagram: <b>@count_taku</b></p>
+`;
+
+const LEGAL_NOTICE_JA = `
 <p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年3月24日</p>
 <p class="font-bold text-sm text-gray-800">特定商取引法に基づく表記</p>
 <table class="w-full border-collapse mt-2">
@@ -227,16 +417,62 @@ const LEGAL_NOTICE_FALLBACK = `
 </table>
 `;
 
+const LEGAL_NOTICE_EN = `
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: March 24, 2026</p>
+<p class="font-bold text-sm text-gray-800">Disclosure Under the Specified Commercial Transactions Act</p>
+<table class="w-full border-collapse mt-2">
+  <tbody>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Service Name</td><td class="py-2 text-gray-600">Days Count in AUS</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Operator</td><td class="py-2 text-gray-600">Count. (Takuma Takeo / Individual)</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Address</td><td class="py-2 text-gray-600">Will be disclosed without delay upon request</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Contact</td><td class="py-2 text-gray-600">Email: communirybrisbane@gmail.com<br/>Instagram: @count_taku</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Price</td><td class="py-2 text-gray-600">Free (all features provided at no charge)</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Additional Costs</td><td class="py-2 text-gray-600">Internet connection fees are borne by the user</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Payment Method</td><td class="py-2 text-gray-600">Not applicable (free service)</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Availability</td><td class="py-2 text-gray-600">Available immediately via web browser after account creation</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Cancellation / Refund</td><td class="py-2 text-gray-600">You can delete your account at any time from the Settings page. No refunds as this is a free service.</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">System Requirements</td><td class="py-2 text-gray-600">Modern browser with JavaScript support (Chrome, Safari, Edge, Firefox). PWA installation supported.</td></tr>
+  </tbody>
+</table>
+`;
+
 // ─── Exported modals ───
 
 export function TermsModal({ onClose }: LegalModalProps) {
-  return <LegalModalShell onClose={onClose} title="利用規約" docId="terms" fallback={TERMS_FALLBACK} />;
+  return (
+    <LegalModalShell
+      onClose={onClose}
+      titleJa="利用規約"
+      titleEn="Terms of Service"
+      docId="terms"
+      fallbackJa={TERMS_JA}
+      fallbackEn={TERMS_EN}
+    />
+  );
 }
 
 export function PrivacyModal({ onClose }: LegalModalProps) {
-  return <LegalModalShell onClose={onClose} title="プライバシーポリシー" docId="privacy" fallback={PRIVACY_FALLBACK} />;
+  return (
+    <LegalModalShell
+      onClose={onClose}
+      titleJa="プライバシーポリシー"
+      titleEn="Privacy Policy"
+      docId="privacy"
+      fallbackJa={PRIVACY_JA}
+      fallbackEn={PRIVACY_EN}
+    />
+  );
 }
 
 export function LegalNoticeModal({ onClose }: LegalModalProps) {
-  return <LegalModalShell onClose={onClose} title="特定商取引法に基づく表記" docId="legal_notice" fallback={LEGAL_NOTICE_FALLBACK} />;
+  return (
+    <LegalModalShell
+      onClose={onClose}
+      titleJa="特定商取引法に基づく表記"
+      titleEn="Legal Notice"
+      docId="legal_notice"
+      fallbackJa={LEGAL_NOTICE_JA}
+      fallbackEn={LEGAL_NOTICE_EN}
+    />
+  );
 }

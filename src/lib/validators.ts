@@ -1,11 +1,11 @@
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 
-/** Check if a nickname is already taken by another user */
+/** Check if a nickname is already taken by another user (case-insensitive) */
 export async function isNicknameTaken(nickname: string, excludeUid?: string): Promise<boolean> {
   const q = query(
     collection(db, "users"),
-    where("displayName", "==", nickname)
+    where("displayNameLower", "==", nickname.toLowerCase())
   );
   const snap = await getDocs(q);
   if (snap.empty) return false;

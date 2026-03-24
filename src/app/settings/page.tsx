@@ -115,6 +115,7 @@ export default function SettingsPage() {
 
       await updateDoc(doc(db, "users", user.uid), {
         displayName: nickname.trim(),
+        displayNameLower: nickname.trim().toLowerCase(),
         region: region.trim(),
         showRegion,
         goal: goal.trim(),
@@ -207,8 +208,8 @@ export default function SettingsPage() {
     if (!user || !reportTarget.trim() || !reportReason.trim() || !reportImage) return;
     setReportError("");
     try {
-      // Resolve username to UID
-      const q = query(collection(db, "users"), where("displayName", "==", reportTarget.trim()));
+      // Resolve username to UID (case-insensitive)
+      const q = query(collection(db, "users"), where("displayNameLower", "==", reportTarget.trim().toLowerCase()));
       const snap = await getDocs(q);
       if (snap.empty) {
         setReportError("User not found");
@@ -360,7 +361,7 @@ export default function SettingsPage() {
                         ? "bg-accent-orange text-white font-bold"
                         : "bg-white text-forest-mid"
                     }`}
-                  >{m.description}</button>
+                  >{m.label}</button>
                 ))}
               </div>
             </div>

@@ -161,6 +161,18 @@ export default function ExplorePage() {
     }
   }, []);
 
+  // Initialize search from URL ?q= param (e.g. from hashtag tap)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    if (q) {
+      setSearchQuery(q);
+      handleSearch(q);
+      // Clean up URL without reload
+      window.history.replaceState({}, "", "/explore");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const refreshPosts = useCallback(() => {
     setPosts([]);
     lastDocRef.current = null;

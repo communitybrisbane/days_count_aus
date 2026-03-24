@@ -26,7 +26,7 @@ service cloud.firestore {
       // isPro, createdAt, uid are immutable
       allow update: if isOwner(userId)
                      && changed().hasOnly([
-                       'displayName', 'photoURL', 'region', 'showRegion', 'goal', 'mainMode',
+                       'displayName', 'displayNameLower', 'photoURL', 'region', 'showRegion', 'goal', 'mainMode',
                        'departureDate', 'returnStartDate', 'status', 'weeklyGoal',
                        'groupIds',
                        'currentStreak', 'lastPostAt', 'totalXP',
@@ -159,10 +159,10 @@ service cloud.firestore {
                      && request.resource.data.groupName.size() >= 1
                      && request.resource.data.groupName.size() <= 30;
 
-      // Update by leader: settings (goal, iconUrl, isClosed)
+      // Update by leader: settings (goal, iconUrl, isClosed, joinType)
       allow update: if isAuth()
                      && resource.data.creatorId == request.auth.uid
-                     && changed().hasOnly(['goal', 'iconUrl', 'isClosed']);
+                     && changed().hasOnly(['goal', 'iconUrl', 'isClosed', 'joinType']);
 
       // Update by leader: kick a member (memberIds remove + memberCount decrement)
       allow update: if isAuth()
@@ -178,14 +178,15 @@ service cloud.firestore {
                      && request.resource.data.memberCount == resource.data.memberCount - 1;
 
       // Join: add self to memberIds, increment memberCount
-      // Official groups have no member cap; user-created groups max 10
+      // Official groups with iconUrl (non-mode) have no cap; all others max 10
       allow update: if isAuth()
                      && !(request.auth.uid in resource.data.memberIds)
                      && request.auth.uid in request.resource.data.memberIds
                      && changed().hasOnly(['memberIds', 'memberCount'])
                      && request.resource.data.memberCount == resource.data.memberCount + 1
                      && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
-                     && (resource.data.isOfficial == true || resource.data.memberCount < 10);
+                     && ((resource.data.isOfficial == true && resource.data.iconUrl != '')
+                         || resource.data.memberCount < 12);
 
       // Leave (non-leader): remove self from memberIds, decrement memberCount
       allow update: if isAuth()

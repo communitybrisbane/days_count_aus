@@ -406,7 +406,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             )}
           </div>
           <p className="text-xs text-gray-400">
-            {createdDate} · {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle mr-0.5" />}{modeInfo?.description}
+            {createdDate} · {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle mr-0.5" />}{modeInfo?.label}
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -450,8 +450,17 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           </p>
         )}
         {post.tags && post.tags.length > 0 && (
-          <p className="text-xs text-accent-orange mt-1.5">
-            {post.tags.join(" ")}
+          <p className="text-xs mt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
+            {post.tags.map((tag, i) => (
+              <a
+                key={i}
+                href={`/explore?q=${encodeURIComponent(tag)}`}
+                onClick={(e) => { e.stopPropagation(); }}
+                className="text-accent-orange active:opacity-60"
+              >
+                {tag}
+              </a>
+            ))}
           </p>
         )}
       </div>

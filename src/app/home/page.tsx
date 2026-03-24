@@ -207,28 +207,19 @@ export default function HomePage() {
 
       {/* ===== 2. Weekly Goal — Material Card ===== */}
       <div className="px-5 mt-3 relative z-10">
-        <div className={`card-material overflow-hidden transition-all duration-500 ${
-          goalCleared
-            ? "ring-2 ring-accent-orange/40 shadow-accent-orange/15"
-            : ""
-        }`}>
-          <div className={`px-5 pt-5 pb-5 ${goalCleared ? "bg-gradient-to-br from-amber-50/80 to-orange-50/40" : ""}`}>
-            {/* Goal text + edit button top-right */}
-            <div className="flex items-start justify-between mb-4">
+        <div className="bg-forest-mid/40 border border-forest-light/20 rounded-2xl overflow-hidden transition-all duration-500">
+          <div className="px-4 pt-4 pb-3">
+            {/* Goal text + edit button */}
+            <div className="flex items-start justify-between mb-3">
               <div className="min-w-0 flex-1">
                 {profile.goal ? (
-                  <p className="text-base font-bold text-forest leading-snug">{profile.goal}</p>
+                  <p className="text-sm font-bold text-white/90 leading-snug">{profile.goal}</p>
                 ) : (
-                  <p className="text-base text-gray-400 italic">No goal set</p>
-                )}
-                {goalCleared && (
-                  <span className="inline-block mt-1 text-[10px] font-black text-white bg-gradient-to-r from-accent-orange to-accent-orange-dark px-2.5 py-0.5 rounded-full shadow-sm">
-                    Complete!
-                  </span>
+                  <p className="text-sm text-white/30 italic">No goal set</p>
                 )}
               </div>
-              <button onClick={() => setShowWeeklyHistory(true)} className="shrink-0 ml-3 p-1.5 active:bg-gray-100 rounded-lg transition-colors">
-                <IconEdit size={18} className="text-gray-400" />
+              <button onClick={() => setShowWeeklyHistory(true)} className="shrink-0 ml-3 p-1.5 active:bg-white/10 rounded-lg transition-colors">
+                <IconEdit size={18} className="text-white/30" />
               </button>
             </div>
 
@@ -245,16 +236,24 @@ export default function HomePage() {
 
       {/* ===== 3. XP / Level ===== */}
       <div className="px-5 mt-3">
-        <div className="card-material px-4 py-3">
+        <div className="bg-forest-mid/40 border border-forest-light/20 rounded-2xl px-4 py-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-black text-forest tabular-nums">Lv.{level}</span>
-            <span className="text-[11px] text-gray-400 tabular-nums">{profile.totalXP} / {xpForLevel(level + 1)} XP</span>
+            <span className="text-lg font-black text-accent-orange tabular-nums leading-none">Lv.{level}</span>
+            <span className="text-[11px] text-white/40 tabular-nums font-medium">{profile.totalXP} / {xpForLevel(level + 1)} XP</span>
           </div>
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="relative">
+            <div className="w-full h-2 bg-white/[0.06] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-accent-orange to-accent-orange-light rounded-full transition-all duration-700"
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+            </div>
             <div
-              className="h-full bg-accent-orange rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
+              className="absolute top-1/2 transition-all duration-700 pointer-events-none"
+              style={{ left: `${Math.min(progress, 100)}%`, transform: `translateX(-55%) translateY(-50%)` }}
+            >
+              <img src="/icons/kangaroo-like.png" alt="" width={36} height={36} draggable={false} className="drop-shadow-sm" style={{ width: 36, height: 36, objectFit: "contain" }} />
+            </div>
           </div>
         </div>
       </div>

@@ -18,7 +18,16 @@ import { FocusModeIcon } from "@/components/icons";
 
 type Phase = "pre-departure" | "in-australia" | "post-return";
 
+const GOAL_PLACEHOLDERS: Record<string, string> = {
+  english: "e.g. Order coffee without Google Translate",
+  skill: "e.g. Build an app while in a WH",
+  adventure: "e.g. Roadtrip from Sydney to Cairns",
+  work: "e.g. Save $10k before going home",
+  chill: "e.g. Find my favourite beach",
+};
+
 const TOTAL_STEPS = 6;
+const TOTAL_STEPS_POST_RETURN = 5;
 
 export default function OnboardingPage() {
   const { user, profile, loading, refreshProfile } = useAuth();
@@ -113,6 +122,7 @@ export default function OnboardingPage() {
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         displayName: nickname.trim(),
+        displayNameLower: nickname.trim().toLowerCase(),
         photoURL,
         status: phase || "in-australia",
         totalXP: 0,
@@ -148,8 +158,11 @@ export default function OnboardingPage() {
     return <LoadingSpinner fullScreen />;
   }
 
-  // Progress bar
-  const progress = step / TOTAL_STEPS;
+  // Progress bar — post-return skips the date step (step 3)
+  const isPostReturn = phase === "post-return";
+  const totalSteps = isPostReturn ? TOTAL_STEPS_POST_RETURN : TOTAL_STEPS;
+  const displayStep = isPostReturn && step > 3 ? step - 1 : step;
+  const progress = displayStep / totalSteps;
 
   return (
     <div className="min-h-dvh bg-white flex flex-col">
@@ -182,7 +195,7 @@ export default function OnboardingPage() {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
-          <span className="text-xs text-gray-300 w-10 text-right">{step}/{TOTAL_STEPS}</span>
+          <span className="text-xs text-gray-300 w-10 text-right">{displayStep}/{totalSteps}</span>
         </div>
       </div>
 
@@ -248,7 +261,7 @@ export default function OnboardingPage() {
               ]).map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => { setPhase(opt.value); goNext(); }}
+                  onClick={() => { setPhase(opt.value); setStep(opt.value === "post-return" ? 4 : 3); }}
                   className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all active:scale-[0.98] ${
                     phase === opt.value
                       ? "border-accent-orange bg-accent-orange/5"
@@ -267,10 +280,10 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="flex-1 flex flex-col">
             <h2 className="text-xl font-bold mb-1">
-              {phase === "pre-departure" ? "When do you leave?" : "When did you arrive?"}
+              {phase === "pre-departure" ? "When will you arrive?" : "When did you arrive?"}
             </h2>
             <p className="text-sm text-gray-400 mb-8">
-              {phase === "pre-departure" ? "Your departure date" : "Your arrival date in Australia"}
+              {phase === "pre-departure" ? "Your planned arrival date" : "Your arrival date in Australia"}
             </p>
 
             <input
@@ -363,7 +376,7 @@ export default function OnboardingPage() {
               maxLength={GOAL_MAX}
               value={goal}
               onChange={(e) => setGoal(sanitize(e.target.value))}
-              placeholder="e.g. Improve my English to IELTS 7.0"
+              placeholder={GOAL_PLACEHOLDERS[mainMode] || "e.g. Set your goal"}
               className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange"
             />
             <AsciiWarn show={showWarn} />
@@ -374,7 +387,7 @@ export default function OnboardingPage() {
               disabled={submitting}
               className="w-full bg-accent-orange text-white font-bold py-3.5 rounded-2xl disabled:opacity-40 active:scale-[0.98] mb-2"
             >
-              {submitting ? "Setting up..." : "Get Started"}
+              {submitting ? "Setting up..." : "Start Days Count"}
             </button>
             <button
               onClick={() => { setGoal(""); handleSubmit(); }}

@@ -190,6 +190,35 @@ export async function fetchAdminConfig() {
   return snap.exists() ? snap.data() : null;
 }
 
+// ─── Legal documents (Firestore with fallback) ───
+
+export interface LegalDoc {
+  contentJa: string;
+  contentEn: string;
+}
+
+const legalCache: Record<string, LegalDoc | null> = {};
+
+export async function fetchLegalDoc(docId: "terms" | "privacy" | "legal_notice"): Promise<LegalDoc | null> {
+  if (legalCache[docId] !== undefined) return legalCache[docId];
+  try {
+    const snap = await getDoc(doc(db, "legal_docs", docId));
+    if (snap.exists()) {
+      const data = snap.data();
+      const result: LegalDoc = {
+        contentJa: data.contentJa || data.content_ja || "",
+        contentEn: data.contentEn || data.content_en || "",
+      };
+      legalCache[docId] = result;
+      return result;
+    }
+  } catch {
+    // Firestore fetch failed — fall through to null
+  }
+  legalCache[docId] = null;
+  return null;
+}
+
 /** Update week streak when streak threshold post of the week is made */
 export async function updateWeekStreak(
   uid: string,
