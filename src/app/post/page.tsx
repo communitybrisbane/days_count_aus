@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX, REGIONS } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_XP, POST_XP_DAILY_MAX, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX, REGIONS } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
-import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount } from "@/lib/services/posts";
+import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount } from "@/lib/services/posts";
 import ImageCropper from "@/components/ImageCropper";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
@@ -133,12 +133,18 @@ export default function PostPage() {
       let totalXpGain = 0;
       let newStreak = 1;
 
+      // Post XP: 5 XP per post, up to 3 posts per day
+      const dailyCount = await getDailyPostCount(user.uid);
+      if (dailyCount <= POST_XP_DAILY_MAX) {
+        totalXpGain += POST_XP;
+      }
+
       if (!alreadyPostedToday) {
         const weeklyCount = await getWeeklyPostCount(user.uid);
         const streakWeeks = Math.min(profile.weekStreak || 0, WEEK_STREAK_MAX);
         const baseXp = weeklyCount < 7 ? WEEKLY_XP[weeklyCount] : 0;
         const streakBonus = weeklyCount < 7 ? streakWeeks * WEEK_STREAK_BONUS : 0;
-        totalXpGain = baseXp + streakBonus + (firstPost ? FIRST_POST_BONUS : 0);
+        totalXpGain += baseXp + streakBonus + (firstPost ? FIRST_POST_BONUS : 0);
 
         if (profile.lastPostAt) {
           const lastPostStr = new Date(profile.lastPostAt).toISOString().slice(0, 10);

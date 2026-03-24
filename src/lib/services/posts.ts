@@ -112,6 +112,22 @@ export async function getWeeklyPostCount(uid: string): Promise<number> {
   return daysSet.size;
 }
 
+/** Get today's post count for a user */
+export async function getDailyPostCount(uid: string): Promise<number> {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const q = query(
+    collection(db, "posts"),
+    where("userId", "==", uid),
+    where("createdAt", ">=", Timestamp.fromDate(todayStart)),
+    orderBy("createdAt", "desc"),
+    limit(10)
+  );
+  const snap = await getDocs(q);
+  return snap.size;
+}
+
 interface CreatePostInput {
   userId: string;
   mode: string;

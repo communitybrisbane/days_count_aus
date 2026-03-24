@@ -47,8 +47,8 @@ export const GRADIENTS = [
 ] as const;
 
 /** Weekly XP rewards — escalating per day (index 0 = 1st post, index 6 = 7th) */
-export const WEEKLY_XP = [5, 7, 10, 15, 25, 35, 50] as const;
-export const WEEKLY_XP_TOTAL = WEEKLY_XP.reduce((a, b) => a + b, 0); // 147
+export const WEEKLY_XP = [10, 12, 15, 20, 30, 40, 60] as const;
+export const WEEKLY_XP_TOTAL = WEEKLY_XP.reduce((a, b) => a + b, 0); // 187
 /** Minimum posts per week to keep streak alive */
 export const WEEK_STREAK_THRESHOLD = 5;
 /** Consecutive week bonus: +5 XP per post per streak week (max 10 weeks) */
@@ -85,10 +85,11 @@ export function getMaxCommunitySlots(level: number): number {
   }
   return slots;
 }
-export const FIRST_POST_BONUS = 50;
-export const LIKE_SEND_XP = 5;
+export const FIRST_POST_BONUS = 0;
+export const POST_XP = 10;
+export const POST_XP_DAILY_MAX = 3;
+export const LIKE_SEND_XP = 3;
 export const LIKE_RECEIVE_XP = 5;
-export const LIKE_RECEIVE_DAILY_MAX = 10;
 
 export const REGIONS = [
   "Sydney",
