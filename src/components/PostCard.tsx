@@ -458,18 +458,18 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           </p>
         )}
         {post.tags && post.tags.length > 0 && (
-          <p className="text-xs mt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
+          <div className="flex flex-wrap gap-1 mt-1.5">
             {post.tags.map((tag, i) => (
               <a
                 key={i}
                 href={`/explore?q=${encodeURIComponent(tag)}`}
                 onClick={(e) => { e.stopPropagation(); }}
-                className="text-accent-orange active:opacity-60"
+                className="text-[11px] text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0.5 active:bg-accent-orange/20 transition-colors"
               >
                 {tag}
               </a>
             ))}
-          </p>
+          </div>
         )}
       </div>
 

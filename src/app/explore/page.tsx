@@ -40,6 +40,7 @@ export default function ExplorePage() {
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
   const [searchTag, setSearchTag] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [trendingTags, setTrendingTags] = useState<{ tag: string; count: number }[]>([]);
   const snapContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
@@ -173,6 +174,23 @@ export default function ExplorePage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Compute trending tags from loaded posts
+  useEffect(() => {
+    if (posts.length === 0) return;
+    const counts = new Map<string, number>();
+    posts.forEach((p) => {
+      p.tags?.forEach((t) => {
+        const key = t.toLowerCase();
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+    });
+    const sorted = Array.from(counts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    setTrendingTags(sorted);
+  }, [posts]);
+
   const refreshPosts = useCallback(() => {
     setPosts([]);
     lastDocRef.current = null;
@@ -298,6 +316,23 @@ export default function ExplorePage() {
                   }`}
                 >
                   <FocusModeIcon modeId={m.id} size={14} /> {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Trending tags — shown when focused, no query */}
+        {searchFocused && !searchQuery && trendingTags.length > 0 && (
+          <div className="px-4 pb-2">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1.5">Trending</p>
+            <div className="flex flex-wrap gap-1.5">
+              {trendingTags.map(({ tag, count }) => (
+                <button
+                  key={tag}
+                  onClick={() => { onSearchInput(tag); setSearchFocused(false); }}
+                  className="px-2.5 py-1 rounded-full text-xs bg-white/10 text-white/80 hover:bg-white/20 active:scale-95 transition-all"
+                >
+                  {tag} <span className="text-white/40">{count}</span>
                 </button>
               ))}
             </div>
