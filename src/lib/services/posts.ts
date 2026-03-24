@@ -206,14 +206,18 @@ export async function reportPost(
   postId: string,
   reporterId: string,
   reason: string
-): Promise<"reported" | "already_reported" | "auto_hidden"> {
+): Promise<"reported" | "already_reported"> {
   const reportRef = doc(db, "posts", postId, "reports", reporterId);
 
   // Check if already reported
-  const existing = await getDoc(reportRef);
-  if (existing.exists()) return "already_reported";
+  try {
+    const existing = await getDoc(reportRef);
+    if (existing.exists()) return "already_reported";
+  } catch {
+    // If read fails (permissions), try to create anyway — will fail if duplicate
+  }
 
-  // Write report to subcollection
+  // Write report to subcollection (triggers checkReportThreshold Cloud Function)
   await setDoc(reportRef, {
     reason,
     createdAt: serverTimestamp(),
@@ -221,24 +225,11 @@ export async function reportPost(
 
   // Increment reportCount on the post
   const postRef = doc(db, "posts", postId);
-  const postSnap = await getDoc(postRef);
-  if (!postSnap.exists()) return "reported";
+  await updateDoc(postRef, {
+    reportCount: increment(1),
+  });
 
-  const currentCount = (postSnap.data().reportCount || 0) + 1;
-
-  if (currentCount >= REPORT_THRESHOLD) {
-    // Auto-hide
-    await updateDoc(postRef, {
-      reportCount: currentCount,
-      status: "hidden",
-    });
-    return "auto_hidden";
-  } else {
-    await updateDoc(postRef, {
-      reportCount: increment(1),
-    });
-    return "reported";
-  }
+  return "reported";
 }
 
 /**

@@ -129,7 +129,7 @@ service cloud.firestore {
 
       // Post reports subcollection (prevent duplicate reports per user)
       match /reports/{reporterId} {
-        allow read: if false;
+        allow read: if isAuth() && request.auth.uid == reporterId;
         allow create: if isAuth()
                        && request.auth.uid == reporterId
                        && resource == null;

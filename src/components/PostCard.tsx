@@ -60,6 +60,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   const [likers, setLikers] = useState<{ uid: string; displayName: string; photoURL: string }[]>([]);
   const [loadingLikers, setLoadingLikers] = useState(false);
   const [recentLikers, setRecentLikers] = useState<{ uid: string; photoURL: string }[]>([]);
+  const [reportStatus, setReportStatus] = useState<"" | "sending" | "done" | "already">("");
   const lastTapRef = useRef(0);
   const imageRef = useRef<HTMLDivElement>(null);
   const likingRef = useRef(false);
@@ -233,18 +234,18 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   const handleReport = async () => {
     if (!user) return;
     if (!confirm("Report this post as inappropriate?")) return;
+    setReportStatus("sending");
     try {
       const result = await reportPost(post.id, user.uid, "Inappropriate content");
       if (result === "already_reported") {
-        alert("You have already reported this post.");
-      } else if (result === "auto_hidden") {
-        alert("Thank you. This post has been hidden due to multiple reports.");
-        onDelete?.();
+        setReportStatus("already");
       } else {
-        alert("Thank you for reporting. We will review it.");
+        setReportStatus("done");
       }
+      setTimeout(() => setReportStatus(""), 3000);
     } catch (e) {
       console.error("Report failed:", e);
+      setReportStatus("");
     }
   };
 
@@ -548,6 +549,25 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
 
       {/* Likers modal */}
       {showLikers && <LikersModal />}
+
+      {/* Report status toast */}
+      {reportStatus && (
+        <div className="fixed bottom-20 inset-x-0 z-50 flex justify-center px-4 animate-fade-in">
+          <div className={`px-5 py-3 rounded-2xl shadow-lg text-sm font-medium flex items-center gap-2 ${
+            reportStatus === "done" ? "bg-forest-mid text-white" :
+            reportStatus === "already" ? "bg-gray-700 text-white" :
+            "bg-gray-700 text-white"
+          }`}>
+            {reportStatus === "sending" && (
+              <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Reporting...</>
+            )}
+            {reportStatus === "done" && (
+              <><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10l4 4 8-8" /></svg>Report submitted. Thank you!</>
+            )}
+            {reportStatus === "already" && "You have already reported this post."}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
