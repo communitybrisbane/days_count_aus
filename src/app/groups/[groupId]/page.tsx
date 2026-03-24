@@ -55,6 +55,7 @@ export default function GroupChatPage() {
   const [memberProfiles, setMemberProfiles] = useState<Record<string, any>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [editGoal, setEditGoal] = useState("");
+  const [editJoinType, setEditJoinType] = useState<"open" | "friends">("open");
   const [savingSettings, setSavingSettings] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -82,6 +83,7 @@ export default function GroupChatPage() {
 
       setGroup(data);
       setEditGoal(data.goal || "");
+      setEditJoinType(data.joinType || "open");
     }
     if (user) fetchGroup().catch((err) => console.error("fetchGroup error:", err));
   }, [groupId, user]);
@@ -283,8 +285,9 @@ export default function GroupChatPage() {
     setSavingSettings(true);
     await updateDoc(doc(db, "groups", groupId), {
       goal: editGoal.trim(),
+      joinType: editJoinType,
     });
-    setGroup((g) => g ? { ...g, goal: editGoal.trim() } : g);
+    setGroup((g) => g ? { ...g, goal: editGoal.trim(), joinType: editJoinType } : g);
     setSavingSettings(false);
     setShowSettings(false);
   };
@@ -343,7 +346,7 @@ export default function GroupChatPage() {
               {modeInfo && (
                 <span className="flex items-center gap-0.5">
                   <FocusModeIcon modeId={modeInfo.id} size={10} className="text-white/50" />
-                  {modeInfo.description}
+                  {modeInfo.label}
                 </span>
               )}
               <span>· {group.memberCount}{isOfficial ? "" : "/10"}</span>
@@ -424,6 +427,33 @@ export default function GroupChatPage() {
           <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center">
             <div className="w-full max-w-[430px] bg-white rounded-t-2xl p-5">
               <h3 className="font-bold text-sm mb-3">Community Settings</h3>
+
+              <label className="block text-xs font-medium text-gray-500 mb-1">Who can join?</label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setEditJoinType("open")}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
+                    editJoinType === "open"
+                      ? "bg-accent-orange text-white"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  Anyone welcome
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditJoinType("friends")}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
+                    editJoinType === "friends"
+                      ? "bg-accent-orange text-white"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  Friends only
+                </button>
+              </div>
+
               <label className="block text-xs font-medium text-gray-500 mb-1">Goal / Rules</label>
               <textarea
                 value={editGoal}

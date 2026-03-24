@@ -1,9 +1,9 @@
 export const FOCUS_MODES = [
-  { id: "english", label: "English", icon: "english", description: "English" },
-  { id: "skill", label: "Skill", icon: "skill", description: "Skill" },
-  { id: "adventure", label: "Challenge", icon: "adventure", description: "Challenge" },
-  { id: "work", label: "Work", icon: "work", description: "Work" },
-  { id: "chill", label: "Chill", icon: "chill", description: "Chill" },
+  { id: "english", label: "English", icon: "english", description: "IELTS, speaking, language exchange" },
+  { id: "skill", label: "Skill", icon: "skill", description: "Coding, AI, SNS, portfolio" },
+  { id: "adventure", label: "Challenge", icon: "adventure", description: "Road trips, English interviews, new cities" },
+  { id: "work", label: "Work", icon: "work", description: "Farm, cafe job, 88 days" },
+  { id: "chill", label: "Chill", icon: "chill", description: "Beach, surfing, cafes, daily vibes" },
 ] as const;
 
 export type FocusModeId = (typeof FOCUS_MODES)[number]["id"];
@@ -55,7 +55,7 @@ export const WEEK_STREAK_THRESHOLD = 5;
 export const WEEK_STREAK_BONUS = 5;
 export const WEEK_STREAK_MAX = 10;
 
-export const MAX_GROUP_MEMBERS = 10;
+export const MAX_GROUP_MEMBERS = 12;
 export const DAILY_LIKE_LIMIT = 5;
 export const POST_EDIT_WINDOW_MS = 5 * 60 * 1000;
 export const DOUBLE_TAP_DELAY_MS = 300;
@@ -68,6 +68,23 @@ export const POST_IMAGE_SIZE = 1024;
 export const AVATAR_SIZE = 512;
 export const GROUP_JOIN_LEVEL = 2;
 export const GROUP_CREATE_LEVEL = 2;
+
+/** Community slots unlocked by level (mode group is always free) */
+export const GROUP_SLOT_TIERS = [
+  { level: 2, slots: 1 },
+  { level: 3, slots: 2 },
+  { level: 5, slots: 3 },
+  { level: 8, slots: 4 },
+] as const;
+
+/** Get max community slots for a given level */
+export function getMaxCommunitySlots(level: number): number {
+  let slots = 0;
+  for (const tier of GROUP_SLOT_TIERS) {
+    if (level >= tier.level) slots = tier.slots;
+  }
+  return slots;
+}
 export const FIRST_POST_BONUS = 100;
 export const LIKE_SEND_XP = 5;
 export const LIKE_RECEIVE_XP = 10;

@@ -37,6 +37,8 @@ export async function joinOfficialGroup(uid: string, mode: string) {
   if (!group) return;
   const memberIds = group.memberIds || [];
   if (memberIds.includes(uid)) return;
+  // Mode groups (no iconUrl) have max 10 members
+  if (!group.iconUrl && memberIds.length >= 12) return;
 
   const { doc: firestoreDoc } = await import("firebase/firestore");
   await updateDoc(firestoreDoc(db, "groups", group.id), {

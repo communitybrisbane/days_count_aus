@@ -124,7 +124,7 @@ export default function MyPage() {
             {profile.mainMode && (
               <span className="inline-flex items-center gap-1 text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
                 <FocusModeIcon modeId={resolveMode(profile.mainMode)} size={12} />
-                {FOCUS_MODES.find((m) => m.id === resolveMode(profile.mainMode))?.description}
+                {FOCUS_MODES.find((m) => m.id === resolveMode(profile.mainMode))?.label}
               </span>
             )}
             {profile.region && profile.showRegion !== false && (
@@ -324,7 +324,7 @@ export default function MyPage() {
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-bold truncate text-white/90">{fp.displayName}</p>
                       <p className="text-xs text-white/40">
-                        {fp.mainMode && FOCUS_MODES.find((m) => m.id === resolveMode(fp.mainMode || ""))?.description}
+                        {fp.mainMode && FOCUS_MODES.find((m) => m.id === resolveMode(fp.mainMode || ""))?.label}
                         {fp.region && fp.showRegion !== false && ` · ${fp.region}`}
                       </p>
                     </div>

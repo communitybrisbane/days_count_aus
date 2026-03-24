@@ -33,10 +33,12 @@ service firebase.storage {
                     && request.resource.contentType == 'image/jpeg';
     }
 
-    // ─── Report evidence: authenticated upload, no public read ───
+    // ─── Report evidence: uploader can read (for getDownloadURL), authenticated upload ───
     match /reports/{fileName} {
-      allow read: if false;
+      allow read: if isVerified()
+                    && request.auth.uid == fileName.split('_')[0];
       allow write: if isVerified()
+                    && request.auth.uid == fileName.split('_')[0]
                     && request.resource.size < 5 * 1024 * 1024
                     && request.resource.contentType == 'image/jpeg';
     }

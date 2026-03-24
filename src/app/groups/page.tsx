@@ -6,7 +6,7 @@ import { collection, getDocs, getDoc, doc, query, orderBy, where, limit } from "
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { fetchAdminConfig } from "@/lib/services/users";
 import BottomNav from "@/components/layout/BottomNav";
@@ -85,8 +85,9 @@ export default function GroupsPage() {
   );
   const myJoinedExtra = myJoinedGroups.filter((g) => !isModeGroup(g));
   const hasCreatedGroup = groups.some((g) => !g.isOfficial && g.creatorId === user?.uid);
-  const hasMaxGroups = myJoinedExtra.length >= 2;
-  const canJoinMore = !hasCreatedGroup ? myJoinedExtra.length < 2 : myJoinedExtra.filter((g) => g.creatorId !== user?.uid).length < 1;
+  const maxSlots = getMaxCommunitySlots(level);
+  const hasMaxGroups = myJoinedExtra.length >= maxSlots;
+  const canJoinMore = myJoinedExtra.length < maxSlots;
   const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
 
   // Search shows all groups (official + user-created), excluding already joined
@@ -200,7 +201,6 @@ export default function GroupsPage() {
               {/* Study Meeting */}
               {liveSession && (
                 <div className="px-4 pt-4">
-                  <p className="text-xs font-bold text-white/50 mb-2 px-1">count.study room</p>
                   {liveSession.url ? (
                     <a
                       href={liveSession.url}
@@ -258,9 +258,9 @@ export default function GroupsPage() {
 
               {/* Group Chat section */}
               <div className="px-4 pt-4">
-                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat</p>
+                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedExtra.length}/{maxSlots + 1}</span></p>
               </div>
-              <div className="flex flex-col px-4 gap-3">
+              <div className="flex flex-col">
                 {myJoinedGroups.map((group) => (
                   <GroupCard
                     key={group.id}
@@ -271,7 +271,7 @@ export default function GroupsPage() {
                 ))}
 
                 {/* Add Community — single button (shown when user can still join or create) */}
-                {(!hasMaxGroups || (canCreateCommunity && !hasCreatedGroup)) && (
+                {!hasMaxGroups && (
                   !canJoinCommunity ? (
                     <div className="card-material border-0 p-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -294,16 +294,19 @@ export default function GroupsPage() {
                   ) : (
                     <button
                       onClick={() => setShowActionChoice(true)}
-                      className="w-full bg-white rounded-2xl border border-forest-mid/20 p-4 text-left active:bg-gray-50"
+                      className="w-full bg-forest-light/15 border border-forest-light/20 rounded-2xl px-4 py-3 text-left active:bg-forest-light/25 transition-all active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-accent-orange/10 flex items-center justify-center shrink-0">
-                          <span className="text-accent-orange font-bold text-lg">+</span>
+                        <div className="w-9 h-9 rounded-full bg-accent-orange flex items-center justify-center shrink-0">
+                          <span className="text-white font-bold text-sm">+</span>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-forest-mid">Find or Create Community</p>
-                          <p className="text-[10px] text-gray-400">Join an existing group or start your own</p>
+                          <p className="text-sm font-bold text-white/90">Find or Create</p>
+                          <p className="text-[10px] text-white/40">{myJoinedExtra.length}/{maxSlots} communities joined</p>
                         </div>
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 shrink-0">
+                          <path d="M7 4L13 10L7 16" />
+                        </svg>
                       </div>
                     </button>
                   )
@@ -348,7 +351,7 @@ export default function GroupsPage() {
               </button>
 
               {/* Create */}
-              {canCreateCommunity && !hasCreatedGroup ? (
+              {canCreateCommunity && !hasCreatedGroup && !hasMaxGroups ? (
                 <Link
                   href="/groups/create"
                   onClick={() => setShowActionChoice(false)}
@@ -370,7 +373,7 @@ export default function GroupsPage() {
                   <div>
                     <p className="text-sm font-bold text-gray-400">Create a Community</p>
                     <p className="text-[10px] text-gray-400">
-                      {hasCreatedGroup ? "You already lead a group (max 1)" : `Unlocks at Lv.${GROUP_CREATE_LEVEL}`}
+                      {hasMaxGroups ? "Level up to unlock more slots" : hasCreatedGroup ? "You already lead a group (max 1)" : `Unlocks at Lv.${GROUP_CREATE_LEVEL}`}
                     </p>
                   </div>
                 </div>

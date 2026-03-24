@@ -252,7 +252,7 @@ export default function HomePage() {
               className="absolute top-1/2 transition-all duration-700 pointer-events-none"
               style={{ left: `${Math.min(progress, 100)}%`, transform: `translateX(-55%) translateY(-50%)` }}
             >
-              <img src="/icons/kangaroo-like.png" alt="" width={36} height={36} draggable={false} className="drop-shadow-sm" style={{ width: 36, height: 36, objectFit: "contain" }} />
+              <img src="/icons/kangaroo-like.png" alt="" width={30} height={30} draggable={false} className="drop-shadow-sm" style={{ width: 30, height: 30, objectFit: "contain" }} />
             </div>
           </div>
         </div>

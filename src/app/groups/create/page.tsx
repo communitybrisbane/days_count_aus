@@ -6,7 +6,7 @@ import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getD
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GROUP_NAME_MAX, GROUP_CREATE_LEVEL } from "@/lib/constants";
+import { FOCUS_MODES, GROUP_NAME_MAX, GROUP_CREATE_LEVEL, getMaxCommunitySlots } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
@@ -27,6 +27,7 @@ export default function CreateGroupPage() {
   const [iconBlob, setIconBlob] = useState<Blob | null>(null);
   const [iconPreview, setIconPreview] = useState("");
   const [cropSrc, setCropSrc] = useState("");
+  const [joinType, setJoinType] = useState<"open" | "friends">("open");
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
@@ -103,10 +104,13 @@ export default function CreateGroupPage() {
 
     setSubmitting(true);
     try {
-      // Check group limit: max 2 groups excluding mode group (mode group + 2 others = 3 total)
+      // Check group limit based on level
       const currentGroupIds = profile?.groupIds || [];
-      if (currentGroupIds.length >= 3) {
-        alert("Max 2 groups. Please leave one first.");
+      const lvl = calculateLevel(profile?.totalXP || 0);
+      const maxSlots = getMaxCommunitySlots(lvl);
+      // currentGroupIds includes mode group, so community count = total - 1
+      if (currentGroupIds.length - 1 >= maxSlots) {
+        alert("Level up to unlock more community slots.");
         setSubmitting(false);
         return;
       }
@@ -127,6 +131,7 @@ export default function CreateGroupPage() {
         memberIds: [user.uid],
         memberCount: 1,
         iconUrl: "",
+        joinType,
         lastMessageAt: serverTimestamp(),
         createdAt: serverTimestamp(),
         isClosed: false,
@@ -290,9 +295,40 @@ export default function CreateGroupPage() {
                 }`}
               >
                 <FocusModeIcon modeId={m.id} size={24} />
-                <span className="text-xs">{m.description}</span>
+                <span className="text-xs">{m.label}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Join Type */}
+        <div>
+          <label className="block text-sm font-medium text-white/80 mb-2">
+            Who can join? <span className="text-red-400">*</span>
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setJoinType("open")}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                joinType === "open"
+                  ? "bg-accent-orange text-white"
+                  : "bg-white text-forest-mid"
+              }`}
+            >
+              Anyone welcome
+            </button>
+            <button
+              type="button"
+              onClick={() => setJoinType("friends")}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                joinType === "friends"
+                  ? "bg-accent-orange text-white"
+                  : "bg-white text-forest-mid"
+              }`}
+            >
+              Friends only
+            </button>
           </div>
         </div>
 

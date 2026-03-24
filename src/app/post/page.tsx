@@ -351,7 +351,7 @@ export default function PostPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">{profile.displayName || "You"}</p>
               <p className="text-xs text-gray-400">
-                {todayStr} · {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle mr-0.5" />}{modeInfo?.description || "Select a mode"}
+                {todayStr} · {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle mr-0.5" />}{modeInfo?.label || "Select a mode"}
               </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">

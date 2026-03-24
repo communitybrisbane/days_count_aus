@@ -1,6 +1,11 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { defineSecret } from "firebase-functions/params";
+import * as nodemailer from "nodemailer";
+
+const gmailUser = defineSecret("GMAIL_USER");
+const gmailPass = defineSecret("GMAIL_PASS");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -106,11 +111,36 @@ export const moderatePost = onDocumentCreated(
   }
 );
 
+// ─── Email helper ───
+const ADMIN_EMAIL = "communitybrisbane@gmail.com";
+
+async function sendReportEmail(subject: string, body: string) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: gmailUser.value(),
+      pass: gmailPass.value(),
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"Days Count" <${gmailUser.value()}>`,
+    to: ADMIN_EMAIL,
+    subject,
+    text: body,
+  });
+}
+
 // ─── Cloud Function: Auto-hide posts with high report count ───
 export const checkReportThreshold = onDocumentCreated(
-  "posts/{postId}/reports/{reporterId}",
+  {
+    document: "posts/{postId}/reports/{reporterId}",
+    secrets: [gmailUser, gmailPass],
+  },
   async (event) => {
     const postId = event.params.postId;
+    const reporterId = event.params.reporterId;
+    const reportData = event.data?.data();
 
     const postRef = db.doc(`posts/${postId}`);
     const postSnap = await postRef.get();
@@ -118,12 +148,31 @@ export const checkReportThreshold = onDocumentCreated(
     if (!postSnap.exists) return;
     const data = postSnap.data()!;
 
-    // Already hidden
-    if (data.status === "hidden") return;
-
     // Count reports
     const reportsSnap = await db.collection(`posts/${postId}/reports`).count().get();
     const reportCount = reportsSnap.data().count;
+
+    // Send email notification for every report
+    try {
+      const reporterSnap = await db.doc(`users/${reporterId}`).get();
+      const reporterName = reporterSnap.exists ? (reporterSnap.data()!.displayName || reporterId) : reporterId;
+
+      await sendReportEmail(
+        `[Report] Post reported (${reportCount} total)`,
+        `Post ID: ${postId}\n` +
+        `Reporter: ${reporterName}\n` +
+        `Reason: ${reportData?.reason || "N/A"}\n` +
+        `Report count: ${reportCount}/3\n` +
+        `Post content: ${(data.content || "").slice(0, 200)}\n` +
+        `Post author: ${data.userId}\n` +
+        `${reportCount >= 3 ? ">>> AUTO-HIDDEN <<<" : ""}`
+      );
+    } catch (e) {
+      console.error("[REPORT_EMAIL] Failed to send:", e);
+    }
+
+    // Already hidden
+    if (data.status === "hidden") return;
 
     // Auto-hide at 3 reports
     if (reportCount >= 3) {

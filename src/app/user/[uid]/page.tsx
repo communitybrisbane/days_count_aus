@@ -132,7 +132,7 @@ export default function PublicProfilePage() {
             {userData.mainMode && (
               <span className="inline-flex items-center gap-1 text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
                 <FocusModeIcon modeId={resolveMode(userData.mainMode)} size={12} />
-                {FOCUS_MODES.find((m) => m.id === resolveMode(userData.mainMode))?.description}
+                {FOCUS_MODES.find((m) => m.id === resolveMode(userData.mainMode))?.label}
               </span>
             )}
             {userData.region && userData.showRegion !== false && (
