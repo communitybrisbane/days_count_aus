@@ -138,15 +138,22 @@ export const checkReportThreshold = onDocumentCreated(
     secrets: [gmailUser, gmailPass],
   },
   async (event) => {
+    console.log("[REPORT] checkReportThreshold triggered", JSON.stringify(event.params));
+
     const postId = event.params.postId;
     const reporterId = event.params.reporterId;
     const reportData = event.data?.data();
+    console.log("[REPORT] reportData:", JSON.stringify(reportData));
 
     const postRef = db.doc(`posts/${postId}`);
     const postSnap = await postRef.get();
 
-    if (!postSnap.exists) return;
+    if (!postSnap.exists) {
+      console.log("[REPORT] Post not found:", postId);
+      return;
+    }
     const data = postSnap.data()!;
+    console.log("[REPORT] Post found, author:", data.userId);
 
     // Count reports
     const reportsSnap = await db.collection(`posts/${postId}/reports`).count().get();
@@ -171,23 +178,24 @@ export const checkReportThreshold = onDocumentCreated(
       console.error("[REPORT_EMAIL] Failed to send:", e);
     }
 
-    // Already hidden
-    if (data.status === "hidden") return;
+    // Already restricted
+    if (data.status === "hidden" || data.reportRestricted === true) return;
 
-    // Auto-hide at 3 reports
+    // Auto-restrict at 3 reports: switch to private so only the author can see it
     if (reportCount >= 3) {
-      console.log(`[MODERATION] Auto-hiding post ${postId}: ${reportCount} reports`);
+      console.log(`[MODERATION] Auto-restricting post ${postId}: ${reportCount} reports → private`);
 
       await postRef.update({
-        status: "hidden",
+        visibility: "private",
+        reportRestricted: true,
         reportCount,
       });
 
       await db.collection("moderation_logs").add({
         postId,
         userId: data.userId,
-        action: "report_hidden",
-        reason: `${reportCount} user reports`,
+        action: "report_restricted",
+        reason: `${reportCount} user reports — switched to private`,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }

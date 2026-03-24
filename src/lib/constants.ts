@@ -85,9 +85,10 @@ export function getMaxCommunitySlots(level: number): number {
   }
   return slots;
 }
-export const FIRST_POST_BONUS = 100;
+export const FIRST_POST_BONUS = 50;
 export const LIKE_SEND_XP = 5;
-export const LIKE_RECEIVE_XP = 10;
+export const LIKE_RECEIVE_XP = 5;
+export const LIKE_RECEIVE_DAILY_MAX = 10;
 
 export const REGIONS = [
   "Sydney",

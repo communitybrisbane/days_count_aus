@@ -443,6 +443,13 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         )}
       </div>
 
+      {/* Report restricted notice */}
+      {post.reportRestricted && (
+        <div className="mx-3 mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <p className="text-[11px] text-red-600 font-medium">This post has been made private due to reports from other users.</p>
+        </div>
+      )}
+
       {/* Content */}
       <div className="p-3">
         {(post.content) && (

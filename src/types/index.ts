@@ -12,6 +12,7 @@ export interface Post {
   visibility?: "public" | "private";
   status: "active" | "hidden" | "pending";
   reportCount: number;
+  reportRestricted?: boolean;
   createdAt: Timestamp;
   editableUntil: Timestamp;
   tags?: string[];
