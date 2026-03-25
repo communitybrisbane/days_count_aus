@@ -193,15 +193,15 @@ export default function HomePage() {
 
       {/* Notification permission banner */}
       {showNotifBanner && (
-        <div className="mx-5 mt-3 bg-forest-light/20 border border-forest-light/30 rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="flex-1">
-            <p className="text-sm font-bold text-white/90">Enable notifications</p>
-            <p className="text-xs text-white/50">Get streak warnings before you lose your progress</p>
-          </div>
-          <button onClick={handleEnableNotifications} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg shrink-0">
-            Enable
+        <div className="mx-5 mt-3 bg-forest-mid/40 border border-forest-light/20 rounded-xl px-4 py-3 flex items-center gap-3">
+          <span className="text-xl">🔔</span>
+          <p className="flex-1 text-sm text-white/80">Turn on notifications?</p>
+          <button onClick={handleEnableNotifications} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg">
+            Yes
           </button>
-          <button onClick={dismissNotifBanner} className="text-white/40 text-lg leading-none">×</button>
+          <button onClick={dismissNotifBanner} className="px-3 py-1.5 bg-white/10 text-white/50 text-xs font-bold rounded-lg">
+            No
+          </button>
         </div>
       )}
 
