@@ -14,10 +14,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || "Days Count in AUS";
-  const link = payload.fcmOptions?.link || payload.data?.link || "/home";
+  // If notification field exists, the browser shows it automatically.
+  // Only show manually for data-only messages.
+  if (payload.notification) return;
+
+  const title = payload.data?.title || "Days Count in AUS";
+  const link = payload.data?.link || "/home";
   const options = {
-    body: payload.notification?.body || "",
+    body: payload.data?.body || "",
     icon: "/icons/icon-192x192.png",
     badge: "/icons/icon-192x192.png",
     data: { link },
