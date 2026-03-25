@@ -8,7 +8,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
-import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
+import { fetchAdminConfig, saveFCMToken, updateNotificationPrefs } from "@/lib/services/users";
 import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -76,16 +76,33 @@ export default function HomePage() {
     localStorage.setItem(key, "true");
   }, [dayCount, profile]);
 
-  // FCM: check permission & register token
+  // FCM: register token if already granted, or show banner for first-time choice
   useEffect(() => {
     if (!user) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (Notification.permission === "default") {
-      if (!localStorage.getItem("notif_banner_dismissed")) setShowNotifBanner(true);
-    } else if (Notification.permission === "granted") {
+    if (Notification.permission === "granted") {
       requestFCMToken().then((token) => { if (token) saveFCMToken(user.uid, token); });
+    } else if (Notification.permission === "default" && !localStorage.getItem("notif_choice_made")) {
+      setShowNotifBanner(true);
     }
   }, [user]);
+
+  const handleNotifYes = async () => {
+    if (!user) return;
+    const token = await requestFCMToken();
+    if (token) await saveFCMToken(user.uid, token);
+    setShowNotifBanner(false);
+    localStorage.setItem("notif_choice_made", "true");
+  };
+
+  const handleNotifNo = async () => {
+    if (!user) return;
+    // Don't request browser permission — just set prefs to OFF
+    await updateNotificationPrefs(user.uid, { likes: false, groupMessage: false, streakWarning: false });
+    await saveFCMToken(user.uid, "");
+    setShowNotifBanner(false);
+    localStorage.setItem("notif_choice_made", "true");
+  };
 
   // FCM: foreground message listener
   useEffect(() => {
@@ -112,18 +129,6 @@ export default function HomePage() {
     }
   }, [profile, dayCount]);
 
-  const handleEnableNotifications = async () => {
-    if (!user) return;
-    const token = await requestFCMToken();
-    if (token) await saveFCMToken(user.uid, token);
-    setShowNotifBanner(false);
-    localStorage.setItem("notif_banner_dismissed", "true");
-  };
-
-  const dismissNotifBanner = () => {
-    setShowNotifBanner(false);
-    localStorage.setItem("notif_banner_dismissed", "true");
-  };
 
   const handlePhaseTransition = async () => {
     if (!user || !phasePrompt) return;
@@ -191,15 +196,15 @@ export default function HomePage() {
       {/* ===== Scrollable content ===== */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
 
-      {/* Notification permission banner */}
+      {/* Notification choice banner */}
       {showNotifBanner && (
         <div className="mx-5 mt-3 bg-forest-mid/40 border border-forest-light/20 rounded-xl px-4 py-3 flex items-center gap-3">
           <span className="text-xl">🔔</span>
           <p className="flex-1 text-sm text-white/80">Turn on notifications?</p>
-          <button onClick={handleEnableNotifications} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg">
+          <button onClick={handleNotifYes} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg">
             Yes
           </button>
-          <button onClick={dismissNotifBanner} className="px-3 py-1.5 bg-white/10 text-white/50 text-xs font-bold rounded-lg">
+          <button onClick={handleNotifNo} className="px-3 py-1.5 bg-white/10 text-white/50 text-xs font-bold rounded-lg">
             No
           </button>
         </div>

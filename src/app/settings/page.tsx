@@ -10,7 +10,8 @@ import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from 
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, submitReport, fetchNotificationPrefs, updateNotificationPrefs, unblockUser } from "@/lib/services/users";
+import { uploadAvatar, deleteAccount, submitReport, fetchNotificationPrefs, updateNotificationPrefs, saveFCMToken, unblockUser } from "@/lib/services/users";
+import { requestFCMToken } from "@/lib/fcm";
 import type { NotificationPrefs } from "@/types";
 import ImageCropper from "@/components/ImageCropper";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -77,7 +78,25 @@ export default function SettingsPage() {
 
   const handleNotifToggle = async (key: keyof NotificationPrefs) => {
     if (!user) return;
-    const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+    const turningOn = !notifPrefs[key];
+    const updated = { ...notifPrefs, [key]: turningOn };
+
+    // When turning ON any toggle, ensure browser permission + FCM token
+    if (turningOn) {
+      const token = await requestFCMToken();
+      if (!token) {
+        // Browser permission denied — revert toggle
+        return;
+      }
+      await saveFCMToken(user.uid, token);
+    }
+
+    // If all toggles are OFF, clear FCM token to stop all notifications
+    const allOff = !updated.likes && !updated.groupMessage && !updated.streakWarning;
+    if (allOff) {
+      await saveFCMToken(user.uid, "");
+    }
+
     setNotifPrefs(updated);
     await updateNotificationPrefs(user.uid, updated);
   };
@@ -433,7 +452,7 @@ export default function SettingsPage() {
                 </button>
               </div>
             ))}
-            <p className="text-[10px] text-white/40">To fully disable push notifications, use your browser settings.</p>
+            <p className="text-[10px] text-white/40">Turn on a toggle to enable push notifications.</p>
           </div>
         )}
 
