@@ -90,7 +90,7 @@ export default function MyPage() {
   };
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "calc(3rem + env(safe-area-inset-bottom, 0px))" }}>
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "3rem" }}>
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト with geometric bg */}
       <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
@@ -254,7 +254,7 @@ export default function MyPage() {
         <>
           <div ref={swipePost.bgRef} className="fixed inset-0 bg-black z-40" />
           <div className="fixed inset-0 z-40 flex justify-center">
-            <div ref={swipePost.ref} className="relative w-full max-w-[430px] flex flex-col" style={{ paddingBottom: "calc(3rem + env(safe-area-inset-bottom, 0px))" }} {...swipePost.handlers}>
+            <div ref={swipePost.ref} className="relative w-full max-w-[430px] flex flex-col" style={{ paddingBottom: "3rem" }} {...swipePost.handlers}>
 
               {/* Scrollable posts — 白背景でカード間の隙間をなくし、listRoundedでなめらかに接続 */}
               <div
