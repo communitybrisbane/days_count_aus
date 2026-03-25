@@ -430,8 +430,8 @@ export default function SettingsPage() {
         {activeSection === "notifications" && (
           <div className="px-4 py-3 bg-forest-light/10 border-b border-forest-light/15">
             <button onClick={handleToggleNotifications}
-              className={`w-full py-2.5 text-sm font-bold rounded-xl ${notifEnabled ? "bg-white/10 text-white/60" : "bg-accent-orange text-white"}`}>
-              {notifEnabled ? "Disable notifications" : "Enable notifications"}
+              className={`w-full py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 ${notifEnabled ? "bg-white/10 text-white/60" : "bg-accent-orange text-white"}`}>
+              {notifEnabled ? "🔕 Disable notifications" : "🔔 Enable notifications"}
             </button>
           </div>
         )}
