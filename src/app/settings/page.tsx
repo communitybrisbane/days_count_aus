@@ -10,9 +10,8 @@ import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from 
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, submitReport, fetchNotificationPrefs, updateNotificationPrefs, saveFCMToken, unblockUser } from "@/lib/services/users";
+import { uploadAvatar, deleteAccount, submitReport, saveFCMToken, unblockUser } from "@/lib/services/users";
 import { requestFCMToken } from "@/lib/fcm";
-import type { NotificationPrefs } from "@/types";
 import ImageCropper from "@/components/ImageCropper";
 import ConfirmModal from "@/components/ConfirmModal";
 import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
@@ -36,7 +35,6 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "blocked" | "report" | null>(null);
   const [blockedProfiles, setBlockedProfiles] = useState<{ uid: string; displayName: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
-  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({ likes: true, groupMessage: true, streakWarning: true });
 
   // Image crop
   const [cropSrc, setCropSrc] = useState("");
@@ -70,35 +68,22 @@ export default function SettingsPage() {
     setShowRegion(profile.showRegion !== false);
   }, [profile]);
 
-  // Load notification prefs
+
+  const [notifStatus, setNotifStatus] = useState<"unknown" | "granted" | "default" | "denied">("unknown");
+
   useEffect(() => {
-    if (!user) return;
-    fetchNotificationPrefs(user.uid).then(setNotifPrefs).catch(console.error);
-  }, [user]);
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifStatus(Notification.permission as "granted" | "default" | "denied");
+    }
+  }, []);
 
-  const handleNotifToggle = async (key: keyof NotificationPrefs) => {
+  const handleEnableNotifications = async () => {
     if (!user) return;
-    const turningOn = !notifPrefs[key];
-    const updated = { ...notifPrefs, [key]: turningOn };
-
-    // When turning ON any toggle, ensure browser permission + FCM token
-    if (turningOn) {
-      const token = await requestFCMToken();
-      if (!token) {
-        // Browser permission denied — revert toggle
-        return;
-      }
+    const token = await requestFCMToken();
+    if (token) {
       await saveFCMToken(user.uid, token);
+      setNotifStatus("granted");
     }
-
-    // If all toggles are OFF, clear FCM token to stop all notifications
-    const allOff = !updated.likes && !updated.groupMessage && !updated.streakWarning;
-    if (allOff) {
-      await saveFCMToken(user.uid, "");
-    }
-
-    setNotifPrefs(updated);
-    await updateNotificationPrefs(user.uid, updated);
   };
 
   // Nickname uniqueness check
@@ -435,24 +420,18 @@ export default function SettingsPage() {
           <span className="text-white/30 text-sm">{activeSection === "notifications" ? "▲" : "▼"}</span>
         </button>
         {activeSection === "notifications" && (
-          <div className="px-4 py-3 space-y-3 bg-forest-light/10 border-b border-forest-light/15">
-            {([
-              { key: "likes" as const, label: "Like notifications" },
-              { key: "groupMessage" as const, label: "Group message notifications" },
-              { key: "streakWarning" as const, label: "Streak warnings" },
-            ]).map(({ key, label }) => (
-              <div key={key} className="flex items-center justify-between">
-                <span className="text-sm text-white/80">{label}</span>
-                <button
-                  type="button"
-                  onClick={() => handleNotifToggle(key)}
-                  className={`relative w-10 h-5.5 rounded-full transition-colors ${notifPrefs[key] ? "bg-accent-orange" : "bg-forest-light/30"}`}
-                >
-                  <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${notifPrefs[key] ? "left-5" : "left-0.5"}`} />
-                </button>
+          <div className="px-4 py-3 bg-forest-light/10 border-b border-forest-light/15">
+            {notifStatus === "granted" ? (
+              <div className="flex items-center gap-2">
+                <span className="text-green-400 text-sm">●</span>
+                <span className="text-sm text-white/80">Notifications are enabled</span>
               </div>
-            ))}
-            <p className="text-[10px] text-white/40">Turn on a toggle to enable push notifications.</p>
+            ) : (
+              <button onClick={handleEnableNotifications} className="w-full py-2.5 bg-accent-orange text-white text-sm font-bold rounded-xl">
+                Enable notifications
+              </button>
+            )}
+            <p className="text-[10px] text-white/40 mt-2">Manage notifications in your device settings.</p>
           </div>
         )}
 

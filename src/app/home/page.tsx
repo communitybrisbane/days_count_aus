@@ -8,7 +8,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
-import { fetchAdminConfig, saveFCMToken, updateNotificationPrefs } from "@/lib/services/users";
+import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
 import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -95,11 +95,7 @@ export default function HomePage() {
     localStorage.setItem("notif_choice_made", "true");
   };
 
-  const handleNotifNo = async () => {
-    if (!user) return;
-    // Don't request browser permission — just set prefs to OFF
-    await updateNotificationPrefs(user.uid, { likes: false, groupMessage: false, streakWarning: false });
-    await saveFCMToken(user.uid, "");
+  const handleNotifNo = () => {
     setShowNotifBanner(false);
     localStorage.setItem("notif_choice_made", "true");
   };
