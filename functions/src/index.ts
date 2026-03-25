@@ -235,8 +235,8 @@ export const onLikeCreated = onDocumentCreated(
       await admin.messaging().send({
         token: fcmToken,
         notification: {
-          title: `🦘 ${likerName} liked your post!`,
-          body: "Check it out 👀",
+          title: `🦘 ${likerName} 🦘`,
+          body: "liked your post!",
         },
         webpush: {
           fcmOptions: { link: "/mypage" },
@@ -319,14 +319,14 @@ export const checkStreaks = onSchedule(
 
         // Final warning: UTC 23:00+ (1h left)
         if (utcHour >= 23 && warnLevel < 2) {
-          const sent = await sendStreakWarning(userDoc, "🦘 Hey, only 1 hour left!?", "Please… I'm about to cry 🥺");
+          const sent = await sendStreakWarning(userDoc, "🦘 Hey, only 1 hour left!? 🦘", "Please… I'm about to cry 🥺");
           if (sent) {
             await userDoc.ref.update({ streakWarningSent: 2 });
             warned++;
           }
         // First warning: UTC 20:00+ (4h left)
         } else if (utcHour >= 20 && warnLevel < 1) {
-          const sent = await sendStreakWarning(userDoc, "🦘 No post today…?", "I'm lonely… post something! 🥹");
+          const sent = await sendStreakWarning(userDoc, "🦘 No post today…? 🦘", "I'm lonely… post something! 🥹");
           if (sent) {
             await userDoc.ref.update({ streakWarningSent: 1 });
             warned++;
@@ -417,7 +417,7 @@ export const onGroupMessageCreated = onDocumentCreated(
       messages.push({
         token: fcmToken,
         notification: {
-          title: `🦘 New message in ${groupName}`,
+          title: `🦘 ${groupName} 🦘`,
           body: `${senderName} sent a message`,
         },
         webpush: {

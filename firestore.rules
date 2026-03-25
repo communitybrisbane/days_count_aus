@@ -245,10 +245,14 @@ service cloud.firestore {
                       && request.resource.data.text is string
                       && request.resource.data.text.size() >= 1
                       && request.resource.data.text.size() <= 100;
-        // Reaction updates only — restrict to reactions field changes
+        // Reaction updates by any member
         allow update: if isAuth()
                       && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+        // Sender can edit text or unsend their own message
+        allow update: if isAuth()
+                      && request.auth.uid == resource.data.senderId
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'edited', 'unsent']);
       }
     }
 
