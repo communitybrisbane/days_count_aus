@@ -248,7 +248,7 @@ export default function SettingsPage() {
   if (!profile) return null;
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="h-dvh flex flex-col overflow-hidden">
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}

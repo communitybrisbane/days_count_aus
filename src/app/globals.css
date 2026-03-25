@@ -18,12 +18,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
+}
+
 body {
   background: var(--color-forest);
   color: var(--color-foreground);
   font-family: Arial, Helvetica, sans-serif;
-  min-height: 100dvh;
+  height: 100%;
+  overflow: hidden;
   overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
 }
 
 /* ===== Geometric green background ===== */

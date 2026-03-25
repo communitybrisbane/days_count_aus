@@ -55,10 +55,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-forest min-h-dvh geo-bg`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-forest h-full geo-bg`}
       >
         <AuthProvider>
-          <div className="mx-auto max-w-[450px] min-h-dvh bg-forest/80 relative shadow-2xl backdrop-blur-sm overflow-hidden">
+          <div className="mx-auto max-w-[450px] h-full bg-forest/80 relative shadow-2xl backdrop-blur-sm overflow-hidden">
             {children}
           </div>
         </AuthProvider>

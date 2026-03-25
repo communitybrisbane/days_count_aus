@@ -165,7 +165,7 @@ export default function OnboardingPage() {
   const progress = displayStep / totalSteps;
 
   return (
-    <div className="min-h-dvh bg-white flex flex-col">
+    <div className="h-dvh bg-white flex flex-col overflow-hidden">
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
