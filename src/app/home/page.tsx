@@ -40,6 +40,10 @@ export default function HomePage() {
   const [toast, setToast] = useState<{ title: string; body: string; link?: string } | null>(null);
   const [showWeeklyHistory, setShowWeeklyHistory] = useState(false);
   const dismissToast = useCallback(() => setToast(null), []);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
 
   const dayCount = useDayCount(profile ?? null);
 
@@ -111,6 +115,53 @@ export default function HomePage() {
     });
   }, [user]);
 
+  // PWA install banner
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Already installed as PWA
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window.navigator as any).standalone === true) return;
+    // Already dismissed (re-show after 7 days)
+    const dismissed = localStorage.getItem("pwa_install_dismissed");
+    if (dismissed && Date.now() - Number(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
+
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    setIsIOS(ios);
+
+    if (ios) {
+      setShowInstallBanner(true);
+    } else {
+      const handler = (e: Event) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setShowInstallBanner(true);
+      };
+      window.addEventListener("beforeinstallprompt", handler);
+      return () => window.removeEventListener("beforeinstallprompt", handler);
+    }
+  }, []);
+
+  const handleInstall = async () => {
+    if (isIOS) {
+      setShowIOSGuide(true);
+      return;
+    }
+    if (deferredPrompt) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (deferredPrompt as any).prompt();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (deferredPrompt as any).userChoice;
+      if (result.outcome === "accepted") setShowInstallBanner(false);
+      setDeferredPrompt(null);
+    }
+  };
+
+  const dismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    localStorage.setItem("pwa_install_dismissed", String(Date.now()));
+  };
+
   // Phase auto-transition check
   useEffect(() => {
     if (!profile?.departureDate) return;
@@ -150,6 +201,35 @@ export default function HomePage() {
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
       <NotificationToast show={!!toast} title={toast?.title || ""} body={toast?.body || ""} link={toast?.link} onDismiss={dismissToast} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
+
+      {/* iOS PWA Install Guide Modal */}
+      {showIOSGuide && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={() => setShowIOSGuide(false)}>
+          <div className="bg-forest-dark border border-forest-light/20 rounded-t-2xl w-full max-w-md p-6 pb-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-5">
+              <img src="/icons/kangaroo-like.png" alt="" width={40} height={40} style={{ objectFit: "contain" }} />
+              <h3 className="text-lg font-bold text-white">Install Count</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="bg-accent-orange text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">1</span>
+                <p className="text-sm text-white/80">Tap the <span className="inline-block mx-1 text-accent-orange font-bold">Share</span> button <span className="text-white/50">(square with arrow)</span> at the bottom of Safari</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="bg-accent-orange text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">2</span>
+                <p className="text-sm text-white/80">Scroll down and tap <span className="font-bold text-accent-orange">Add to Home Screen</span></p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="bg-accent-orange text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">3</span>
+                <p className="text-sm text-white/80">Tap <span className="font-bold text-accent-orange">Add</span> — done! Push notifications will work too</p>
+              </div>
+            </div>
+            <button onClick={() => { setShowIOSGuide(false); dismissInstallBanner(); }} className="mt-6 w-full py-3 bg-accent-orange text-white font-bold rounded-xl text-sm">
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
 
       {phasePrompt && (
         <ConfirmModal
@@ -203,6 +283,21 @@ export default function HomePage() {
           <button onClick={handleNotifNo} className="px-3 py-1.5 bg-white/10 text-white/50 text-xs font-bold rounded-lg">
             No
           </button>
+        </div>
+      )}
+
+      {/* PWA Install banner */}
+      {showInstallBanner && !showNotifBanner && (
+        <div className="mx-5 mt-3 bg-forest-mid/40 border border-forest-light/20 rounded-xl px-4 py-3 flex items-center gap-3">
+          <img src="/icons/kangaroo-like.png" alt="" width={32} height={32} className="shrink-0" style={{ objectFit: "contain" }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white/90">Add me to your home screen!</p>
+            <p className="text-[11px] text-white/50">Get the full app experience</p>
+          </div>
+          <button onClick={handleInstall} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg shrink-0">
+            Install
+          </button>
+          <button onClick={dismissInstallBanner} className="text-white/30 text-lg leading-none shrink-0">✕</button>
         </div>
       )}
 
