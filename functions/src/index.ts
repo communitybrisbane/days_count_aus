@@ -231,15 +231,12 @@ export const onLikeCreated = onDocumentCreated(
 
     if (!fcmToken) return;
 
-    // Respect notification preferences (default: enabled)
-    if (privData?.notificationPrefs?.likes === false) return;
-
     try {
       await admin.messaging().send({
         token: fcmToken,
         notification: {
-          title: `${likerName} liked your post`,
-          body: postData.content ? postData.content.slice(0, 60) : "Tap to view",
+          title: `🦘 ${likerName} liked your post!`,
+          body: "Check it out 👀",
         },
         webpush: {
           fcmOptions: { link: "/mypage" },
@@ -253,13 +250,44 @@ export const onLikeCreated = onDocumentCreated(
   }
 );
 
-// ─── Scheduled: Streak warning (6h before 48h expiry) & reset ───
+// Helper: send streak warning FCM to a user (returns true if sent)
+async function sendStreakWarning(
+  userDoc: admin.firestore.QueryDocumentSnapshot,
+  title: string,
+  body: string,
+): Promise<boolean> {
+  const privSnap = await db.doc(`users/${userDoc.id}/private/config`).get();
+  const privData = privSnap.exists ? privSnap.data() : null;
+  const fcmToken = privData?.fcmToken || "";
+  if (!fcmToken) return false;
+  try {
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: { title, body },
+      webpush: { fcmOptions: { link: "/post" } },
+    });
+    return true;
+  } catch (e) {
+    console.error(`FCM send failed for ${userDoc.id}:`, e);
+    await db.doc(`users/${userDoc.id}/private/config`).update({ fcmToken: "" });
+    return false;
+  }
+}
+
+// ─── Scheduled: Streak warning & reset (UTC calendar-date based) ───
+// Matches client logic: streak continues only if lastPostAt date === yesterday (UTC).
+// Reset: lastPostAt date < yesterday → streak = 0
+// Warning 1: UTC 20:00+ (4h before midnight) — first nudge
+// Warning 2: UTC 23:00+ (1h before midnight) — final urgent
 export const checkStreaks = onSchedule(
   { schedule: "every 1 hours", timeZone: "Australia/Sydney" },
   async () => {
-    const now = Date.now();
-    const FORTY_TWO_HOURS = 42 * 60 * 60 * 1000;
-    const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const utcHour = now.getUTCHours();
 
     // Get users with active streaks
     const usersSnap = await db
@@ -274,60 +302,50 @@ export const checkStreaks = onSchedule(
       const data = userDoc.data();
       if (!data.lastPostAt) continue;
 
-      const lastPostTime = new Date(data.lastPostAt).getTime();
-      const elapsed = now - lastPostTime;
+      const lastPostDateStr = new Date(data.lastPostAt).toISOString().slice(0, 10);
 
-      if (elapsed >= FORTY_EIGHT_HOURS) {
-        // Reset streak
-        await userDoc.ref.update({ currentStreak: 0 });
+      if (lastPostDateStr === todayStr) {
+        // Posted today — streak is safe, nothing to do
+        continue;
+      }
+
+      if (lastPostDateStr < yesterdayStr) {
+        // Last post is 2+ days ago — reset streak
+        await userDoc.ref.update({ currentStreak: 0, streakWarningSent: 0 });
         reset++;
-      } else if (
-        elapsed >= FORTY_TWO_HOURS &&
-        !data.streakWarningSent
-      ) {
-        // Read fcmToken and prefs from private subcollection
-        const privSnap = await db.doc(`users/${userDoc.id}/private/config`).get();
-        const privData = privSnap.exists ? privSnap.data() : null;
-        const fcmToken = privData?.fcmToken || "";
+      } else if (lastPostDateStr === yesterdayStr) {
+        // Posted yesterday but not today — check if we need to warn
+        const warnLevel = data.streakWarningSent || 0;
 
-        // Respect notification preferences (default: enabled)
-        if (privData?.notificationPrefs?.streakWarning === false) continue;
-
-        if (fcmToken) {
-          // Send 6-hour warning
-          try {
-            await admin.messaging().send({
-              token: fcmToken,
-              notification: {
-                title: "Streak warning!",
-                body: "Your streak expires in 6 hours. Post now to keep it!",
-              },
-              webpush: {
-                fcmOptions: { link: "/post" },
-              },
-            });
-            await userDoc.ref.update({ streakWarningSent: true });
+        // Final warning: UTC 23:00+ (1h left)
+        if (utcHour >= 23 && warnLevel < 2) {
+          const sent = await sendStreakWarning(userDoc, "🦘 Hey, only 1 hour left!?", "Please… I'm about to cry 🥺");
+          if (sent) {
+            await userDoc.ref.update({ streakWarningSent: 2 });
             warned++;
-          } catch (e) {
-            // Token might be invalid — clear it
-            console.error(`FCM send failed for ${userDoc.id}:`, e);
-            await db.doc(`users/${userDoc.id}/private/config`).update({ fcmToken: "" });
+          }
+        // First warning: UTC 20:00+ (4h left)
+        } else if (utcHour >= 20 && warnLevel < 1) {
+          const sent = await sendStreakWarning(userDoc, "🦘 No post today…?", "I'm lonely… post something! 🥹");
+          if (sent) {
+            await userDoc.ref.update({ streakWarningSent: 1 });
+            warned++;
           }
         }
       }
     }
 
-    // Reset streakWarningSent flag for users who posted recently
+    // Reset streakWarningSent for users who posted today
     const recentSnap = await db
       .collection("users")
-      .where("streakWarningSent", "==", true)
+      .where("streakWarningSent", ">", 0)
       .get();
     for (const userDoc of recentSnap.docs) {
       const data = userDoc.data();
       if (!data.lastPostAt) continue;
-      const elapsed = now - new Date(data.lastPostAt).getTime();
-      if (elapsed < FORTY_TWO_HOURS) {
-        await userDoc.ref.update({ streakWarningSent: false });
+      const lastPostDateStr = new Date(data.lastPostAt).toISOString().slice(0, 10);
+      if (lastPostDateStr === todayStr) {
+        await userDoc.ref.update({ streakWarningSent: 0 });
       }
     }
 
@@ -396,14 +414,11 @@ export const onGroupMessageCreated = onDocumentCreated(
       const fcmToken = privData?.fcmToken || "";
       if (!fcmToken) continue;
 
-      // Respect notification preferences (default: enabled)
-      if (privData?.notificationPrefs?.groupMessage === false) continue;
-
       messages.push({
         token: fcmToken,
         notification: {
-          title: `${senderName} in ${groupName}`,
-          body: text.slice(0, 80),
+          title: `🦘 New message in ${groupName}`,
+          body: `${senderName} sent a message`,
         },
         webpush: {
           fcmOptions: { link: `/groups/${groupId}` },
