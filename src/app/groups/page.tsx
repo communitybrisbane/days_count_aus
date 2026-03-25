@@ -104,7 +104,7 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "calc(3rem + env(safe-area-inset-bottom, 0px))" }}>
       {/* Header */}
       <div className="sticky top-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
         <div className="px-4 pt-3 pb-2">
@@ -326,7 +326,7 @@ export default function GroupsPage() {
       {showActionChoice && (
         <>
           <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowActionChoice(false)} />
-          <div className="fixed inset-x-0 z-50 bg-white rounded-t-2xl" style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
+          <div className="fixed inset-x-0 z-50 bg-white rounded-t-2xl" style={{ bottom: "calc(3rem + env(safe-area-inset-bottom, 0px))" }}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-bold text-sm">What would you like to do?</h3>
               <button onClick={() => setShowActionChoice(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
