@@ -23,6 +23,7 @@ body {
   overscroll-behavior: none;
   overflow: hidden;
   height: 100dvh;
+  background: var(--color-forest);
 }
 
 body {
