@@ -10,8 +10,7 @@ import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from 
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, submitReport, saveFCMToken, unblockUser } from "@/lib/services/users";
-import { requestFCMToken } from "@/lib/fcm";
+import { uploadAvatar, deleteAccount, submitReport, unblockUser } from "@/lib/services/users";
 import ImageCropper from "@/components/ImageCropper";
 import ConfirmModal from "@/components/ConfirmModal";
 import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
@@ -32,7 +31,7 @@ export default function SettingsPage() {
   const [showRegion, setShowRegion] = useState(profile?.showRegion !== false);
   const [saving, setSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
-  const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "blocked" | "report" | null>(null);
+  const [activeSection, setActiveSection] = useState<"profile" | "blocked" | "report" | null>(null);
   const [blockedProfiles, setBlockedProfiles] = useState<{ uid: string; displayName: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
 
@@ -69,30 +68,6 @@ export default function SettingsPage() {
   }, [profile]);
 
 
-  const [notifEnabled, setNotifEnabled] = useState(false);
-
-  // Check if notifications are active (permission granted + token exists)
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted" && privateData?.fcmToken) {
-      setNotifEnabled(true);
-    }
-  }, [privateData]);
-
-  const handleToggleNotifications = async () => {
-    if (!user) return;
-    if (notifEnabled) {
-      // Disable: clear token
-      await saveFCMToken(user.uid, "");
-      setNotifEnabled(false);
-    } else {
-      // Enable: request permission + save token
-      const token = await requestFCMToken();
-      if (token) {
-        await saveFCMToken(user.uid, token);
-        setNotifEnabled(true);
-      }
-    }
-  };
 
   // Nickname uniqueness check
   useEffect(() => {
@@ -415,23 +390,6 @@ export default function SettingsPage() {
             <button onClick={handleSave} disabled={saving}
               className="w-full bg-accent-orange text-white font-bold py-2 rounded-full text-sm disabled:opacity-50">
               {saving ? "Saving..." : "Save"}
-            </button>
-          </div>
-        )}
-
-        {/* Notifications — Accordion */}
-        <button
-          onClick={() => toggle("notifications")}
-          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
-        >
-          <span className="font-medium text-sm text-white/80">Notifications</span>
-          <span className="text-white/30 text-sm">{activeSection === "notifications" ? "▲" : "▼"}</span>
-        </button>
-        {activeSection === "notifications" && (
-          <div className="px-4 py-3 bg-forest-light/10 border-b border-forest-light/15">
-            <button onClick={handleToggleNotifications}
-              className={`w-full py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2 ${notifEnabled ? "bg-white/10 text-white/60" : "bg-accent-orange text-white"}`}>
-              {notifEnabled ? "🔕 Disable notifications" : "🔔 Enable notifications"}
             </button>
           </div>
         )}
