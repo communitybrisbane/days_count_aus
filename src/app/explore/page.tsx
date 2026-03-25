@@ -386,7 +386,7 @@ export default function ExplorePage() {
       {/* Post detail modal — Shorts-style snap scroll */}
       {selectedIndex !== null && (
         <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
-          <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col pb-14" {...swipe.handlers}>
+          <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }} {...swipe.handlers}>
             {/* Snap scroll container */}
             <div
               ref={snapContainerRef}
@@ -396,7 +396,8 @@ export default function ExplorePage() {
               {posts.map((post) => (
                 <div
                   key={post.id}
-                  className="snap-start snap-always w-full h-[calc(100dvh-56px)] flex items-center"
+                  className="snap-start snap-always w-full flex items-center"
+                  style={{ height: "calc(100dvh - 4rem - env(safe-area-inset-bottom, 0px))" }}
                 >
                   <div className="bg-white w-full max-h-full overflow-y-auto rounded-2xl scrollbar-hide" style={{ scrollbarWidth: "none" }}>
                     <PostCard
