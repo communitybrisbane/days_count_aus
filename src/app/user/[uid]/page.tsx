@@ -299,7 +299,7 @@ export default function PublicProfilePage() {
             })}
           </div>
         )}
-        <div className="h-16 shrink-0" />
+        <div className="shrink-0" style={{ height: "calc(4rem + env(safe-area-inset-bottom, 0px))" }} />
       </div>
       </div>
 

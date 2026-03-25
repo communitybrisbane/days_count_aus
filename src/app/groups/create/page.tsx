@@ -161,7 +161,7 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}

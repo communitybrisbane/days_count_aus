@@ -460,7 +460,7 @@ export default function SettingsPage() {
       </div>
 
       {/* フッター直上: Legal links・Log Out・Delete Account */}
-      <div className="shrink-0 border-t border-forest-light/15 px-4 py-4 space-y-3">
+      <div className="shrink-0 border-t border-forest-light/15 px-4 py-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}>
         <p className="text-center text-xs text-white/30">
           produced by{" "}
           <a href="https://www.instagram.com/count_taku/" target="_blank" rel="noopener noreferrer" className="text-accent-orange underline">@count_taku</a>

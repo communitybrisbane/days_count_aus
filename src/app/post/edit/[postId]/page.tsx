@@ -68,7 +68,7 @@ export default function EditPostPage() {
   }
 
   return (
-    <div className="min-h-dvh p-6">
+    <div className="min-h-dvh p-6" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}>
       <h1 className="text-2xl font-bold mb-6 text-white/90">Edit Post</h1>
       <div className="space-y-4">
         <div>

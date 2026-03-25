@@ -147,7 +147,7 @@ export default function HomePage() {
   const goalCleared = weeklyGoal > 0 && weeklyPostCount >= weeklyGoal;
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden pb-16">
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
       <NotificationToast show={!!toast} title={toast?.title || ""} body={toast?.body || ""} link={toast?.link} onDismiss={dismissToast} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
 

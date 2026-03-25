@@ -254,10 +254,10 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden pb-16">
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
       <div
         className="shrink-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20"
-        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
       >
         {/* Search bar */}
         <div className="px-4 pt-3 pb-2">

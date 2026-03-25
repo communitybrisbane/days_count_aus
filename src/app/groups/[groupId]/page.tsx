@@ -40,6 +40,8 @@ interface Message {
   text: string;
   createdAt: Timestamp;
   reactions: Record<string, boolean>;
+  edited?: boolean;
+  unsent?: boolean;
 }
 
 export default function GroupChatPage() {
@@ -265,6 +267,37 @@ export default function GroupChatPage() {
     if (!user) return;
     const msgRef = doc(db, "groups", groupId, "messages", msgId);
     await updateDoc(msgRef, { [`reactions.${user.uid}`]: !hasReacted });
+  };
+
+  // Edit / Unsend state
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [actionMenuMsgId, setActionMenuMsgId] = useState<string | null>(null);
+
+  const handleUnsend = async (msgId: string) => {
+    if (!user) return;
+    const msgRef = doc(db, "groups", groupId, "messages", msgId);
+    await updateDoc(msgRef, { text: "", unsent: true });
+    setActionMenuMsgId(null);
+  };
+
+  const handleEditStart = (msg: Message) => {
+    setEditingMsgId(msg.id);
+    setEditText(msg.text);
+    setActionMenuMsgId(null);
+  };
+
+  const handleEditSave = async () => {
+    if (!user || !editingMsgId || !editText.trim()) return;
+    const msgRef = doc(db, "groups", groupId, "messages", editingMsgId);
+    await updateDoc(msgRef, { text: editText.trim(), edited: true });
+    setEditingMsgId(null);
+    setEditText("");
+  };
+
+  const handleEditCancel = () => {
+    setEditingMsgId(null);
+    setEditText("");
   };
 
   // Leader: change icon
@@ -562,15 +595,47 @@ export default function GroupChatPage() {
             return (
               <div key={msg.id} className="flex justify-end items-end gap-1.5">
                 <div className="flex flex-col items-end">
-                  <div className="bg-accent-orange text-white px-3 py-2 rounded-2xl rounded-br-md text-sm max-w-[65vw]">
-                    {msg.text}
-                  </div>
+                  {/* Action menu */}
+                  {actionMenuMsgId === msg.id && !msg.unsent && (
+                    <div className="flex gap-1 mb-1">
+                      <button onClick={() => handleEditStart(msg)} className="text-[10px] bg-white/10 text-white/70 px-2 py-0.5 rounded-full hover:bg-white/20">Edit</button>
+                      <button onClick={() => handleUnsend(msg.id)} className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full hover:bg-red-500/30">Unsend</button>
+                      <button onClick={() => setActionMenuMsgId(null)} className="text-[10px] text-white/30 px-1">✕</button>
+                    </div>
+                  )}
+                  {/* Edit mode */}
+                  {editingMsgId === msg.id ? (
+                    <div className="flex flex-col gap-1 items-end">
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
+                        onKeyDown={(e) => e.key === "Enter" && handleEditSave()}
+                        className="border border-accent-orange rounded-xl px-3 py-1.5 text-sm text-black max-w-[65vw] focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                        autoFocus
+                      />
+                      <div className="flex gap-1">
+                        <button onClick={handleEditSave} className="text-[10px] text-accent-orange font-bold">Save</button>
+                        <button onClick={handleEditCancel} className="text-[10px] text-white/40">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => !msg.unsent && setActionMenuMsgId(actionMenuMsgId === msg.id ? null : msg.id)}
+                      className={`px-3 py-2 rounded-2xl rounded-br-md text-sm max-w-[65vw] cursor-pointer ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-accent-orange text-white"}`}
+                    >
+                      {msg.unsent ? "This message was unsent" : msg.text}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mt-0.5">
-                    <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
-                      <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
-                        <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
-                      </span>
-                    </button>
+                    {!msg.unsent && (
+                      <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
+                        <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
+                          <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
+                        </span>
+                      </button>
+                    )}
+                    {msg.edited && !msg.unsent && <span className="text-[10px] text-white/30 italic">edited</span>}
                     {timeStr && <span className="text-[10px] text-white/30">{timeStr}</span>}
                   </div>
                 </div>
@@ -599,15 +664,18 @@ export default function GroupChatPage() {
                     {sender?.displayName || "..."}
                   </button>
                 )}
-                <div className="bg-forest-light/20 text-white/90 px-3 py-2 rounded-2xl rounded-bl-md text-sm max-w-[65vw] w-fit">
-                  {msg.text}
+                <div className={`px-3 py-2 rounded-2xl rounded-bl-md text-sm max-w-[65vw] w-fit ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-forest-light/20 text-white/90"}`}>
+                  {msg.unsent ? "This message was unsent" : msg.text}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
-                    <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
-                      <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
-                    </span>
-                  </button>
+                  {!msg.unsent && (
+                    <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
+                      <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/30"}`}>
+                        <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span>{reactionCount}</span>}
+                      </span>
+                    </button>
+                  )}
+                  {msg.edited && !msg.unsent && <span className="text-[10px] text-white/30 italic">edited</span>}
                   {timeStr && <span className="text-[10px] text-white/30">{timeStr}</span>}
                 </div>
               </div>
@@ -619,7 +687,7 @@ export default function GroupChatPage() {
 
       {/* Input */}
       {isMember && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-3">
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-3" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
           {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
           <div className="flex gap-2">
           <input
