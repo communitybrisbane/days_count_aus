@@ -69,20 +69,28 @@ export default function SettingsPage() {
   }, [profile]);
 
 
-  const [notifStatus, setNotifStatus] = useState<"unknown" | "granted" | "default" | "denied">("unknown");
+  const [notifEnabled, setNotifEnabled] = useState(false);
 
+  // Check if notifications are active (permission granted + token exists)
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifStatus(Notification.permission as "granted" | "default" | "denied");
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted" && privateData?.fcmToken) {
+      setNotifEnabled(true);
     }
-  }, []);
+  }, [privateData]);
 
-  const handleEnableNotifications = async () => {
+  const handleToggleNotifications = async () => {
     if (!user) return;
-    const token = await requestFCMToken();
-    if (token) {
-      await saveFCMToken(user.uid, token);
-      setNotifStatus("granted");
+    if (notifEnabled) {
+      // Disable: clear token
+      await saveFCMToken(user.uid, "");
+      setNotifEnabled(false);
+    } else {
+      // Enable: request permission + save token
+      const token = await requestFCMToken();
+      if (token) {
+        await saveFCMToken(user.uid, token);
+        setNotifEnabled(true);
+      }
     }
   };
 
@@ -421,17 +429,10 @@ export default function SettingsPage() {
         </button>
         {activeSection === "notifications" && (
           <div className="px-4 py-3 bg-forest-light/10 border-b border-forest-light/15">
-            {notifStatus === "granted" ? (
-              <div className="flex items-center gap-2">
-                <span className="text-green-400 text-sm">●</span>
-                <span className="text-sm text-white/80">Notifications are enabled</span>
-              </div>
-            ) : (
-              <button onClick={handleEnableNotifications} className="w-full py-2.5 bg-accent-orange text-white text-sm font-bold rounded-xl">
-                Enable notifications
-              </button>
-            )}
-            <p className="text-[10px] text-white/40 mt-2">Manage notifications in your device settings.</p>
+            <button onClick={handleToggleNotifications}
+              className={`w-full py-2.5 text-sm font-bold rounded-xl ${notifEnabled ? "bg-white/10 text-white/60" : "bg-accent-orange text-white"}`}>
+              {notifEnabled ? "Disable notifications" : "Enable notifications"}
+            </button>
           </div>
         )}
 
