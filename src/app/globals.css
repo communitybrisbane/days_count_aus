@@ -22,7 +22,10 @@ html,
 body {
   overscroll-behavior: none;
   overflow: hidden;
+  overflow-x: hidden;
   height: 100dvh;
+  width: 100vw;
+  max-width: 100vw;
   background: var(--color-forest);
 }
 
@@ -92,10 +95,11 @@ body {
   clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%);
 }
 
-/* Hide scrollbars globally — all elements */
+/* Hide scrollbars globally — all elements, prevent horizontal scroll */
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overscroll-behavior-x: none;
 }
 *::-webkit-scrollbar {
   display: none;
