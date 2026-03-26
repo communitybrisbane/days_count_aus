@@ -309,6 +309,19 @@ export default function PublicProfilePage() {
           <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40" />
           <div className="fixed inset-0 z-40 flex justify-center">
             <div ref={swipe.ref} className="relative w-full max-w-[430px] flex flex-col pb-14" {...swipe.handlers}>
+              {/* Header */}
+              <div className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
+                <button
+                  onClick={() => setSelectedIndex(null)}
+                  className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13 4L7 10L13 16" />
+                  </svg>
+                </button>
+                <h2 className="text-sm font-bold text-white/90">Post</h2>
+                <div className="w-10" />
+              </div>
               <div
                 ref={scrollRef}
                 className="flex-1 w-full overflow-y-auto bg-white"
