@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +9,7 @@ import { calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/ut
 import { useDayCount } from "@/hooks/useDayCount";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
 import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
-import { requestFCMToken, onFCMMessage } from "@/lib/fcm";
+import { requestFCMToken } from "@/lib/fcm";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -20,7 +20,6 @@ import { MILESTONES, NAV_HEIGHT } from "@/lib/constants";
 import { IconEdit } from "@/components/icons";
 import WeeklyChallenge from "@/components/WeeklyChallenge";
 import WeeklyHistoryModal from "@/components/WeeklyHistoryModal";
-import NotificationToast from "@/components/NotificationToast";
 import type { AdminConfig } from "@/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -44,9 +43,7 @@ export default function HomePage() {
   const [milestoneDay, setMilestoneDay] = useState(0);
   const [phasePrompt, setPhasePrompt] = useState<{ message: string; newStatus: string } | null>(null);
   const [showNotifBanner, setShowNotifBanner] = useState(false);
-  const [toast, setToast] = useState<{ title: string; body: string; link?: string } | null>(null);
   const [showWeeklyHistory, setShowWeeklyHistory] = useState(false);
-  const dismissToast = useCallback(() => setToast(null), []);
 
   const dayCount = useDayCount(profile ?? null);
 
@@ -107,16 +104,6 @@ export default function HomePage() {
     localStorage.setItem("notif_choice_made", "true");
   };
 
-  // FCM: foreground message listener
-  useEffect(() => {
-    if (!user) return;
-    return onFCMMessage((payload: unknown) => {
-      const p = payload as { notification?: { title?: string; body?: string }; fcmOptions?: { link?: string } };
-      if (p.notification?.title) {
-        setToast({ title: p.notification.title, body: p.notification.body || "", link: p.fcmOptions?.link });
-      }
-    });
-  }, [user]);
 
   // Phase auto-transition check
   useEffect(() => {
@@ -159,7 +146,6 @@ export default function HomePage() {
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
-      <NotificationToast show={!!toast} title={toast?.title || ""} body={toast?.body || ""} link={toast?.link} onDismiss={dismissToast} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
       <PWAInstallBanner />
 
