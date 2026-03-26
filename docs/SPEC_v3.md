@@ -24,7 +24,7 @@
 | エラー監視 | Sentry（無料枠） |
 | デプロイ | Vercel |
 | ドメイン | https://days-count.com（Vercel管理） |
-| PWA | manifest.json + アイコン + OGP + iOS standalone（next-pwa未使用、手動設定） |
+| PWA | manifest.json + Service Worker（オフラインフォールバック + FCM） + OGP + iOS standalone（next-pwa未使用、手動設定） |
 | ビルドツール | Turbopack（Next.js 16 デフォルト） |
 | フォント | Geist / Geist Mono（Google Fonts） |
 
@@ -48,9 +48,15 @@
 - **レスポンシブ・シェル設計**: PC閲覧時は画面中央に **最大幅450px** でコンテンツ表示。シェル内側は白背景 + `shadow-lg`。
 - **背景色**: Sand Beige `#F5F5DC`（シェル外側）。
 - **最小高さ**: `min-h-dvh`（Dynamic Viewport Height）。
-- **PWA要件**: manifest.json設定済み。`standalone` モード。テーマカラー `#FFB800`。
+- **PWA要件**: manifest.json設定済み。`standalone` モード。テーマカラー `#1A3C2E`。`short_name: "days-count"`。
 - **PWAアイコン**: 192×192px / 512×512px の PNG アイコン。
+- **PWAインストールバナー**: 未インストールユーザーに毎回表示（z-[200]で最前面）。iOS向けはビジュアルステップガイド（Step 1: Share → Step 2: Add to Home Screen → Step 3: Add）をSVGアイコン+アニメーション矢印で案内。Android向けは `beforeinstallprompt` ネイティブプロンプト使用。
+- **オフラインフォールバック**: Service Worker が `offline.html` をキャッシュ。ナビゲーション失敗時にブランドデザインの「You're Offline」ページ（Retryボタン付き）を表示。スクロール完全無効化。
+- **OG画像**: `opengraph-image.tsx` で動的生成（1200×630px）。アプリアイコン + "days-count" テキスト + タグライン + Working Holiday / Journal / Community ピル。カンガルー透かし。
 - **COOP ヘッダー**: Google OAuth popup 対応のため `next.config.ts` で `Cross-Origin-Opener-Policy: same-origin-allow-popups` を設定。
+- **SEOメタデータ**: 各ルート（home, explore, mypage, groups, settings, login, post）に `layout.tsx` でページ固有の `title` と `description` を設定。
+- **エラーUI**: ルートの `error.tsx` でランタイムエラー時にブランドデザインのリトライ画面を表示。
+- **アクセシビリティ**: モーダルに `role="dialog" aria-modal="true"`、アイコンボタンに `aria-label`、オーバーレイに `aria-hidden="true"`、トーストに `aria-live="polite"` を全コンポーネントに適用。
 
 ---
 
@@ -202,7 +208,7 @@ Level = floor( sqrt( TotalXP / 1.5 ) ) + 1
 - **既読追跡**: `localStorage` に投稿IDを保存（最大500件、3日間TTL）。`markSeen()` で記録。
 - **無限スクロール**: Firestoreの `limit(20)` + `startAfter(lastVisibleDoc)` で20件ずつ追加読み込み。スクロール位置がページ下端500pxに達したら次ページ取得。
 - **フィルタ**: 上部に固定ヘッダーで2行レイアウト。Row1: All + WH系モード、Row2: その他モード。**WH系（enjoying/challenging）は amber系カラー、その他は blue系カラー**（選択/非選択とも色分け）。
-- **検索**: ユーザー名・地域でのデバウンス検索（400ms）。500ユーザーまでスキャン。
+- **検索**: ユーザー名・地域でのデバウンス検索（400ms）。500ユーザーまでスキャン。初回検索時にキャッシュし、以降はメモリ内フィルタリング。
 - **いいね**: 投稿カードのハートボタンで送信。ダブルタップでもいいね可能。**タップ位置にハートバースト + パーティクルアニメーション**。**楽観的UI更新**（即座に反映、失敗時ロールバック）。
 - **自分の投稿にもいいね可能**（ただしXP付与なし）。
 - **いいね取り消し可能**（XPは戻さない — ファーミング防止）。
@@ -436,7 +442,7 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 - すべてのモード選択UI（Explore、Post、Edit、Groups Create、MyPage、User Profile）で統一適用。
 
 ### 共通UIパターン
-- ローディング: `animate-spin` の円 + `border-b-2 border-aussie-gold`（LoadingSpinnerコンポーネント、fullScreen対応）
+- ローディング: カンガルーアイコン7匹が円軌道を自転+公転するアニメーション（LoadingSpinnerコンポーネント、fullScreen対応）。ルートの `loading.tsx` でページ遷移時にも表示。
 - カード: `rounded-2xl shadow-sm border border-gray-100`
 - ボタン（プライマリ）: `bg-aussie-gold text-white font-bold rounded-full`
 - フォーム入力: `border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-aussie-gold`
@@ -725,6 +731,9 @@ src/
 ├── app/
 │   ├── layout.tsx              # ルートレイアウト（AuthProvider、450pxシェル）
 │   ├── page.tsx                # ルートリダイレクト
+│   ├── loading.tsx             # ルートローディング（カンガルースピナー）
+│   ├── error.tsx               # ルートエラー画面（リトライ+ホーム遷移）
+│   ├── opengraph-image.tsx     # OG画像動的生成（1200×630px）
 │   ├── globals.css             # Tailwind v4 + テーマカラー定義
 │   ├── (auth)/
 │   │   ├── login/page.tsx      # ログイン画面（法的同意リンク付き）
@@ -750,11 +759,17 @@ src/
 │   ├── MilestoneAnimation.tsx  # マイルストーン演出
 │   ├── LevelUpAnimation.tsx    # レベルアップ演出
 │   ├── XPToast.tsx             # XP獲得トースト
-│   ├── LoadingSpinner.tsx      # ローディングスピナー
+│   ├── LoadingSpinner.tsx      # ローディングスピナー（カンガルー7匹公転+自転）
 │   ├── ConfirmModal.tsx        # 汎用確認ダイアログ
 │   ├── LegalModals.tsx         # 利用規約・プライバシーポリシーモーダル（Firestore管理+フォールバック）
 │   ├── NotificationToast.tsx   # 通知トーストUI（Framer Motion、スワイプ dismissible）
 │   ├── BannerCarousel.tsx      # 運営バナーカルーセル
+│   ├── PWAInstallBanner.tsx   # PWAインストール促進バナー（iOS視覚ステップガイド）
+│   ├── PostDetailModal.tsx    # 共通投稿詳細モーダル（list/snap 2バリアント）
+│   ├── PostGrid.tsx           # 共通4列サムネイルグリッド
+│   ├── ModeFilterBar.tsx      # 共通モードフィルターバー
+│   ├── FollowingModal.tsx     # フォロー一覧モーダル
+│   ├── ProfileGroups.tsx      # 所属グループ表示コンポーネント
 │   ├── AsciiWarn.tsx           # ASCII入力警告バナー
 │   ├── GroupCard.tsx           # グループカード
 │   ├── icons/index.tsx         # SVGアイコンコンポーネント群
@@ -774,7 +789,8 @@ src/
 │   ├── validators.ts           # バリデーション（ニックネーム・グループ名重複チェック）
 │   ├── feedScore.ts            # フィードスコアリングアルゴリズム + 既読追跡
 │   ├── follow.ts               # フォロー/アンフォロー操作
-│   ├── groups.ts               # 公式グループ参加/退出
+│   ├── groups.ts               # 公式グループ参加/退出 + fetchUserGroups
+│   ├── postUtils.ts            # 共通投稿ユーティリティ（getPostThumb）
 │   ├── fcm.ts                  # FCMトークン登録・メッセージリスナー
 │   ├── imageUtils.ts           # 画像圧縮・EXIF除去
 │   └── services/
@@ -794,8 +810,9 @@ public/
 ├── manifest.json               # PWAマニフェスト（OGP、iOS standalone対応）
 ├── robots.txt                  # クローラー設定
 ├── sitemap.xml                 # サイトマップ
-├── firebase-messaging-sw.js    # FCMサービスワーカー
-└── icons/                      # PWAアイコン（192×192, 512×512, SVG）
+├── firebase-messaging-sw.js    # Service Worker（FCM + オフラインフォールバック）
+├── offline.html                # オフラインフォールバックページ
+└── icons/                      # PWAアイコン（192×192, 512×512, kangaroo-like）
 ```
 
 ---
@@ -823,8 +840,8 @@ public/
 | Stripeサブスクリプション | 未実装 | `isPro` フィールドのみ用意済み |
 | App Check の Cloud Firestore 強制適用 | 未有効化 | reCAPTCHA Enterprise トークン取得が本番で失敗する問題の解決が必要 |
 | 全体的なUIデザイン改善 | 継続 | — |
-| OG画像作成 | 未実装 | 1200×630px のSNS共有用画像（現在は512pxアイコンで代用） |
-| FCM VAPID key修正 | 未解決 | 本番環境で通知トークン取得が失敗する |
+| ~~OG画像作成~~ | **実装済み** | `opengraph-image.tsx` で動的生成（アプリアイコン + カンガルー使用） |
+| ~~FCM VAPID key修正~~ | **解決済み** | 本番で動作確認済み |
 
 ---
 
@@ -836,4 +853,5 @@ public/
 | v3 | 2025-03-10 | Phase 1〜9 実装完了。実装詳細・ルート・ファイル構成・未実装項目を追記。 |
 | v3 改訂 | 2026-03-12 | 現在の実装に完全準拠して全面書き直し。主な差分: レベル計算式を `sqrt(TotalXP/4)+1` に修正、投稿テキストを統合 `content` フィールド（400文字）に変更、投稿に `visibility`（public/private）と `status`（active/hidden/pending）を追加、フォロー機能・公式グループ・投稿モデレーション（自動非表示）・禁止語句フィルター・ブロックUI を追記、グループ作成条件を Lv.5 に修正、自己いいね（XP付与なし）を明記、ダブルタップいいね・2ステップ投稿フロー・画像圧縮仕様を追記、Firestore構造に `users/private`・`users/following`・`posts/reports`・`groups/lastRead`・`banners`・`moderation_config` を追加、セキュリティルールを実装準拠で全面更新、アカウント削除手順を拡充。 |
 | v3 改訂2 | 2026-03-17 | いいねシステム刷新（無制限いいね、XP上限5回/日、タップ位置アニメーション、いいね一覧モーダル、楽観的UI、XP取り消し廃止）。フィードアルゴリズム導入（スコアベースランキング + localStorage既読追跡）。フォロー楽観的UI更新。公開プロフィールUI刷新（MyPageと統一、ブロック/アンブロックトグル）。モードカラー統一（WH=amber、その他=blue、全6画面）。Live SessionをHOMEからCommunityタブへ移動。HOME画面リファクタ（WeeklyChallenge抽出、ストリーク火消去）。右スワイプで閉じるジェスチャー（useSwipeDismiss、GPU加速）。いいね通知Cloud Function（onLikeCreated、未デプロイ）。新規ファイル: feedScore.ts, WeeklyChallenge.tsx, useSwipeDismiss.ts, AsciiWarn.tsx, useAsciiInput.ts。 |
+| v3 改訂4 | 2026-03-27 | コード品質・パフォーマンス・UX大規模改善。共通コンポーネント抽出（PostDetailModal, PostGrid, ModeFilterBar, FollowingModal, ProfileGroups, postUtils）。PWAインストールバナー（iOSビジュアルステップガイド、毎回表示、z-[200]最前面）。OG画像リデザイン（アプリアイコン+カンガルー使用、opengraph-image.tsx）。manifest short_name変更（"days-count"）。オフラインフォールバック（Service Worker + offline.html）。ローディングスピナー刷新（カンガルー7匹公転+自転アニメーション）。エラーページ追加（error.tsx）。SEOメタデータ追加（7ページにlayout.tsx）。アクセシビリティ改善（12ファイル、aria属性追加）。Firestore並列化（ホーム画面Promise.all、投稿ページPromise.all）。Explore検索キャッシュ化。画像lazy loading全コンポーネント追加。投稿ページモードボタン重複解消。 |
 | v3 改訂3 | 2026-03-17 | Cloud Functions全7つデプロイ（moderatePost, checkReportThreshold, onLikeCreated, checkStreaks, cleanupHiddenPosts, onGroupMessageCreated, syncGroupMembership）。通知システム強化（NotificationToast UI、設定画面にトグル3種、通知種別ごとのPrefs対応）。Firestoreセキュリティルール全面監査・強化（groupIds他人更新禁止、フィールドホワイトリスト厳格化）。Legal文書をFirestore管理に移行（legal_docsコレクション）。XPバランス調整（除数4→1.5、Lv.90=10ヶ月目標）。グループ解放レベル変更（参加Lv.13、作成Lv.20、初回ボーナス考慮）。PWA本番対応（OGP、iOS standalone、manifest強化、robots.txt、sitemap.xml）。Sentry導入。カスタムドメイン days-count.com 設定。オンボーディングUI改善（必須/任意マーカー、グリッドレイアウト、英語日付入力）。 |
