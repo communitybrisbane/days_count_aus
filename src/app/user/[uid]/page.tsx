@@ -3,22 +3,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { fetchUserPosts } from "@/lib/services/posts";
 import { fetchUserProfile, blockUser, unblockUser } from "@/lib/services/users";
-import { FOCUS_MODES, MAIN_MODE_OPTIONS, resolveMode, NAV_HEIGHT } from "@/lib/constants";
-import { getPostThumb } from "@/lib/postUtils";
+import { fetchUserGroups } from "@/lib/groups";
+import { FOCUS_MODES, resolveMode, NAV_HEIGHT } from "@/lib/constants";
 import { followUser, unfollowUser, getFollowingIds } from "@/lib/follow";
 import Avatar from "@/components/Avatar";
 import PostDetailModal from "@/components/PostDetailModal";
+import PostGrid from "@/components/PostGrid";
+import ModeFilterBar from "@/components/ModeFilterBar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { FocusModeIcon, IconBan, IconLock } from "@/components/icons";
+import { FocusModeIcon, IconBan } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Post, UserProfile, Group } from "@/types";
 import { NO_SCROLLBAR_STYLE } from "@/types";
-
 
 export default function PublicProfilePage() {
   const { user, profile: myProfile, privateData, following, refreshFollowing, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
@@ -45,17 +44,8 @@ export default function PublicProfilePage() {
         ]);
         if (profile) {
           setUserData(profile);
-          // Fetch user groups (non-official only)
           if (profile.groupIds?.length) {
-            const groups: Group[] = [];
-            for (const gid of profile.groupIds) {
-              const snap = await getDoc(doc(db, "groups", gid));
-              if (snap.exists()) {
-                const g = { id: snap.id, ...snap.data() } as Group;
-                if (!g.isClosed && (!g.isOfficial || g.iconUrl)) groups.push(g);
-              }
-            }
-            setUserGroups(groups);
+            fetchUserGroups(profile.groupIds).then(setUserGroups);
           }
         }
         setPosts(allPosts);
@@ -102,7 +92,7 @@ export default function PublicProfilePage() {
 
         {/* 戻るボタン — 右上 */}
         <button onClick={() => router.back()} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
-          ×
+          &times;
         </button>
 
         <div className="flex flex-col items-center pt-10 relative">
@@ -236,60 +226,14 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* モードアイコン — 投稿のすぐ上 */}
-      <div className="flex justify-around px-4 py-4 bg-forest/50">
-        <button
-          onClick={() => setModeFilter("")}
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold ${
-            !modeFilter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-          }`}
-        >
-          All
-        </button>
-        {MAIN_MODE_OPTIONS.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setModeFilter(m.id)}
-            className={`w-14 h-14 rounded-full flex items-center justify-center ${
-              modeFilter === m.id
-                ? "bg-accent-orange"
-                : "bg-white"
-            }`}
-          >
-            <FocusModeIcon modeId={m.id} size={33} className={modeFilter === m.id ? "text-white" : "text-forest-mid"} />
-          </button>
-        ))}
-      </div>
+      <ModeFilterBar value={modeFilter} onChange={setModeFilter} size={14} />
 
       {/* 投稿グリッド */}
       <div className="flex-1 min-h-0">
         {filteredPosts.length === 0 ? (
           <p className="text-center text-white/40 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
         ) : (
-          <div className="grid grid-cols-4">
-            {filteredPosts.map((post, idx) => {
-              const thumb = getPostThumb(post);
-              const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(post.mode || ""));
-              return (
-                <button
-                  key={post.id}
-                  onClick={() => setSelectedIndex(idx)}
-                  className="relative aspect-square overflow-hidden"
-                >
-                  {thumb.type === "image" ? (
-                    <img src={thumb.url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${thumb.gradient} flex items-center justify-center`}>
-                      {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={24} className="text-white" />}
-                    </div>
-                  )}
-                  {post.visibility === "private" && (
-                    <div className="absolute top-1 left-1"><IconLock size={10} className="text-white drop-shadow" /></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <PostGrid posts={filteredPosts} onSelect={setSelectedIndex} />
         )}
         <div className="shrink-0" style={{ height: NAV_HEIGHT }} />
       </div>

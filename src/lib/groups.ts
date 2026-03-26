@@ -1,5 +1,7 @@
 import {
   collection,
+  doc,
+  getDoc,
   query,
   where,
   getDocs,
@@ -10,6 +12,25 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Group } from "@/types";
+
+/**
+ * Fetch visible groups for a user by their groupIds.
+ * Filters out closed groups and official groups without icons.
+ */
+export async function fetchUserGroups(groupIds: string[]): Promise<Group[]> {
+  if (!groupIds.length) return [];
+  const groups: Group[] = [];
+  await Promise.all(
+    groupIds.map(async (gid) => {
+      const snap = await getDoc(doc(db, "groups", gid));
+      if (snap.exists()) {
+        const g = { id: snap.id, ...snap.data() } as Group;
+        if (!g.isClosed && (!g.isOfficial || g.iconUrl)) groups.push(g);
+      }
+    })
+  );
+  return groups;
+}
 
 /**
  * Find the official group doc for a given mode.
