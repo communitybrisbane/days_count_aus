@@ -15,11 +15,11 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, MAIN_MODE_OPTIONS, REGIONS, NAV_HEIGHT } from "@/lib/constants";
+import { NAV_HEIGHT } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { IconEucalyptus, FocusModeIcon, IconSearch } from "@/components/icons";
+import { IconEucalyptus, IconSearch } from "@/components/icons";
 import type { Post } from "@/types";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
@@ -27,7 +27,7 @@ import { rankPosts, markSeen } from "@/lib/feedScore";
 
 const PAGE_SIZE = 20;
 
-type SortTab = "new" | "popular" | "following";
+type SortTab = "new" | "popular";
 
 export default function ExplorePage() {
   useAuthGuard({ requireProfile: false });
@@ -36,16 +36,13 @@ export default function ExplorePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
-  const [filter, setFilter] = useState<string>("");
-  const [regionFilter, setRegionFilter] = useState<string>("");
   const [sortTab, setSortTab] = useState<SortTab>("new");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
   const [searchTag, setSearchTag] = useState<string | null>(null);
-  const [searchFocused, setSearchFocused] = useState(false);
   const [trendingTags, setTrendingTags] = useState<{ tag: string; count: number }[]>([]);
-  const [showRegionPicker, setShowRegionPicker] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
   const snapContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
@@ -63,13 +60,6 @@ export default function ExplorePage() {
         const constraints: QueryConstraint[] = [];
         constraints.push(where("status", "==", "active"));
         constraints.push(where("visibility", "==", "public"));
-        if (filter) {
-          constraints.push(where("mode", "==", filter));
-        }
-        if (regionFilter) {
-          constraints.push(where("region", "==", regionFilter));
-        }
-        // Sort: popular uses likeCount, others use createdAt
         if (sortTab === "popular") {
           constraints.push(orderBy("likeCount", "desc"));
         } else {
@@ -91,11 +81,6 @@ export default function ExplorePage() {
           );
         }
 
-        // Following tab: filter to only followed users' posts
-        if (sortTab === "following") {
-          newPosts = newPosts.filter((p) => following.includes(p.userId));
-        }
-
         // Client-side filter: user/region OR tag match
         if (searchUserIds !== null || searchTag) {
           const tagQuery = searchTag ? searchTag.replace(/^#/, "") : "";
@@ -106,7 +91,7 @@ export default function ExplorePage() {
           });
         }
 
-        // Score-based ranking only for "new" tab without search
+        // Score-based ranking for "new" tab without search
         if (sortTab === "new" && searchUserIds === null && !searchTag) {
           newPosts = rankPosts(
             newPosts,
@@ -116,7 +101,6 @@ export default function ExplorePage() {
           );
         }
 
-        // Mark posts as seen
         markSeen(newPosts.map((p) => p.id));
 
         if (reset) {
@@ -138,10 +122,10 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [filter, regionFilter, sortTab, user, profile, privateData, following, searchUserIds, searchTag]
+    [sortTab, profile, privateData, following, searchUserIds, searchTag]
   );
 
-  // Search handler — #tag, username (partial), or city/region
+  // Search handler
   const handleSearch = useCallback(async (q: string) => {
     const trimmed = q.trim().toLowerCase();
     if (!trimmed) {
@@ -150,19 +134,16 @@ export default function ExplorePage() {
       return;
     }
 
-    // Tag search: starts with #
     if (trimmed.startsWith("#")) {
       setSearchUserIds(null);
       setSearchTag(trimmed);
       return;
     }
 
-    // User/region search + also search tags
     setSearchTag(trimmed);
     try {
       const usersRef = collection(db, "users");
       const snap = await getDocs(query(usersRef, limit(500)));
-
       const userIds = new Set<string>();
       snap.docs.forEach((d) => {
         const data = d.data();
@@ -173,26 +154,24 @@ export default function ExplorePage() {
           userIds.add(d.id);
         }
       });
-
       setSearchUserIds(userIds.size > 0 ? Array.from(userIds) : []);
     } catch (e) {
       console.error("Search failed:", e);
     }
   }, []);
 
-  // Initialize search from URL ?q= param (e.g. from hashtag tap)
+  // Initialize search from URL ?q=
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     if (q) {
       setSearchQuery(q);
       handleSearch(q);
-      // Clean up URL without reload
       window.history.replaceState({}, "", "/explore");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Compute trending tags from loaded posts
+  // Trending tags
   useEffect(() => {
     if (posts.length === 0) return;
     const counts = new Map<string, number>();
@@ -218,13 +197,8 @@ export default function ExplorePage() {
   }, [fetchPosts]);
 
   useEffect(() => {
-    if (user) {
-      setPosts([]);
-      lastDocRef.current = null;
-      setHasMore(true);
-      fetchPosts(true);
-    }
-  }, [user, filter, regionFilter, sortTab, fetchPosts]);
+    if (user) refreshPosts();
+  }, [user, refreshPosts]);
 
   useEffect(() => {
     const el = scrollAreaRef.current;
@@ -247,7 +221,6 @@ export default function ExplorePage() {
     setSelectedIndex(null);
   };
 
-  // Scroll to selected post when modal opens
   useEffect(() => {
     if (selectedIndex !== null && snapContainerRef.current) {
       const target = snapContainerRef.current.children[selectedIndex] as HTMLElement;
@@ -255,13 +228,20 @@ export default function ExplorePage() {
     }
   }, [selectedIndex]);
 
-  // Debounced search
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSearchInput = (value: string) => {
     setSearchQuery(value);
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     searchTimerRef.current = setTimeout(() => handleSearch(value), 400);
   };
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    };
+  }, []);
 
   const handleExploreClick = () => {
     if (selectedIndex !== null) {
@@ -270,17 +250,6 @@ export default function ExplorePage() {
       refreshPosts();
     }
   };
-
-  const clearAll = () => {
-    setSearchQuery("");
-    setSearchUserIds(null);
-    setSearchTag(null);
-    setFilter("");
-    setRegionFilter("");
-    setSearchFocused(false);
-  };
-
-  const hasActiveFilter = !!(searchQuery || filter || regionFilter);
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
@@ -297,13 +266,14 @@ export default function ExplorePage() {
               value={searchQuery}
               onChange={(e) => onSearchInput(sanitize(e.target.value))}
               onFocus={() => setSearchFocused(true)}
+              onBlur={() => { if (!searchQuery) setSearchFocused(false); }}
               placeholder="Search by city, username, or #tag..."
               className="flex-1 bg-transparent text-sm outline-none placeholder-white/30 text-white"
             />
             {showWarn && <span className="text-red-400 text-[10px] font-bold shrink-0">English only</span>}
-            {(hasActiveFilter || searchFocused) && (
+            {(searchQuery || searchFocused) && (
               <button
-                onClick={clearAll}
+                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); setSearchFocused(false); }}
                 className="text-white/40 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
               >
                 &times;
@@ -312,9 +282,9 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Sort tabs: New / Popular / Following */}
-        <div className="flex px-4 gap-1 pb-2">
-          {(["new", "popular", "following"] as SortTab[]).map((tab) => (
+        {/* Sort tabs: New / Popular */}
+        <div className="flex px-4 gap-2 pb-2">
+          {(["new", "popular"] as SortTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setSortTab(tab)}
@@ -324,88 +294,11 @@ export default function ExplorePage() {
                   : "bg-forest-light/20 text-white/50"
               }`}
             >
-              {tab === "new" ? "New" : tab === "popular" ? "Popular" : "Following"}
+              {tab === "new" ? "New" : "Popular"}
             </button>
           ))}
-          {/* Region filter button */}
-          <button
-            onClick={() => setShowRegionPicker(!showRegionPicker)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-              regionFilter
-                ? "bg-accent-orange text-white"
-                : "bg-forest-light/20 text-white/50"
-            }`}
-          >
-            {regionFilter || "Area"}
-          </button>
         </div>
 
-        {/* Region picker dropdown */}
-        {showRegionPicker && (
-          <div className="px-4 pb-2">
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => { setRegionFilter(""); setShowRegionPicker(false); }}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                  !regionFilter ? "bg-accent-orange text-white" : "bg-white/10 text-white/70"
-                }`}
-              >
-                All
-              </button>
-              {REGIONS.filter((r) => r !== "Other").map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setRegionFilter(r); setShowRegionPicker(false); }}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                    regionFilter === r ? "bg-accent-orange text-white" : "bg-white/10 text-white/70"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Mode filter chips — shown on search focus or when filter active */}
-        {(searchFocused || filter) && (
-          <div className="px-4 pb-2 space-y-1.5">
-            <div className="flex gap-1.5">
-              <button
-                onClick={() => { setFilter(""); }}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium text-center transition-all ${
-                  !filter ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                All
-              </button>
-              {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => { setFilter(m.id); setSearchFocused(false); }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                  }`}
-                >
-                  <FocusModeIcon modeId={m.id} size={14} /> {m.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-1.5">
-              {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => { setFilter(m.id); setSearchFocused(false); }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    filter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                  }`}
-                >
-                  <FocusModeIcon modeId={m.id} size={14} /> {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         {/* Trending tags — shown when focused, no query */}
         {searchFocused && !searchQuery && trendingTags.length > 0 && (
           <div className="px-4 pb-2">
@@ -415,7 +308,7 @@ export default function ExplorePage() {
                 <button
                   key={tag}
                   onClick={() => { onSearchInput(tag); setSearchFocused(false); }}
-                  className="px-2.5 py-1 rounded-full text-xs bg-white/10 text-white/80 hover:bg-white/20 active:scale-95 transition-all"
+                  className="px-2.5 py-1 rounded-full text-xs bg-white/10 text-white/80 active:scale-95 transition-all"
                 >
                   {tag} <span className="text-white/40">{count}</span>
                 </button>
@@ -432,11 +325,7 @@ export default function ExplorePage() {
               <IconEucalyptus size={40} className="text-white/40 mx-auto" />
             </div>
             <p className="text-white/60">
-              {searchQuery || hasActiveFilter
-                ? "No posts found"
-                : sortTab === "following"
-                ? "Follow someone to see their posts here"
-                : "Post your first entry and start counting!"}
+              {searchQuery ? "No posts found" : "Post your first entry and start counting!"}
             </p>
           </div>
         )}
@@ -472,11 +361,10 @@ export default function ExplorePage() {
         {loadingPosts && <LoadingSpinner size="sm" />}
       </div>
 
-      {/* Post detail modal — Shorts-style snap scroll */}
+      {/* Post detail modal */}
       {selectedIndex !== null && (
         <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
           <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipe.handlers}>
-            {/* Snap scroll container */}
             <div
               ref={snapContainerRef}
               className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
