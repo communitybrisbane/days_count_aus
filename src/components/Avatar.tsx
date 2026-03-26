@@ -20,6 +20,7 @@ export default function Avatar({ photoURL, displayName, uid, size = 40, classNam
         height={size}
         className={`rounded-full object-cover ${className}`}
         style={{ width: size, height: size }}
+        loading="lazy"
       />
     );
   }

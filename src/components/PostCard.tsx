@@ -318,7 +318,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         <XPToast xp={xpGained} show={showXP} />
         <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
           {post.imageUrl ? (
-            <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" />
+            <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" loading="lazy" />
           ) : (
             <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-3`}>
               <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4">
@@ -427,7 +427,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       {/* Image or gradient card */}
       <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
         {post.imageUrl ? (
-          <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" />
+          <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" loading="lazy" />
         ) : (
           <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
             <p className="text-white text-center font-medium text-sm leading-relaxed">

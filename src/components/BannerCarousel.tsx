@@ -81,14 +81,14 @@ export default function BannerCarousel({ location, bannerImageUrl }: BannerCarou
                 <img
                   src={banner.imageUrl}
                   alt=""
-                  className="w-full aspect-video object-cover"
+                  className="w-full aspect-video object-cover" loading="lazy"
                 />
               </a>
             ) : (
               <img
                 src={banner.imageUrl}
                 alt=""
-                className="w-full aspect-video object-cover"
+                className="w-full aspect-video object-cover" loading="lazy"
               />
             )}
           </div>

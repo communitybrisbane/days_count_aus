@@ -23,7 +23,7 @@ export default function PostGrid({ posts, onSelect }: Props) {
             className="relative aspect-square overflow-hidden"
           >
             {thumb.type === "image" ? (
-              <img src={thumb.url} alt="" className="w-full h-full object-cover" />
+              <img src={thumb.url} alt="" className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <div className={`w-full h-full bg-gradient-to-br ${thumb.gradient} flex items-center justify-center`}>
                 {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={24} className="text-white" />}

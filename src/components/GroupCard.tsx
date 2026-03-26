@@ -81,7 +81,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
       >
         <div className="flex items-center gap-3 px-4 py-3">
           {group.iconUrl ? (
-            <img src={group.iconUrl} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+            <img src={group.iconUrl} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" loading="lazy" />
           ) : (
             <div className="w-12 h-12 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0">
               <FocusModeIcon modeId={resolveMode(group.mode || "adventure")} size={26} className="text-forest-mid" />
@@ -136,7 +136,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
           <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl overflow-hidden max-w-sm mx-auto shadow-xl">
             <div className="flex flex-col items-center pt-6 pb-4 px-6">
               {group.iconUrl ? (
-                <img src={group.iconUrl} alt="" className="w-20 h-20 rounded-full object-cover mb-3" />
+                <img src={group.iconUrl} alt="" className="w-20 h-20 rounded-full object-cover mb-3" loading="lazy" />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-forest-light/20 flex items-center justify-center mb-3">
                   <FocusModeIcon modeId={resolveMode(group.mode || "adventure")} size={40} className="text-forest-mid" />

@@ -58,7 +58,7 @@ export default function NotificationToast({ show, title, body, link, type, icon,
           <div className="flex items-center gap-3 px-4 pb-3">
             {/* Icon */}
             {isMessage && icon ? (
-              <img src={icon} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+              <img src={icon} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" loading="lazy" />
             ) : isMessage ? (
               <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                 <span className="text-base">💬</span>
