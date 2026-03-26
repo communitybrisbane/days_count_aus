@@ -270,46 +270,20 @@ export default function GroupsPage() {
                   />
                 ))}
 
-                {/* Add Community — single button (shown when user can still join or create) */}
-                {!hasMaxGroups && (
-                  !canJoinCommunity ? (
-                    <div className="card-material border-0 p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
-                          <IconLock size={18} className="text-forest-mid" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-gray-700">Communities</p>
-                          <p className="text-[10px] text-gray-400">Unlocks at Lv.{GROUP_JOIN_LEVEL}</p>
-                        </div>
-                      </div>
-                      <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-forest-mid h-2 rounded-full transition-all"
-                          style={{ width: `${Math.min((level / GROUP_JOIN_LEVEL) * 100, 100)}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-gray-400 text-right mt-1">Lv.{level} / Lv.{GROUP_JOIN_LEVEL}</p>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowActionChoice(true)}
-                      className="w-full bg-forest-light/15 border border-forest-light/20 rounded-2xl px-4 py-3 text-left active:bg-forest-light/25 transition-all active:scale-[0.98]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-accent-orange flex items-center justify-center shrink-0">
-                          <span className="text-white font-bold text-sm">+</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-white/90">Find or Create</p>
-                          <p className="text-[10px] text-white/40">{myJoinedExtra.length}/{maxSlots} communities joined</p>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30 shrink-0">
-                          <path d="M7 4L13 10L7 16" />
-                        </svg>
-                      </div>
-                    </button>
-                  )
+                {/* Add Community */}
+                {!hasMaxGroups && canJoinCommunity && (
+                  <button
+                    onClick={() => setShowActionChoice(true)}
+                    className="w-full py-3 text-center text-sm font-bold text-accent-orange active:opacity-70 transition-opacity"
+                  >
+                    + Find or Create
+                  </button>
+                )}
+                {!canJoinCommunity && (
+                  <p className="text-center text-[10px] text-white/30 py-3">
+                    <IconLock size={10} className="inline mr-1" />
+                    Communities unlock at Lv.{GROUP_JOIN_LEVEL}
+                  </p>
                 )}
               </div>
 
