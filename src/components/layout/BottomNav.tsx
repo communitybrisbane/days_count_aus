@@ -57,7 +57,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
         className="hidden"
       />
 
-      <div className="flex items-center justify-around h-10 px-2">
+      <div className="flex items-center justify-around h-20 px-2">
         {/* HOME */}
         <Link href="/home" className="flex items-center justify-center w-12 h-12">
           <IconHome size={26} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
