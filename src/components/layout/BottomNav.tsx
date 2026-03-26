@@ -59,17 +59,17 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
 
       <div className="flex items-center justify-around h-12 px-2">
         {/* HOME */}
-        <Link href="/home" className="flex items-center justify-center w-14 h-14">
+        <Link href="/home" className="flex items-center justify-center w-12 h-12">
           <IconHome size={26} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
         </Link>
 
         {/* EXPLORE */}
         {onExploreClick ? (
-          <button onClick={onExploreClick} className="flex items-center justify-center w-14 h-14">
+          <button onClick={onExploreClick} className="flex items-center justify-center w-12 h-12">
             <IconDiary size={26} className="text-accent-orange" />
           </button>
         ) : (
-          <Link href="/explore" className="flex items-center justify-center w-14 h-14">
+          <Link href="/explore" className="flex items-center justify-center w-12 h-12">
             <IconDiary size={26} className={isActive("/explore") ? "text-accent-orange" : "text-white/40"} />
           </Link>
         )}
@@ -77,7 +77,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
         {/* POST — center floating, opens file picker first */}
         <button onClick={handlePostClick} className="flex items-center justify-center -mt-6">
           <div
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-long ${
+            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-long ${
               isActive("/post") ? "bg-gradient-to-br from-accent-orange to-accent-orange-dark" : "bg-gradient-to-br from-accent-orange-light to-accent-orange"
             }`}
           >
@@ -86,13 +86,13 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
         </button>
 
         {/* GROUPS */}
-        <Link href="/groups" className="flex items-center justify-center w-14 h-14">
+        <Link href="/groups" className="flex items-center justify-center w-12 h-12">
           <IconGroup size={26} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
         </Link>
 
         {/* MY */}
         {onMyClick ? (
-          <button onClick={onMyClick} className="flex items-center justify-center w-14 h-14">
+          <button onClick={onMyClick} className="flex items-center justify-center w-12 h-12">
             <div className="rounded-full ring-2 ring-accent-orange">
               <Avatar
                 photoURL={profile?.photoURL}
@@ -103,7 +103,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
             </div>
           </button>
         ) : (
-          <Link href="/mypage" className="flex items-center justify-center w-14 h-14">
+          <Link href="/mypage" className="flex items-center justify-center w-12 h-12">
             <div className={`rounded-full ${isActive("/mypage") ? "ring-2 ring-accent-orange" : ""}`}>
               <Avatar
                 photoURL={profile?.photoURL}

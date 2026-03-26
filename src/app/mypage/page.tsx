@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { calculateLevel } from "@/lib/utils";
 import { fetchUserPosts } from "@/lib/services/posts";
-import { FOCUS_MODES, MAIN_MODE_OPTIONS, GRADIENTS, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, MAIN_MODE_OPTIONS, GRADIENTS, resolveMode, NAV_HEIGHT } from "@/lib/constants";
 import Avatar from "@/components/Avatar";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -90,7 +90,7 @@ export default function MyPage() {
   };
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "3rem" }}>
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト with geometric bg */}
       <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
@@ -254,7 +254,7 @@ export default function MyPage() {
         <>
           <div ref={swipePost.bgRef} className="fixed inset-0 bg-black z-40" />
           <div className="fixed inset-0 z-40 flex justify-center">
-            <div ref={swipePost.ref} className="relative w-full max-w-[430px] flex flex-col" style={{ paddingBottom: "3rem" }} {...swipePost.handlers}>
+            <div ref={swipePost.ref} className="relative w-full max-w-[430px] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipePost.handlers}>
 
               {/* Scrollable posts — 白背景でカード間の隙間をなくし、listRoundedでなめらかに接続 */}
               <div

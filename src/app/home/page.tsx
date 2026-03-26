@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +15,8 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
 import MilestoneAnimation from "@/components/MilestoneAnimation";
 import BannerCarousel from "@/components/BannerCarousel";
-import { MILESTONES } from "@/lib/constants";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
+import { MILESTONES, NAV_HEIGHT } from "@/lib/constants";
 import { IconEdit } from "@/components/icons";
 import WeeklyChallenge from "@/components/WeeklyChallenge";
 import WeeklyHistoryModal from "@/components/WeeklyHistoryModal";
@@ -27,6 +28,12 @@ const STATUS_LABELS: Record<string, string> = {
   "in-australia": "In Australia",
   "post-return": "After return",
 };
+
+const ANNOUNCEMENT_COLORS = {
+  info: { bg: "bg-forest-light/10", border: "border-forest-light/20", title: "text-lime", dot: "bg-lime" },
+  warning: { bg: "bg-red-500/10", border: "border-red-500/20", title: "text-red-400", dot: "bg-red-400" },
+  event: { bg: "bg-accent-orange/10", border: "border-accent-orange/20", title: "text-accent-orange", dot: "bg-accent-orange" },
+} as const;
 
 export default function HomePage() {
   const { user, profile, loading } = useAuthGuard();
@@ -40,10 +47,6 @@ export default function HomePage() {
   const [toast, setToast] = useState<{ title: string; body: string; link?: string } | null>(null);
   const [showWeeklyHistory, setShowWeeklyHistory] = useState(false);
   const dismissToast = useCallback(() => setToast(null), []);
-  const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
 
   const dayCount = useDayCount(profile ?? null);
 
@@ -62,11 +65,11 @@ export default function HomePage() {
 
   // Fetch weekly stats
   useEffect(() => {
-    if (!user || !profile) return;
+    if (!user) return;
     fetchTotalLikesAndWeekly(user.uid).then(({ weeklyPostCount: count }) => {
       setWeeklyPostCount(count);
     }).catch(console.error);
-  }, [user, profile]);
+  }, [user]);
 
   // Milestone check
   useEffect(() => {
@@ -115,53 +118,6 @@ export default function HomePage() {
     });
   }, [user]);
 
-  // PWA install banner
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Already installed as PWA
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window.navigator as any).standalone === true) return;
-    // Already dismissed (re-show after 7 days)
-    const dismissed = localStorage.getItem("pwa_install_dismissed");
-    if (dismissed && Date.now() - Number(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
-
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
-    setIsIOS(ios);
-
-    if (ios) {
-      setShowInstallBanner(true);
-    } else {
-      const handler = (e: Event) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-        setShowInstallBanner(true);
-      };
-      window.addEventListener("beforeinstallprompt", handler);
-      return () => window.removeEventListener("beforeinstallprompt", handler);
-    }
-  }, []);
-
-  const handleInstall = async () => {
-    if (isIOS) {
-      setShowIOSGuide(true);
-      return;
-    }
-    if (deferredPrompt) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (deferredPrompt as any).prompt();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (deferredPrompt as any).userChoice;
-      if (result.outcome === "accepted") setShowInstallBanner(false);
-      setDeferredPrompt(null);
-    }
-  };
-
-  const dismissInstallBanner = () => {
-    setShowInstallBanner(false);
-    localStorage.setItem("pwa_install_dismissed", String(Date.now()));
-  };
-
   // Phase auto-transition check
   useEffect(() => {
     if (!profile?.departureDate) return;
@@ -175,7 +131,6 @@ export default function HomePage() {
       setPhasePrompt({ message: "You've been in Australia for over 365 days. Switch to post-return?", newStatus: "post-return" });
     }
   }, [profile, dayCount]);
-
 
   const handlePhaseTransition = async () => {
     if (!user || !phasePrompt) return;
@@ -193,59 +148,20 @@ export default function HomePage() {
     setPhasePrompt(null);
   };
 
+  const activeAnnouncements = useMemo(
+    () => adminConfig?.announcements?.filter((a) => a.active) ?? [],
+    [adminConfig?.announcements]
+  );
+
   if (loading || !profile) return <LoadingSpinner fullScreen />;
 
   const goalCleared = weeklyGoal > 0 && weeklyPostCount >= weeklyGoal;
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "3rem" }}>
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
       <NotificationToast show={!!toast} title={toast?.title || ""} body={toast?.body || ""} link={toast?.link} onDismiss={dismissToast} />
       <MilestoneAnimation dayNumber={milestoneDay} show={showMilestone} onClose={() => setShowMilestone(false)} />
-
-      {/* PWA Install Full-Screen Modal */}
-      {showInstallBanner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="flex flex-col items-center w-full max-w-sm mx-6">
-            {!showIOSGuide ? (
-              <>
-                <img src="/icons/kangaroo-like.png" alt="" width={80} height={80} className="mb-6 drop-shadow-lg" style={{ objectFit: "contain" }} />
-                <h2 className="text-2xl font-black text-white mb-2 text-center">Add Count to Home</h2>
-                <p className="text-sm text-white/50 text-center mb-8">Get the full app experience with push notifications</p>
-                <button
-                  onClick={handleInstall}
-                  className="w-full py-4 bg-accent-orange text-white text-lg font-black rounded-2xl shadow-lg shadow-accent-orange/30 active:scale-95 transition-transform"
-                >
-                  Add to Home Screen
-                </button>
-                <button onClick={dismissInstallBanner} className="mt-4 text-sm text-white/30 active:text-white/50">
-                  Not now
-                </button>
-              </>
-            ) : (
-              <div className="bg-forest-dark border border-forest-light/20 rounded-2xl w-full p-6">
-                <h3 className="text-lg font-bold text-white text-center mb-5">Almost there!</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <span className="bg-accent-orange text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">1</span>
-                    <p className="text-sm text-white/80">Tap the <span className="text-accent-orange font-bold">Share</span> button <span className="text-white/40">(square with arrow)</span> at the bottom of Safari</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="bg-accent-orange text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">2</span>
-                    <p className="text-sm text-white/80">Scroll and tap <span className="font-bold text-accent-orange">Add to Home Screen</span></p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="bg-accent-orange text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">3</span>
-                    <p className="text-sm text-white/80">Tap <span className="font-bold text-accent-orange">Add</span> — push notifications will work too!</p>
-                  </div>
-                </div>
-                <button onClick={() => { setShowIOSGuide(false); dismissInstallBanner(); }} className="mt-6 w-full py-3 bg-accent-orange text-white font-bold rounded-xl text-sm">
-                  Got it!
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <PWAInstallBanner />
 
       {phasePrompt && (
         <ConfirmModal
@@ -275,7 +191,7 @@ export default function HomePage() {
 
           <div className="flex items-baseline gap-2 mb-1">
             <span className="text-[3.25rem] font-black tracking-tight leading-none">
-              {dayCount.label} {dayCount.number < 0 ? "−" : "+"} {Math.abs(dayCount.number)}
+              {dayCount.label} {dayCount.number < 0 ? "\u2212" : "+"} {Math.abs(dayCount.number)}
             </span>
           </div>
 
@@ -301,7 +217,6 @@ export default function HomePage() {
           </button>
         </div>
       )}
-
 
       {/* ===== 2. Weekly Goal — Material Card ===== */}
       <div className="px-5 mt-3 relative z-10">
@@ -369,21 +284,16 @@ export default function HomePage() {
         />
       )}
 
-      {/* ===== 3. Banner Carousel ===== */}
+      {/* ===== 4. Banner Carousel ===== */}
       <div className="px-5 mt-3">
         <BannerCarousel location="home" bannerImageUrl={adminConfig?.bannerImageUrl} />
       </div>
 
-      {/* ===== 4. Announcements ===== */}
-      {adminConfig?.announcements && adminConfig.announcements.filter((a) => a.active).length > 0 && (
+      {/* ===== 5. Announcements ===== */}
+      {activeAnnouncements.length > 0 && (
         <div className="px-5 mt-3 space-y-2">
-          {adminConfig.announcements.filter((a) => a.active).map((ann, i) => {
-            const colors = {
-              info: { bg: "bg-forest-light/10", border: "border-forest-light/20", title: "text-lime", dot: "bg-lime" },
-              warning: { bg: "bg-red-500/10", border: "border-red-500/20", title: "text-red-400", dot: "bg-red-400" },
-              event: { bg: "bg-accent-orange/10", border: "border-accent-orange/20", title: "text-accent-orange", dot: "bg-accent-orange" },
-            };
-            const c = colors[ann.type] || colors.info;
+          {activeAnnouncements.map((ann, i) => {
+            const c = ANNOUNCEMENT_COLORS[ann.type] || ANNOUNCEMENT_COLORS.info;
             return (
               <div key={i} className={`${c.bg} border ${c.border} rounded-xl px-4 py-3`}>
                 <div className="flex items-start gap-2">

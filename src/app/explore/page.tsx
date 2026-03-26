@@ -15,7 +15,7 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, MAIN_MODE_OPTIONS } from "@/lib/constants";
+import { FOCUS_MODES, MAIN_MODE_OPTIONS, NAV_HEIGHT } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
@@ -254,7 +254,7 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: "3rem" }}>
+    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
       <div
         className="shrink-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
@@ -386,7 +386,7 @@ export default function ExplorePage() {
       {/* Post detail modal — Shorts-style snap scroll */}
       {selectedIndex !== null && (
         <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
-          <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col" style={{ paddingBottom: "3rem" }} {...swipe.handlers}>
+          <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipe.handlers}>
             {/* Snap scroll container */}
             <div
               ref={snapContainerRef}
@@ -397,7 +397,7 @@ export default function ExplorePage() {
                 <div
                   key={post.id}
                   className="snap-start snap-always w-full flex items-center"
-                  style={{ height: "calc(100dvh - 3rem)" }}
+                  style={{ height: `calc(100dvh - ${NAV_HEIGHT})` }}
                 >
                   <div className="bg-white w-full max-h-full overflow-y-auto rounded-2xl scrollbar-hide" style={{ scrollbarWidth: "none" }}>
                     <PostCard

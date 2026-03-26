@@ -7,7 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { fetchUserPosts } from "@/lib/services/posts";
 import { fetchUserProfile, blockUser, unblockUser } from "@/lib/services/users";
-import { FOCUS_MODES, MAIN_MODE_OPTIONS, GRADIENTS, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, MAIN_MODE_OPTIONS, GRADIENTS, resolveMode, NAV_HEIGHT } from "@/lib/constants";
 import { followUser, unfollowUser, getFollowingIds } from "@/lib/follow";
 import Avatar from "@/components/Avatar";
 import PostCard from "@/components/PostCard";
@@ -299,7 +299,7 @@ export default function PublicProfilePage() {
             })}
           </div>
         )}
-        <div className="shrink-0" style={{ height: "3rem" }} />
+        <div className="shrink-0" style={{ height: NAV_HEIGHT }} />
       </div>
       </div>
 
