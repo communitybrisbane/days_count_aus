@@ -15,11 +15,11 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { NAV_HEIGHT } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, NAV_HEIGHT } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
-import { IconEucalyptus, IconSearch } from "@/components/icons";
+import { IconEucalyptus, IconSearch, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
@@ -41,8 +41,7 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
   const [searchTag, setSearchTag] = useState<string | null>(null);
-  const [trendingTags, setTrendingTags] = useState<{ tag: string; count: number }[]>([]);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [modeFilter, setModeFilter] = useState<string>("");
   const snapContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
@@ -60,6 +59,9 @@ export default function ExplorePage() {
         const constraints: QueryConstraint[] = [];
         constraints.push(where("status", "==", "active"));
         constraints.push(where("visibility", "==", "public"));
+        if (modeFilter) {
+          constraints.push(where("mode", "==", modeFilter));
+        }
         if (sortTab === "popular") {
           constraints.push(orderBy("likeCount", "desc"));
         } else {
@@ -122,7 +124,7 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [sortTab, profile, privateData, following, searchUserIds, searchTag]
+    [sortTab, modeFilter, profile, privateData, following, searchUserIds, searchTag]
   );
 
   // Search handler
@@ -170,23 +172,6 @@ export default function ExplorePage() {
       window.history.replaceState({}, "", "/explore");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Trending tags
-  useEffect(() => {
-    if (posts.length === 0) return;
-    const counts = new Map<string, number>();
-    posts.forEach((p) => {
-      p.tags?.forEach((t) => {
-        const key = t.toLowerCase();
-        counts.set(key, (counts.get(key) || 0) + 1);
-      });
-    });
-    const sorted = Array.from(counts.entries())
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-    setTrendingTags(sorted);
-  }, [posts]);
 
   const refreshPosts = useCallback(() => {
     setPosts([]);
@@ -265,15 +250,13 @@ export default function ExplorePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchInput(sanitize(e.target.value))}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => { if (!searchQuery) setSearchFocused(false); }}
               placeholder="Search by city, username, or #tag..."
               className="flex-1 bg-transparent text-sm outline-none placeholder-white/30 text-white"
             />
             {showWarn && <span className="text-red-400 text-[10px] font-bold shrink-0">English only</span>}
-            {(searchQuery || searchFocused) && (
+            {searchQuery && (
               <button
-                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); setSearchFocused(false); }}
+                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); }}
                 className="text-white/40 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
               >
                 &times;
@@ -299,23 +282,29 @@ export default function ExplorePage() {
           ))}
         </div>
 
-        {/* Trending tags — shown when focused, no query */}
-        {searchFocused && !searchQuery && trendingTags.length > 0 && (
-          <div className="px-4 pb-2">
-            <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-1.5">Trending</p>
-            <div className="flex flex-wrap gap-1.5">
-              {trendingTags.map(({ tag, count }) => (
-                <button
-                  key={tag}
-                  onClick={() => { onSearchInput(tag); setSearchFocused(false); }}
-                  className="px-2.5 py-1 rounded-full text-xs bg-white/10 text-white/80 active:scale-95 transition-all"
-                >
-                  {tag} <span className="text-white/40">{count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Mode filter tabs */}
+        <div className="flex px-4 gap-1.5 pb-2">
+          <button
+            onClick={() => setModeFilter("")}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              !modeFilter ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
+            }`}
+          >
+            All
+          </button>
+          {MAIN_MODE_OPTIONS.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setModeFilter(modeFilter === m.id ? "" : m.id)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+                modeFilter === m.id ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
+              }`}
+            >
+              <FocusModeIcon modeId={m.id} size={13} />
+              {m.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide" ref={scrollAreaRef}>
