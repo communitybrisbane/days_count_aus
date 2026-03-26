@@ -234,12 +234,10 @@ export const onLikeCreated = onDocumentCreated(
     try {
       await admin.messaging().send({
         token: fcmToken,
-        notification: {
+        data: {
           title: `🦘 ${likerName} 🦘`,
           body: "liked your post!",
-        },
-        webpush: {
-          fcmOptions: { link: "/mypage" },
+          link: "/mypage",
         },
       });
     } catch (e) {
@@ -263,8 +261,7 @@ async function sendStreakWarning(
   try {
     await admin.messaging().send({
       token: fcmToken,
-      notification: { title, body },
-      webpush: { fcmOptions: { link: "/post" } },
+      data: { title, body, link: "/post" },
     });
     return true;
   } catch (e) {
@@ -416,12 +413,10 @@ export const onGroupMessageCreated = onDocumentCreated(
 
       messages.push({
         token: fcmToken,
-        notification: {
+        data: {
           title: `🦘 ${groupName} 🦘`,
           body: `${senderName} sent a message`,
-        },
-        webpush: {
-          fcmOptions: { link: `/groups/${groupId}` },
+          link: `/groups/${groupId}`,
         },
       });
     }
