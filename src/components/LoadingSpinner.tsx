@@ -38,12 +38,17 @@ export default function LoadingSpinner({ fullScreen = false, size = "md" }: Load
               top: y,
               left: x,
               opacity: 0.3 + (i / (count - 1)) * 0.7,
+              animation: "self-spin 1.2s linear infinite",
             }}
           />
         );
       })}
       <style>{`
         @keyframes orbit {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes self-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
