@@ -89,7 +89,7 @@ export default function PWAInstallBanner() {
   // ─── Step 0: Intro screen ───
   if (step === 0) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
         <div className="flex flex-col items-center w-full max-w-sm mx-6">
           <img src="/icons/kangaroo-like.png" alt="" width={80} height={80} className="mb-6 drop-shadow-lg" style={{ objectFit: "contain" }} />
           <h2 className="text-2xl font-black text-white mb-2 text-center">Add to Home Screen</h2>
@@ -126,7 +126,7 @@ export default function PWAInstallBanner() {
   // ─── Step 1: Tap the Share button (bottom center) ───
   if (step === 1) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[200] flex flex-col bg-black/85 backdrop-blur-sm">
         {/* Top content */}
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           <div className="bg-white/10 border border-white/20 rounded-full p-5 mb-5">
@@ -161,7 +161,7 @@ export default function PWAInstallBanner() {
   // ─── Step 2: Tap "Add to Home Screen" ───
   if (step === 2) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[200] flex flex-col bg-black/85 backdrop-blur-sm">
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           <p className="text-xl font-black text-white text-center mb-6">
             Step 2 of 3
@@ -208,7 +208,7 @@ export default function PWAInstallBanner() {
 
   // ─── Step 3: Tap "Add" ───
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex flex-col bg-black/85 backdrop-blur-sm">
       {/* Mock top-right area */}
       <div className="flex justify-end px-4 pt-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
         <div className="bg-accent-orange/15 border-2 border-accent-orange rounded-lg px-5 py-2 relative">
