@@ -30,10 +30,10 @@ interface GroupCardProps {
   canJoin?: boolean;
   onJoined?: () => void;
   showGoal?: boolean;
-  hasUnread?: boolean;
+  unreadCount?: number;
 }
 
-export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, hasUnread }: GroupCardProps) {
+export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0 }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
@@ -107,16 +107,18 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
                 <span className="ml-auto shrink-0">{formatTime(group.lastMessageAt)}</span>
               )}
             </div>
-            {showGoal && group.goal && (
-              <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{group.goal}</p>
+            {group.lastMessageText && (
+              <p className={`text-xs mt-0.5 truncate ${unreadCount > 0 ? "text-gray-600 font-medium" : "text-gray-400"}`}>{group.lastMessageText}</p>
             )}
-            {!showGoal && group.lastMessageText && (
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{group.lastMessageText}</p>
+            {!group.lastMessageText && showGoal && group.goal && (
+              <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{group.goal}</p>
             )}
           </div>
 
-          {hasUnread && (
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+          {unreadCount > 0 && (
+            <span className="min-w-[20px] h-5 flex items-center justify-center bg-red-500 text-white text-[11px] font-bold rounded-full px-1.5 shrink-0">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
           )}
           {!group.isOfficial && isFull && (
             <span className="bg-red-100 text-red-500 text-xs font-bold px-2 py-1 rounded-full shrink-0">

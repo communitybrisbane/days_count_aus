@@ -1,47 +1,42 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, collection, query, where, getCountFromServer, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 /**
- * Listens to group docs in real-time and compares lastMessageAt
- * with the user's lastRead timestamp to determine unread status.
- * Returns a Set of groupIds that have unread messages and the total count.
+ * Listens to group docs in real-time and counts unread messages
+ * by comparing with the user's lastRead timestamp.
+ * Returns per-group unread counts and total count.
  */
 export function useUnreadGroups(userId: string | undefined, groupIds: string[]) {
-  const [unreadSet, setUnreadSet] = useState<Set<string>>(new Set());
+  const [unreadMap, setUnreadMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (!userId || groupIds.length === 0) {
-      setUnreadSet(new Set());
+      setUnreadMap(new Map());
       return;
     }
 
-    // Track lastMessageAt per group from real-time listeners
-    const lastMessageAtMap = new Map<string, Timestamp | null>();
     const lastReadAtMap = new Map<string, Timestamp | null>();
     const unsubs: (() => void)[] = [];
+    let cancelled = false;
 
-    const recalc = () => {
-      const newUnread = new Set<string>();
-      for (const gid of groupIds) {
-        const msgAt = lastMessageAtMap.get(gid);
-        const readAt = lastReadAtMap.get(gid);
-        if (msgAt) {
-          if (!readAt || msgAt.toMillis() > readAt.toMillis()) {
-            newUnread.add(gid);
-          }
-        }
+    const countUnread = async (gid: string) => {
+      const readAt = lastReadAtMap.get(gid);
+      try {
+        const messagesRef = collection(db, "groups", gid, "messages");
+        const q = readAt
+          ? query(messagesRef, where("createdAt", ">", readAt))
+          : query(messagesRef);
+        const snap = await getCountFromServer(q);
+        return snap.data().count;
+      } catch {
+        return 0;
       }
-      setUnreadSet((prev) => {
-        // Only update if changed to avoid unnecessary re-renders
-        if (prev.size === newUnread.size && [...newUnread].every((id) => prev.has(id))) return prev;
-        return newUnread;
-      });
     };
 
-    // Fetch lastRead for all groups once
+    // Fetch lastRead for all groups once, then set up listeners
     Promise.all(
       groupIds.map(async (gid) => {
         try {
@@ -52,28 +47,54 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
         }
       })
     ).then(() => {
-      // After lastRead is loaded, set up real-time listeners on group docs
+      if (cancelled) return;
+
+      // Set up real-time listeners on group docs
       for (const gid of groupIds) {
         const unsub = onSnapshot(
           doc(db, "groups", gid),
-          (snap) => {
-            if (snap.exists()) {
-              lastMessageAtMap.set(gid, snap.data().lastMessageAt as Timestamp | null);
+          async (snap) => {
+            if (cancelled) return;
+            if (!snap.exists()) return;
+
+            const lastMessageAt = snap.data().lastMessageAt as Timestamp | null;
+            const readAt = lastReadAtMap.get(gid);
+
+            // Quick check: if no messages or already read, skip count query
+            if (!lastMessageAt || (readAt && lastMessageAt.toMillis() <= readAt.toMillis())) {
+              setUnreadMap((prev) => {
+                if ((prev.get(gid) || 0) === 0) return prev;
+                const next = new Map(prev);
+                next.set(gid, 0);
+                return next;
+              });
+              return;
             }
-            recalc();
+
+            // Count unread messages
+            const count = await countUnread(gid);
+            if (cancelled) return;
+            setUnreadMap((prev) => {
+              if (prev.get(gid) === count) return prev;
+              const next = new Map(prev);
+              next.set(gid, count);
+              return next;
+            });
           },
-          () => {
-            // Error — ignore
-          }
+          () => { /* ignore errors */ }
         );
         unsubs.push(unsub);
       }
     });
 
     return () => {
+      cancelled = true;
       unsubs.forEach((u) => u());
     };
   }, [userId, groupIds.join(",")]);
 
-  return { unreadSet, unreadCount: unreadSet.size };
+  let totalUnread = 0;
+  unreadMap.forEach((count) => { totalUnread += count; });
+
+  return { unreadMap, totalUnread };
 }
