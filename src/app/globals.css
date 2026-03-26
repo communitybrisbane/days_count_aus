@@ -92,7 +92,14 @@ body {
   clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%);
 }
 
-/* Hide scrollbars globally */
+/* Hide scrollbars globally — all elements */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
 .scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
