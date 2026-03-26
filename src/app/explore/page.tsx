@@ -17,12 +17,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, NAV_HEIGHT } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
+import PostDetailModal from "@/components/PostDetailModal";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
 import { IconEucalyptus, IconSearch, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
-import { useSwipeDismiss } from "@/hooks/useSwipeDismiss";
 import { rankPosts, markSeen } from "@/lib/feedScore";
 
 const PAGE_SIZE = 20;
@@ -42,14 +42,11 @@ export default function ExplorePage() {
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
   const [searchTag, setSearchTag] = useState<string | null>(null);
   const [modeFilter, setModeFilter] = useState<string>("");
-  const snapContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
   const loadingRef = useRef(false);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapCountRef = useRef(0);
-  const swipe = useSwipeDismiss(() => setSelectedIndex(null));
-
   const fetchPosts = useCallback(
     async (reset = false) => {
       if (loadingRef.current) return;
@@ -127,7 +124,9 @@ export default function ExplorePage() {
     [sortTab, modeFilter, profile, privateData, following, searchUserIds, searchTag]
   );
 
-  // Search handler
+  // Cached user list for search — fetch once, filter in memory
+  const userCacheRef = useRef<{ uid: string; name: string; region: string }[] | null>(null);
+
   const handleSearch = useCallback(async (q: string) => {
     const trimmed = q.trim().toLowerCase();
     if (!trimmed) {
@@ -144,19 +143,23 @@ export default function ExplorePage() {
 
     setSearchTag(trimmed);
     try {
-      const usersRef = collection(db, "users");
-      const snap = await getDocs(query(usersRef, limit(500)));
-      const userIds = new Set<string>();
-      snap.docs.forEach((d) => {
-        const data = d.data();
-        const name = (data.displayName || "").toLowerCase();
-        const regionVisible = data.showRegion !== false;
-        const region = regionVisible ? (data.region || "").toLowerCase() : "";
-        if (name.includes(trimmed) || region.includes(trimmed)) {
-          userIds.add(d.id);
-        }
-      });
-      setSearchUserIds(userIds.size > 0 ? Array.from(userIds) : []);
+      // Fetch user list once, reuse for subsequent searches
+      if (!userCacheRef.current) {
+        const snap = await getDocs(query(collection(db, "users"), limit(500)));
+        userCacheRef.current = snap.docs.map((d) => {
+          const data = d.data();
+          const regionVisible = data.showRegion !== false;
+          return {
+            uid: d.id,
+            name: (data.displayName || "").toLowerCase(),
+            region: regionVisible ? (data.region || "").toLowerCase() : "",
+          };
+        });
+      }
+      const matched = userCacheRef.current.filter(
+        (u) => u.name.includes(trimmed) || u.region.includes(trimmed)
+      );
+      setSearchUserIds(matched.length > 0 ? matched.map((u) => u.uid) : []);
     } catch (e) {
       console.error("Search failed:", e);
     }
@@ -205,13 +208,6 @@ export default function ExplorePage() {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
     setSelectedIndex(null);
   };
-
-  useEffect(() => {
-    if (selectedIndex !== null && snapContainerRef.current) {
-      const target = snapContainerRef.current.children[selectedIndex] as HTMLElement;
-      if (target) target.scrollIntoView({ block: "start" });
-    }
-  }, [selectedIndex]);
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onSearchInput = (value: string) => {
@@ -350,33 +346,14 @@ export default function ExplorePage() {
         {loadingPosts && <LoadingSpinner size="sm" />}
       </div>
 
-      {/* Post detail modal */}
       {selectedIndex !== null && (
-        <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
-          <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipe.handlers}>
-            <div
-              ref={snapContainerRef}
-              className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              {posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="snap-start snap-always w-full flex items-center"
-                  style={{ height: `calc(100dvh - ${NAV_HEIGHT})` }}
-                >
-                  <div className="bg-white w-full max-h-full overflow-y-auto rounded-2xl scrollbar-hide" style={{ scrollbarWidth: "none" }}>
-                    <PostCard
-                      post={post}
-                      onDelete={() => handleDelete(post.id)}
-                      listRounded="none"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <PostDetailModal
+          posts={posts}
+          selectedIndex={selectedIndex}
+          onClose={() => setSelectedIndex(null)}
+          onDelete={handleDelete}
+          variant="snap"
+        />
       )}
 
       <BottomNav onExploreClick={handleExploreClick} />
