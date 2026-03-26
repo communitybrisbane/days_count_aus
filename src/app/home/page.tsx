@@ -225,6 +225,7 @@ export default function HomePage() {
             <div onClick={() => setShowWeeklyHistory(true)} className="cursor-pointer active:opacity-80">
               <WeeklyChallenge
                 weekStreak={profile.weekStreak ?? 0}
+                currentStreak={profile.currentStreak ?? 0}
                 weeklyPostCount={weeklyPostCount}
                 goalCleared={goalCleared}
               />
