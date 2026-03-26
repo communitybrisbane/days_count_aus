@@ -52,20 +52,16 @@ export default function HomePage() {
 
   const weeklyGoal = 7;
 
-  // Fetch admin config
+  // Fetch admin config + weekly stats in parallel
   useEffect(() => {
     if (!user) return;
-    fetchAdminConfig().then((data) => {
-      if (data) setAdminConfig(data as AdminConfig);
-    }).catch((e) => console.error("Failed to fetch admin config:", e));
-  }, [user]);
-
-  // Fetch weekly stats
-  useEffect(() => {
-    if (!user) return;
-    fetchTotalLikesAndWeekly(user.uid).then(({ weeklyPostCount: count }) => {
-      setWeeklyPostCount(count);
-    }).catch(console.error);
+    Promise.all([
+      fetchAdminConfig().catch((e) => { console.error("Failed to fetch admin config:", e); return null; }),
+      fetchTotalLikesAndWeekly(user.uid).catch((e) => { console.error("Failed to fetch weekly stats:", e); return null; }),
+    ]).then(([config, stats]) => {
+      if (config) setAdminConfig(config as AdminConfig);
+      if (stats) setWeeklyPostCount(stats.weeklyPostCount);
+    });
   }, [user]);
 
   // Milestone check
