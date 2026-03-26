@@ -100,27 +100,18 @@ export default async function Image() {
             }}
           >
             {/* App name */}
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={kangarooSrc}
-                alt=""
-                width={56}
-                height={56}
-              />
-              <h1
-                style={{
-                  fontSize: 68,
-                  fontWeight: 900,
-                  color: "white",
-                  letterSpacing: "-2px",
-                  margin: 0,
-                  lineHeight: 1,
-                }}
-              >
-                days-count
-              </h1>
-            </div>
+            <h1
+              style={{
+                fontSize: 68,
+                fontWeight: 900,
+                color: "white",
+                letterSpacing: "-2px",
+                margin: 0,
+                lineHeight: 1,
+              }}
+            >
+              days-count
+            </h1>
 
             {/* Divider */}
             <div
