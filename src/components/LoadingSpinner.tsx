@@ -4,9 +4,23 @@ interface LoadingSpinnerProps {
 }
 
 export default function LoadingSpinner({ fullScreen = false, size = "md" }: LoadingSpinnerProps) {
-  const sizeClass = size === "sm" ? "h-6 w-6" : "h-8 w-8";
+  const imgSize = size === "sm" ? 28 : 40;
+
   const spinner = (
-    <div className={`animate-spin rounded-full ${sizeClass} border-b-2 border-accent-orange`} />
+    <div className="flex flex-col items-center gap-3">
+      <div
+        className="animate-spin"
+        style={{ animationDuration: "1.2s" }}
+      >
+        <img
+          src="/icons/kangaroo-like.png"
+          alt=""
+          width={imgSize}
+          height={imgSize}
+          style={{ width: imgSize, height: imgSize, objectFit: "contain" }}
+        />
+      </div>
+    </div>
   );
 
   if (fullScreen) {
