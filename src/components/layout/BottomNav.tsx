@@ -32,13 +32,10 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
     // Reset input so same file can be re-selected
     e.target.value = "";
     if (file) {
-      // Store image in sessionStorage as data URL, then navigate
-      const reader = new FileReader();
-      reader.onload = () => {
-        sessionStorage.setItem("post_image", reader.result as string);
-        router.push("/post");
-      };
-      reader.readAsDataURL(file);
+      // Store blob URL (avoids sessionStorage size limit for large photos)
+      const blobUrl = URL.createObjectURL(file);
+      sessionStorage.setItem("post_image", blobUrl);
+      router.push("/post");
     } else {
       // User cancelled file picker — navigate without image
       sessionStorage.removeItem("post_image");
