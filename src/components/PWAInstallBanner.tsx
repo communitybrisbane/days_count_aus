@@ -48,9 +48,6 @@ export default function PWAInstallBanner() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window.navigator as any).standalone === true) return;
 
-    const dismissed = localStorage.getItem("pwa_install_dismissed");
-    if (dismissed && Date.now() - Number(dismissed) < 30 * 24 * 60 * 60 * 1000) return;
-
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     isIOSRef.current = ios;
 
@@ -69,7 +66,6 @@ export default function PWAInstallBanner() {
 
   const dismiss = () => {
     setShow(false);
-    localStorage.setItem("pwa_install_dismissed", String(Date.now()));
   };
 
   const handleInstall = async () => {
