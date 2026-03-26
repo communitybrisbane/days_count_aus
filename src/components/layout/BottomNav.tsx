@@ -59,17 +59,17 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
       <div className="flex items-center justify-around h-10 px-2">
         {/* HOME */}
         <Link href="/home" className="flex items-center justify-center w-10 h-10">
-          <IconHome size={20} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
+          <IconHome size={24} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
         </Link>
 
         {/* EXPLORE */}
         {onExploreClick ? (
           <button onClick={onExploreClick} className="flex items-center justify-center w-10 h-10">
-            <IconDiary size={20} className="text-accent-orange" />
+            <IconDiary size={24} className="text-accent-orange" />
           </button>
         ) : (
           <Link href="/explore" className="flex items-center justify-center w-10 h-10">
-            <IconDiary size={20} className={isActive("/explore") ? "text-accent-orange" : "text-white/40"} />
+            <IconDiary size={24} className={isActive("/explore") ? "text-accent-orange" : "text-white/40"} />
           </Link>
         )}
 
@@ -80,13 +80,13 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
               isActive("/post") ? "bg-gradient-to-br from-accent-orange to-accent-orange-dark" : "bg-gradient-to-br from-accent-orange-light to-accent-orange"
             }`}
           >
-            <IconCamera size={22} className="text-white" />
+            <IconCamera size={26} className="text-white" />
           </div>
         </button>
 
         {/* GROUPS */}
         <Link href="/groups" className="relative flex items-center justify-center w-10 h-10">
-          <IconGroup size={20} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
+          <IconGroup size={24} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
           {totalUnread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
               {totalUnread > 99 ? "99+" : totalUnread}
@@ -102,7 +102,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName || "?"}
                 uid={user?.uid || ""}
-                size={22}
+                size={26}
               />
             </div>
           </button>
@@ -113,7 +113,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName || "?"}
                 uid={user?.uid || ""}
-                size={22}
+                size={26}
               />
             </div>
           </Link>
