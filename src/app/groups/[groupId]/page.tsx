@@ -653,31 +653,43 @@ export default function GroupChatPage() {
             <div
               key={msg.id}
               onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
-              className="select-none"
+              className="flex items-start gap-2 select-none"
             >
-              {/* Name: Message */}
-              <p className="text-sm max-w-[85vw]">
-                <button
-                  onClick={() => !isDeleted && router.push(`/user/${msg.senderId}`)}
-                  className={`font-bold ${isDeleted ? "text-white/30 italic" : "text-white/60 active:text-accent-orange"}`}
-                >
-                  {displayName}
+              {/* Avatar */}
+              {isDeleted ? (
+                <div className="w-6 h-6 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-white/40 text-[8px]">?</span>
+                </div>
+              ) : (
+                <button onClick={() => router.push(`/user/${msg.senderId}`)} className="shrink-0 mt-0.5">
+                  <Avatar photoURL={sender?.photoURL} displayName={sender?.displayName || "?"} uid={msg.senderId} size={24} />
                 </button>
-                <span className={msg.unsent ? "text-white/30 italic ml-1.5" : "text-white/90 ml-1.5"}>
-                  {msg.unsent ? "unsent" : msg.text}
-                </span>
-              </p>
-              {/* Reaction + time */}
-              <div className="flex items-center gap-1.5">
-                {!msg.unsent && (
-                  <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
-                    <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/20"}`}>
-                      <IconKangaroo size={10} filled={hasReacted} />{reactionCount > 0 && <span className="text-[10px]">{reactionCount}</span>}
-                    </span>
+              )}
+              <div className="min-w-0">
+                {/* Name: Message */}
+                <p className="text-sm max-w-[75vw]">
+                  <button
+                    onClick={() => !isDeleted && router.push(`/user/${msg.senderId}`)}
+                    className={`font-bold ${isDeleted ? "text-white/30 italic" : "text-white/60 active:text-accent-orange"}`}
+                  >
+                    {displayName}
                   </button>
-                )}
-                {msg.edited && !msg.unsent && <span className="text-[9px] text-white/20 italic">edited</span>}
-                {timeStr && <span className="text-[9px] text-white/20">{timeStr}</span>}
+                  <span className={msg.unsent ? "text-white/30 italic ml-1.5" : "text-white/90 ml-1.5"}>
+                    {msg.unsent ? "unsent" : msg.text}
+                  </span>
+                </p>
+                {/* Reaction + time */}
+                <div className="flex items-center gap-1.5">
+                  {!msg.unsent && (
+                    <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
+                      <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/20"}`}>
+                        <IconKangaroo size={10} filled={hasReacted} />{reactionCount > 0 && <span className="text-[10px]">{reactionCount}</span>}
+                      </span>
+                    </button>
+                  )}
+                  {msg.edited && !msg.unsent && <span className="text-[9px] text-white/20 italic">edited</span>}
+                  {timeStr && <span className="text-[9px] text-white/20">{timeStr}</span>}
+                </div>
               </div>
             </div>
           );
