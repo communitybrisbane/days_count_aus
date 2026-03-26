@@ -629,7 +629,7 @@ export default function GroupChatPage() {
                     onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
                     className="flex justify-end cursor-pointer select-none"
                   >
-                    <p className={`text-sm max-w-[75vw] ${msg.unsent ? "text-white/30 italic" : "text-accent-orange"}`}>
+                    <p className={`text-[15px] max-w-[75vw] ${msg.unsent ? "text-white/30 italic" : "text-accent-orange"}`}>
                       {msg.unsent ? "unsent" : msg.text}
                     </p>
                   </div>
@@ -638,12 +638,12 @@ export default function GroupChatPage() {
                   {!msg.unsent && (
                     <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
                       <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/20"}`}>
-                        <IconKangaroo size={10} filled={hasReacted} />{reactionCount > 0 && <span className="text-[10px]">{reactionCount}</span>}
+                        <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span className="text-[10px]">{reactionCount}</span>}
                       </span>
                     </button>
                   )}
-                  {msg.edited && !msg.unsent && <span className="text-[9px] text-white/20 italic">edited</span>}
-                  {timeStr && <span className="text-[9px] text-white/20">{timeStr}</span>}
+                  {msg.edited && !msg.unsent && <span className="text-[10px] text-white/20 italic">edited</span>}
+                  {timeStr && <span className="text-[10px] text-white/20">{timeStr}</span>}
                 </div>
               </div>
             );
@@ -657,17 +657,17 @@ export default function GroupChatPage() {
             >
               {/* Avatar */}
               {isDeleted ? (
-                <div className="w-6 h-6 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-white/40 text-[8px]">?</span>
+                <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-white/40 text-xs">?</span>
                 </div>
               ) : (
                 <button onClick={() => router.push(`/user/${msg.senderId}`)} className="shrink-0 mt-0.5">
-                  <Avatar photoURL={sender?.photoURL} displayName={sender?.displayName || "?"} uid={msg.senderId} size={24} />
+                  <Avatar photoURL={sender?.photoURL} displayName={sender?.displayName || "?"} uid={msg.senderId} size={32} />
                 </button>
               )}
               <div className="min-w-0">
                 {/* Name: Message */}
-                <p className="text-sm max-w-[75vw]">
+                <p className="text-[15px] max-w-[75vw]">
                   <button
                     onClick={() => !isDeleted && router.push(`/user/${msg.senderId}`)}
                     className={`font-bold ${isDeleted ? "text-white/30 italic" : "text-white/60 active:text-accent-orange"}`}
@@ -683,12 +683,12 @@ export default function GroupChatPage() {
                   {!msg.unsent && (
                     <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
                       <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/20"}`}>
-                        <IconKangaroo size={10} filled={hasReacted} />{reactionCount > 0 && <span className="text-[10px]">{reactionCount}</span>}
+                        <IconKangaroo size={12} filled={hasReacted} />{reactionCount > 0 && <span className="text-[10px]">{reactionCount}</span>}
                       </span>
                     </button>
                   )}
-                  {msg.edited && !msg.unsent && <span className="text-[9px] text-white/20 italic">edited</span>}
-                  {timeStr && <span className="text-[9px] text-white/20">{timeStr}</span>}
+                  {msg.edited && !msg.unsent && <span className="text-[10px] text-white/20 italic">edited</span>}
+                  {timeStr && <span className="text-[10px] text-white/20">{timeStr}</span>}
                 </div>
               </div>
             </div>
