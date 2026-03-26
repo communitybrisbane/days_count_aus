@@ -483,23 +483,23 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             >
               <IconKangaroo size={20} filled={liked} />
             </button>
-            <button
-              onClick={handleOpenLikers}
-              className="flex items-center gap-1.5"
+            <div
+              onClick={post.userId === user?.uid ? handleOpenLikers : undefined}
+              className={`flex items-center gap-1.5 ${post.userId === user?.uid ? "cursor-pointer active:opacity-70" : ""}`}
             >
               {recentLikers.length > 0 && (
-                <div className="flex items-center -space-x-1.5">
+                <div className="flex items-center -space-x-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                   {recentLikers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i).map((liker) => (
-                    <Avatar key={liker.uid} photoURL={liker.photoURL} displayName="" uid={liker.uid} size={18} className="ring-1.5 ring-white" />
+                    <Avatar key={liker.uid} photoURL={liker.photoURL} displayName="" uid={liker.uid} size={18} className="ring-1.5 ring-white shrink-0" />
                   ))}
                 </div>
               )}
               {likeCount > 0 && (
-                <span className="text-xs text-gray-500 font-medium">
+                <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
                   {likeCount} {likeCount === 1 ? "like" : "likes"}
                 </span>
               )}
-            </button>
+            </div>
           </div>
 
           <div className="relative">
