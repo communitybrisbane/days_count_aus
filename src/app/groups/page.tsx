@@ -258,7 +258,7 @@ export default function GroupsPage() {
 
               {/* Group Chat section */}
               <div className="px-4 pt-4">
-                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedExtra.length}/{maxSlots + 1}</span></p>
+                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + 1}</span></p>
               </div>
               <div className="flex flex-col">
                 {myJoinedGroups.map((group) => (
@@ -314,9 +314,10 @@ export default function GroupsPage() {
               </div>
 
               {/* Banner */}
-              <div className="px-4 pt-4 pb-2">
+              <div className="px-4 pt-4">
                 <BannerCarousel location="community" />
               </div>
+              <div className="h-4" />
             </>
           )}
         </div>
