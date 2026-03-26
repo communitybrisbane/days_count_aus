@@ -39,7 +39,7 @@ export default function WeeklyChallenge({ weekStreak, weeklyPostCount, goalClear
         <span className="text-[11px] text-white/40 font-medium tracking-wide">{getWeekRange()}</span>
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ring-1 ${accent.ring} ${accent.glow} bg-white/5`}>
           <span className={`text-[11px] font-black ${accent.text} tabular-nums`}>
-            {ws}w streak{ws >= WEEK_STREAK_MAX ? " MAX" : ""}
+            {ws} day streak{ws >= WEEK_STREAK_MAX ? " MAX" : ""}
           </span>
           {ws > 0 && (
             <span className="text-[9px] text-white/30 font-medium">+{ws * WEEK_STREAK_BONUS}/post</span>
