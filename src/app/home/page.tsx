@@ -319,6 +319,7 @@ export default function HomePage() {
         </div>
       )}
 
+      <div className="h-6" />
       </div>{/* end scrollable content */}
 
       <BottomNav />
