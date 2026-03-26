@@ -213,12 +213,12 @@ export default function HomePage() {
                   <p className="text-sm text-white/30 italic">No goal set</p>
                 )}
               </div>
-              <button onClick={() => setShowWeeklyHistory(true)} className="shrink-0 ml-3 p-1.5 active:bg-white/10 rounded-lg transition-colors">
+              <button onClick={() => setShowWeeklyHistory(true)} className="shrink-0 ml-3 p-1.5 active:bg-white/10 rounded-lg transition-colors" aria-label="Edit goal">
                 <IconEdit size={18} className="text-white/30" />
               </button>
             </div>
 
-            <div onClick={() => setShowWeeklyHistory(true)} className="cursor-pointer active:opacity-80">
+            <div onClick={() => setShowWeeklyHistory(true)} className="cursor-pointer active:opacity-80" role="button" tabIndex={0}>
               <WeeklyChallenge
                 weekStreak={profile.weekStreak ?? 0}
                 currentStreak={profile.currentStreak ?? 0}

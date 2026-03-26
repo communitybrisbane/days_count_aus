@@ -26,8 +26,8 @@ export default function ConfirmModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onCancel} />
-      <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 card-material p-6 z-50 max-w-sm mx-auto">
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onCancel} aria-hidden="true" />
+      <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 card-material p-6 z-50 max-w-sm mx-auto" role="dialog" aria-modal="true">
         <p className={`text-center font-bold mb-1 ${confirmVariant === "danger" ? "text-red-500" : "text-forest"}`}>
           {title}
         </p>

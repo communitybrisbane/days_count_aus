@@ -58,7 +58,7 @@ export default function FollowingModal({ followingIds, onClose, onSelect }: Prop
     <div ref={swipe.bgRef} className="fixed inset-0 z-50 flex justify-center bg-black/40">
       <div ref={swipe.ref} className="w-full max-w-[430px] bg-forest flex flex-col min-h-dvh" {...swipe.handlers}>
         <div className="flex items-center justify-between p-4 border-b border-forest-light/20">
-          <button onClick={onClose} className="text-white/40">&larr;</button>
+          <button onClick={onClose} className="text-white/40" aria-label="Close">&larr;</button>
           <h3 className="font-bold text-sm text-white/90">Following ({followingIds.length})</h3>
           <div className="w-8" />
         </div>

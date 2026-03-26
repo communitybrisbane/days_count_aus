@@ -498,7 +498,7 @@ export default function GroupChatPage() {
       {/* Leader settings modal */}
       {showSettings && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowSettings(false)} />
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowSettings(false)} aria-hidden="true" />
           <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center">
             <div className="w-full max-w-[430px] bg-white rounded-t-2xl p-5">
               <h3 className="font-bold text-sm mb-3">Community Settings</h3>
@@ -564,11 +564,11 @@ export default function GroupChatPage() {
 
       {showLeaderExitModal && group && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowLeaderExitModal(false)} />
+          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowLeaderExitModal(false)} aria-hidden="true" />
           <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[70dvh] flex flex-col animate-slide-up">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-bold text-sm">Leave as Leader</h3>
-              <button onClick={() => setShowLeaderExitModal(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+              <button onClick={() => setShowLeaderExitModal(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
             <div className="p-4 space-y-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
               {/* Transfer option */}

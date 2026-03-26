@@ -132,8 +132,8 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
       {/* Group preview modal for non-members */}
       {showPreview && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowPreview(false)} />
-          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl overflow-hidden max-w-sm mx-auto shadow-xl">
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setShowPreview(false)} aria-hidden="true" />
+          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl overflow-hidden max-w-sm mx-auto shadow-xl" role="dialog" aria-modal="true">
             <div className="flex flex-col items-center pt-6 pb-4 px-6">
               {group.iconUrl ? (
                 <img src={group.iconUrl} alt="" className="w-20 h-20 rounded-full object-cover mb-3" loading="lazy" />

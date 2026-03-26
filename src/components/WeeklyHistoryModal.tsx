@@ -96,10 +96,10 @@ export default function WeeklyHistoryModal({ uid, goal, onClose, onSaveGoal }: P
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-50" onClick={onClose} />
-      <div className="fixed inset-x-0 z-50 bg-white rounded-t-2xl" style={{ bottom: "4rem" }}>
+      <div className="fixed inset-x-0 z-50 bg-white rounded-t-2xl" role="dialog" aria-modal="true" style={{ bottom: "4rem" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 className="font-bold text-sm text-gray-800">Goal & History</h3>
-          <button onClick={onClose} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+          <button onClick={onClose} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
         </div>
 
         <div className="px-4 pt-3 pb-3 max-h-[70vh] overflow-y-auto scrollbar-hide">

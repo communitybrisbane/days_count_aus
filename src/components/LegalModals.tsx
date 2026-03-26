@@ -44,12 +44,12 @@ function LegalModalShell({
 
   return (
     <div className="fixed inset-0" style={{ zIndex: 9999 }}>
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="absolute inset-0 bg-white flex flex-col" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-white flex flex-col" role="dialog" aria-modal="true" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
           <h3 className="font-bold text-sm text-gray-800 truncate flex-1">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 text-xl shrink-0 ml-2">&times;</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 text-xl shrink-0 ml-2" aria-label="Close">&times;</button>
         </div>
 
         {/* Language toggle */}

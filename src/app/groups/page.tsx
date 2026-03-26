@@ -321,7 +321,7 @@ export default function GroupsPage() {
           <div className="fixed inset-x-0 z-50 bg-white rounded-t-2xl" style={{ bottom: NAV_HEIGHT }}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-bold text-sm">What would you like to do?</h3>
-              <button onClick={() => setShowActionChoice(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+              <button onClick={() => setShowActionChoice(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
 
             <div className="p-4 space-y-3">

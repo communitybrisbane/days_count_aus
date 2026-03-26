@@ -17,6 +17,7 @@ export default function ModeFilterBar({ value, onChange, size = 12 }: Props) {
     <div className="flex justify-around px-4 py-2.5 bg-forest/50">
       <button
         onClick={() => onChange("")}
+        aria-label="All"
         className={`${btnSize} rounded-full flex items-center justify-center text-sm font-bold ${
           !value ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
         }`}
@@ -27,6 +28,7 @@ export default function ModeFilterBar({ value, onChange, size = 12 }: Props) {
         <button
           key={m.id}
           onClick={() => onChange(m.id)}
+          aria-label={m.id}
           className={`${btnSize} rounded-full flex items-center justify-center ${
             value === m.id ? "bg-accent-orange" : "bg-white"
           }`}

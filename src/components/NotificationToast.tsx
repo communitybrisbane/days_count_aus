@@ -44,6 +44,7 @@ export default function NotificationToast({ show, title, body, link, type, icon,
           dragConstraints={{ top: 0, bottom: 0 }}
           onDragEnd={(_, info) => { if (info.offset.y < -30) onDismiss(); }}
           onClick={handleTap}
+          aria-live="polite"
           className={`fixed top-3 left-4 right-4 z-[100] mx-auto max-w-[410px] shadow-xl rounded-xl border cursor-pointer active:scale-[0.98] transition-transform ${
             isLike
               ? "bg-gradient-to-r from-orange-50 to-white border-orange-200"

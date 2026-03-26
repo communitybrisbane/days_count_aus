@@ -29,7 +29,7 @@ export default function PostDetailModal({ posts, selectedIndex, onClose, onDelet
 
   if (variant === "snap") {
     return (
-      <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up">
+      <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40 flex justify-center animate-slide-up" role="dialog" aria-modal="true">
         <div ref={swipe.ref} className="relative w-[min(100%,430px)] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipe.handlers}>
           <div
             ref={scrollRef}
@@ -60,8 +60,8 @@ export default function PostDetailModal({ posts, selectedIndex, onClose, onDelet
   // List variant (mypage / user page)
   return (
     <>
-      <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40" />
-      <div className="fixed inset-0 z-40 flex justify-center">
+      <div ref={swipe.bgRef} className="fixed inset-0 bg-black z-40" aria-hidden="true" />
+      <div className="fixed inset-0 z-40 flex justify-center" role="dialog" aria-modal="true">
         <div ref={swipe.ref} className="relative w-full max-w-[430px] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipe.handlers}>
           {/* Header */}
           <div className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
@@ -69,7 +69,7 @@ export default function PostDetailModal({ posts, selectedIndex, onClose, onDelet
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Back">
                 <path d="M13 4L7 10L13 16" />
               </svg>
             </button>

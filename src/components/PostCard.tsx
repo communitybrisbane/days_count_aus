@@ -280,11 +280,11 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   // Likers modal
   const LikersModal = () => (
     <>
-      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowLikers(false)} />
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowLikers(false)} aria-hidden="true" />
       <div className="fixed inset-x-0 z-[60] bg-white rounded-t-2xl max-h-[60dvh] flex flex-col animate-slide-up" style={{ bottom: NAV_HEIGHT }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 className="font-bold text-sm">Likes ({likeCount})</h3>
-          <button onClick={() => setShowLikers(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
+          <button onClick={() => setShowLikers(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
         </div>
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
           {loadingLikers ? (
@@ -480,6 +480,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             <button
               onClick={handleLike}
               className="flex items-center text-sm"
+              aria-label="Like"
             >
               <IconKangaroo size={20} filled={liked} />
             </button>
@@ -506,12 +507,13 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             <button
               onClick={() => setShowMenu((v) => !v)}
               className="text-gray-400 text-lg px-2 py-1 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              aria-label="More options"
             >
               ···
             </button>
             {showMenu && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} aria-hidden="true" />
                 <div className="absolute right-0 bottom-full mb-1 z-20 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden min-w-[120px]">
                   {post.userId === user?.uid ? (
                     <>
