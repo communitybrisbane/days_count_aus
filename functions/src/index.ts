@@ -398,15 +398,20 @@ export const onGroupMessageCreated = onDocumentCreated(
     const recipients = memberIds.filter((uid) => uid !== senderId);
     if (recipients.length === 0) return;
 
-    // Read all FCM tokens in parallel
-    const privSnaps = await Promise.all(
-      recipients.map((uid) => db.doc(`users/${uid}/private/config`).get())
-    );
+    // Read FCM tokens and mute preferences in parallel
+    const [privSnaps, lastReadSnaps] = await Promise.all([
+      Promise.all(recipients.map((uid) => db.doc(`users/${uid}/private/config`).get())),
+      Promise.all(recipients.map((uid) => db.doc(`groups/${groupId}/lastRead/${uid}`).get())),
+    ]);
 
     const messages: admin.messaging.TokenMessage[] = [];
     const invalidTokenUsers: string[] = [];
 
     for (let i = 0; i < recipients.length; i++) {
+      // Skip muted users
+      const lastReadData = lastReadSnaps[i].exists ? lastReadSnaps[i].data() : null;
+      if (lastReadData?.muted) continue;
+
       const privData = privSnaps[i].exists ? privSnaps[i].data() : null;
       const fcmToken = privData?.fcmToken || "";
       if (!fcmToken) continue;

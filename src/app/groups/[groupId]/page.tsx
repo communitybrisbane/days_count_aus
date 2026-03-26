@@ -61,6 +61,7 @@ export default function GroupChatPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [muted, setMuted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,11 +113,20 @@ export default function GroupChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Load muted state
+  useEffect(() => {
+    if (!user) return;
+    getDoc(doc(db, "groups", groupId, "lastRead", user.uid)).then((snap) => {
+      if (snap.exists()) setMuted(!!snap.data().muted);
+    }).catch(() => {});
+  }, [user, groupId]);
+
   // Mark as read when viewing messages
   useEffect(() => {
     if (user && isMemberNow && messages.length > 0) {
       setDoc(doc(db, "groups", groupId, "lastRead", user.uid), {
         readAt: serverTimestamp(),
+        muted,
       }).catch(() => {});
     }
   }, [user, groupId, messages.length]);
@@ -301,6 +311,16 @@ export default function GroupChatPage() {
     setEditText("");
   };
 
+  const handleToggleMute = async () => {
+    if (!user) return;
+    const newMuted = !muted;
+    setMuted(newMuted);
+    await setDoc(doc(db, "groups", groupId, "lastRead", user.uid), {
+      readAt: serverTimestamp(),
+      muted: newMuted,
+    }).catch(() => {});
+  };
+
   // Leader: change icon
   const handleIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -385,10 +405,28 @@ export default function GroupChatPage() {
             </div>
           </button>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
+            {isMember && (
+              <button onClick={handleToggleMute} className="w-9 h-9 flex items-center justify-center text-white/50 active:text-white/80">
+                {muted ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+                    <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14" />
+                    <path d="M18 8a6 6 0 0 0-9.33-5" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                )}
+              </button>
+            )}
             {isLeader && (
-              <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="w-10 h-10 flex items-center justify-center text-white/50">
-                <IconEdit size={20} />
+              <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="w-9 h-9 flex items-center justify-center text-white/50">
+                <IconEdit size={18} />
               </button>
             )}
             {isModeGroup ? (
