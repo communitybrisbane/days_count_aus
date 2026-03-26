@@ -19,7 +19,7 @@ messaging.onBackgroundMessage((payload) => {
   const link = d.link || "/home";
   const options = {
     body: d.body || "",
-    icon: "/icons/icon-192x192.png",
+    icon: d.icon || "/icons/icon-192x192.png",
     badge: "/icons/icon-192x192.png",
     data: { link },
   };

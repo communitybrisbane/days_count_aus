@@ -235,6 +235,7 @@ export const onLikeCreated = onDocumentCreated(
       await admin.messaging().send({
         token: fcmToken,
         data: {
+          type: "like",
           title: `🦘 ${likerName} 🦘`,
           body: "liked your post!",
           link: "/mypage",
@@ -261,7 +262,7 @@ async function sendStreakWarning(
   try {
     await admin.messaging().send({
       token: fcmToken,
-      data: { title, body, link: "/post" },
+      data: { type: "streak", title, body, link: "/post" },
     });
     return true;
   } catch (e) {
@@ -388,6 +389,7 @@ export const onGroupMessageCreated = onDocumentCreated(
     if (!groupSnap.exists) return;
     const groupData = groupSnap.data()!;
     const groupName = (groupData.groupName as string) || "Group";
+    const groupIcon = (groupData.iconUrl as string) || "";
     const memberIds: string[] = groupData.memberIds || [];
 
     // Get sender's display name
@@ -416,12 +418,16 @@ export const onGroupMessageCreated = onDocumentCreated(
       const fcmToken = privData?.fcmToken || "";
       if (!fcmToken) continue;
 
+      const msgPreview = text.length > 80 ? text.slice(0, 80) + "…" : text;
       messages.push({
         token: fcmToken,
         data: {
-          title: `🦘 ${groupName} 🦘`,
-          body: `${senderName} sent a message`,
+          type: "group_message",
+          title: groupName,
+          body: `${senderName}: ${msgPreview}`,
           link: `/groups/${groupId}`,
+          icon: groupIcon,
+          senderName,
         },
       });
     }
