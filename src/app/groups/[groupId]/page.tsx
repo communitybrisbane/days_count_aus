@@ -369,12 +369,7 @@ export default function GroupChatPage() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-bold text-sm truncate text-white/90">{group.groupName}</h1>
-              {group.isOfficial && (
-                <span className="text-[10px] bg-accent-orange text-white px-1.5 py-0.5 rounded-full shrink-0">Official</span>
-              )}
-            </div>
+            <h1 className="font-bold text-sm truncate text-white/90">{group.groupName}</h1>
             <div className="flex items-center gap-1.5 text-xs text-white/50">
               {modeInfo && (
                 <span className="flex items-center gap-0.5">
@@ -622,7 +617,8 @@ export default function GroupChatPage() {
                   ) : (
                     <div
                       onClick={() => !msg.unsent && setActionMenuMsgId(actionMenuMsgId === msg.id ? null : msg.id)}
-                      className={`px-3 py-2 rounded-2xl rounded-br-md text-sm max-w-[65vw] cursor-pointer ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-accent-orange text-white"}`}
+                      onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
+                      className={`px-3 py-2 rounded-2xl rounded-br-md text-sm max-w-[65vw] cursor-pointer select-none ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-accent-orange text-white"}`}
                     >
                       {msg.unsent ? "This message was unsent" : msg.text}
                     </div>
@@ -664,7 +660,10 @@ export default function GroupChatPage() {
                     {sender?.displayName || "..."}
                   </button>
                 )}
-                <div className={`px-3 py-2 rounded-2xl rounded-bl-md text-sm max-w-[65vw] w-fit ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-forest-light/20 text-white/90"}`}>
+                <div
+                  onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
+                  className={`px-3 py-2 rounded-2xl rounded-bl-md text-sm max-w-[65vw] w-fit select-none ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-forest-light/20 text-white/90"}`}
+                >
                   {msg.unsent ? "This message was unsent" : msg.text}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
@@ -687,25 +686,27 @@ export default function GroupChatPage() {
 
       {/* Input */}
       {isMember && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-3" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
           {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
-          <div className="flex gap-2">
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={`Message (${MESSAGE_CHAR_LIMIT} chars max)`}
-            maxLength={MESSAGE_CHAR_LIMIT}
-            className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!text.trim()}
-            className="bg-accent-orange text-white rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
-          >
-            Send
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Message..."
+              maxLength={MESSAGE_CHAR_LIMIT}
+              className="flex-1 border border-forest-light/30 bg-forest-light/20 text-white rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!text.trim()}
+              className="w-9 h-9 rounded-full bg-accent-orange flex items-center justify-center shrink-0 disabled:opacity-30 active:scale-[0.93] transition-transform"
+            >
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="white" stroke="none">
+                <path d="M2.5 10L17.5 2.5L14 10L17.5 17.5L2.5 10ZM2.5 10H14" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
