@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "Days Count in AUS",
-  "short_name": "Count",
+  "short_name": "days-count",
   "description": "Make Days Count — Turn your 365 days into a lifetime of growth.",
   "start_url": "/",
   "scope": "/",
