@@ -13,7 +13,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import Avatar from "@/components/Avatar";
-import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconKangaroo, IconEdit, FocusModeIcon } from "@/components/icons";
+import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconKangaroo, FocusModeIcon } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
@@ -303,9 +303,9 @@ export default function PostPage() {
         className="hidden"
       />
 
-      {/* Back button header */}
+      {/* Header — back button left, post button right */}
       <div
-        className="shrink-0 flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20"
+        className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20"
         style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}
       >
         <button
@@ -316,7 +316,17 @@ export default function PostPage() {
             <path d="M13 4L7 10L13 16" />
           </svg>
         </button>
-        <span className="text-white/70 text-sm font-medium">New Post</span>
+        <button
+          disabled={!mode || submitting}
+          onClick={handleSubmit}
+          className="px-5 py-2 rounded-full bg-accent-orange text-white text-sm font-bold disabled:opacity-40 active:scale-[0.96] transition-transform"
+        >
+          {submitting ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+          ) : (
+            "Post"
+          )}
+        </button>
       </div>
 
       {/* Scrollable content */}
@@ -508,23 +518,8 @@ export default function PostPage() {
           </div>
         )}
 
-        {/* Spacer for bottom button */}
-        <div className="h-20" />
-      </div>
-
-      {/* Fixed bottom Post button — pencil icon only */}
-      <div className="shrink-0 flex justify-end px-4 pb-3 pt-2" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
-        <button
-          disabled={!mode || submitting}
-          onClick={handleSubmit}
-          className="w-14 h-14 rounded-full bg-accent-orange text-white shadow-lg flex items-center justify-center disabled:opacity-40 active:scale-[0.93] transition-transform"
-        >
-          {submitting ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-          ) : (
-            <IconEdit size={22} className="text-white" />
-          )}
-        </button>
+        {/* Spacer for bottom */}
+        <div className="h-8" />
       </div>
     </div>
   );
