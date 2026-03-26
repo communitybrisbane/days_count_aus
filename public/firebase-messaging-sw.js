@@ -13,7 +13,19 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(async (payload) => {
+  // Check if any app window is currently visible (foreground)
+  const windowClients = await clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  const hasVisibleClient = windowClients.some(
+    (client) => client.visibilityState === "visible"
+  );
+
+  // If app is open, skip OS notification — in-app toast handles it
+  if (hasVisibleClient) return;
+
   const d = payload.data || {};
   const title = d.title || "Days Count in AUS";
   const link = d.link || "/home";
