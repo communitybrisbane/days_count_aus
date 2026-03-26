@@ -583,7 +583,7 @@ export default function GroupChatPage() {
       )}
 
       {/* Scrollable area: Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1" style={{ scrollbarWidth: "none" }}>
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5" style={{ scrollbarWidth: "none" }}>
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.uid;
           const sender = memberProfiles[msg.senderId];
@@ -598,10 +598,10 @@ export default function GroupChatPage() {
 
           if (isMe) {
             return (
-              <div key={msg.id}>
+              <div key={msg.id} className="flex flex-col items-end">
                 {/* Action menu */}
                 {actionMenuMsgId === msg.id && !msg.unsent && (
-                  <div className="flex justify-end gap-1 mb-0.5">
+                  <div className="flex gap-1 mb-0.5">
                     <button onClick={() => handleEditStart(msg)} className="text-[10px] bg-white/10 text-white/70 px-2 py-0.5 rounded-full">Edit</button>
                     <button onClick={() => handleUnsend(msg.id)} className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Unsend</button>
                     <button onClick={() => setActionMenuMsgId(null)} className="text-[10px] text-white/30 px-1">✕</button>
@@ -615,7 +615,7 @@ export default function GroupChatPage() {
                       value={editText}
                       onChange={(e) => setEditText(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
                       onKeyDown={(e) => e.key === "Enter" && handleEditSave()}
-                      className="border border-accent-orange rounded-lg px-3 py-1 text-sm text-black max-w-[70vw] focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                      className="border border-accent-orange rounded-xl px-3 py-1.5 text-sm text-black max-w-[70vw] focus:outline-none focus:ring-2 focus:ring-accent-orange"
                       autoFocus
                     />
                     <div className="flex gap-1">
@@ -627,14 +627,12 @@ export default function GroupChatPage() {
                   <div
                     onClick={() => !msg.unsent && setActionMenuMsgId(actionMenuMsgId === msg.id ? null : msg.id)}
                     onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
-                    className="flex justify-end cursor-pointer select-none"
+                    className={`px-3 py-2 rounded-2xl rounded-br-sm max-w-[70vw] cursor-pointer select-none ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-accent-orange text-white"}`}
                   >
-                    <p className={`text-[15px] max-w-[75vw] ${msg.unsent ? "text-white/30 italic" : "text-accent-orange"}`}>
-                      {msg.unsent ? "unsent" : msg.text}
-                    </p>
+                    <p className="text-sm">{msg.unsent ? "This message was unsent" : msg.text}</p>
                   </div>
                 )}
-                <div className="flex items-center justify-end gap-1.5">
+                <div className="flex items-center gap-1.5 mt-0.5 mr-1">
                   {!msg.unsent && (
                     <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
                       <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/20"}`}>
@@ -650,36 +648,34 @@ export default function GroupChatPage() {
           }
 
           return (
-            <div
-              key={msg.id}
-              onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
-              className="flex items-start gap-2 select-none"
-            >
+            <div key={msg.id} className="flex items-start gap-2 select-none">
               {/* Avatar */}
               {isDeleted ? (
-                <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0">
                   <span className="text-white/40 text-xs">?</span>
                 </div>
               ) : (
-                <button onClick={() => router.push(`/user/${msg.senderId}`)} className="shrink-0 mt-0.5">
+                <button onClick={() => router.push(`/user/${msg.senderId}`)} className="shrink-0">
                   <Avatar photoURL={sender?.photoURL} displayName={sender?.displayName || "?"} uid={msg.senderId} size={32} />
                 </button>
               )}
-              <div className="min-w-0">
-                {/* Name: Message */}
-                <p className="text-[15px] max-w-[75vw]">
-                  <button
-                    onClick={() => !isDeleted && router.push(`/user/${msg.senderId}`)}
-                    className={`font-bold ${isDeleted ? "text-white/30 italic" : "text-white/60 active:text-accent-orange"}`}
-                  >
-                    {displayName}
-                  </button>
-                  <span className={msg.unsent ? "text-white/30 italic ml-1.5" : "text-white/90 ml-1.5"}>
-                    {msg.unsent ? "unsent" : msg.text}
-                  </span>
-                </p>
+              <div className="min-w-0 max-w-[70vw]">
+                {/* Name */}
+                <button
+                  onClick={() => !isDeleted && router.push(`/user/${msg.senderId}`)}
+                  className={`text-[11px] font-bold mb-0.5 block ${isDeleted ? "text-white/30 italic" : "text-white/50 active:text-accent-orange"}`}
+                >
+                  {displayName}
+                </button>
+                {/* Bubble */}
+                <div
+                  onDoubleClick={() => !msg.unsent && handleReaction(msg.id, hasReacted)}
+                  className={`px-3 py-2 rounded-2xl rounded-tl-sm w-fit ${msg.unsent ? "bg-white/5 text-white/30 italic" : "bg-forest-light/25 text-white/90"}`}
+                >
+                  <p className="text-sm">{msg.unsent ? "This message was unsent" : msg.text}</p>
+                </div>
                 {/* Reaction + time */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 mt-0.5 ml-1">
                   {!msg.unsent && (
                     <button onClick={() => handleReaction(msg.id, hasReacted)} className="text-xs">
                       <span className={`inline-flex items-center gap-0.5 ${hasReacted ? "text-red-500" : "text-white/20"}`}>
