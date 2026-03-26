@@ -200,7 +200,7 @@ export default function GroupsPage() {
             <>
               {/* Study Meeting */}
               {liveSession && (
-                <div className="px-4 pt-4">
+                <div className="px-4 pt-2">
                   {liveSession.url ? (
                     <a
                       href={liveSession.url}
@@ -257,7 +257,7 @@ export default function GroupsPage() {
               )}
 
               {/* Group Chat section */}
-              <div className="px-4 pt-4">
+              <div className="px-4 pt-2">
                 <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + 1}</span></p>
               </div>
               <div className="flex flex-col">
