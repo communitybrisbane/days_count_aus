@@ -174,7 +174,7 @@ export default function HomePage() {
       )}
 
       {/* ===== 1. Hero Header — Fixed, Day Count with polygon overlay ===== */}
-      <div className="shrink-0 relative text-white pb-10 px-6 rounded-b-[2rem] overflow-hidden" style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="shrink-0 relative text-white pb-7 px-5 rounded-b-[1.5rem] overflow-hidden" style={{ paddingTop: "max(0.875rem, env(safe-area-inset-top, 0px))" }}>
         {/* Polygon gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-accent-orange via-accent-orange-light to-accent-orange-dark" />
         {/* Geometric polygon overlays */}
@@ -185,17 +185,17 @@ export default function HomePage() {
         </div>
 
         <div className="relative">
-          <p className="text-white/60 text-xs font-medium tracking-widest uppercase mb-4">
+          <p className="text-white/60 text-xs font-medium tracking-widest uppercase mb-2.5">
             {STATUS_LABELS[profile.status || "pre-departure"] ?? profile.status}
           </p>
 
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-[3.25rem] font-black tracking-tight leading-none">
+          <div className="flex items-baseline gap-2 mb-0.5">
+            <span className="text-[2.25rem] font-black tracking-tight leading-none">
               {dayCount.label} {dayCount.number < 0 ? "\u2212" : "+"} {Math.abs(dayCount.number)}
             </span>
           </div>
 
-          <p className="text-white/50 text-sm mt-1">
+          <p className="text-white/50 text-xs mt-0.5">
             Hello, {profile.displayName}
           </p>
         </div>
