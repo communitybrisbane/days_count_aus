@@ -167,7 +167,7 @@ const TERMS_JA = `
 <p>運営者は本規約を随時変更できるものとします。重要な変更はアプリ内で通知します。変更後の利用継続をもって、変更に同意したものとみなします。</p>
 <p class="font-bold text-sm text-gray-800">第21条（お問い合わせ）</p>
 <p>ご不明な点がございましたら、以下までご連絡ください。</p>
-<p>メール: <b>communirybrisbane@gmail.com</b></p>
+<p>メール: <b>communitybrisbane@gmail.com</b></p>
 <p>Instagram: <b>@count_taku</b></p>
 `;
 
@@ -252,7 +252,7 @@ const TERMS_EN = `
 <p>The Operator may modify these Terms at any time. Significant changes will be notified within the App. Continued use after changes constitutes acceptance of the modified Terms.</p>
 <p class="font-bold text-sm text-gray-800">Article 21 (Contact)</p>
 <p>If you have any questions, please contact us at:</p>
-<p>Email: <b>communirybrisbane@gmail.com</b></p>
+<p>Email: <b>communitybrisbane@gmail.com</b></p>
 <p>Instagram: <b>@count_taku</b></p>
 `;
 
@@ -323,7 +323,7 @@ const PRIVACY_JA = `
 <p>運営者は本プライバシーポリシーを随時更新できるものとします。重要な変更はアプリ内で通知します。変更後の利用継続をもって、変更に同意したものとみなします。</p>
 <p class="font-bold text-sm text-gray-800">第12条（お問い合わせ）</p>
 <p>プライバシーに関するお問い合わせは以下までご連絡ください。</p>
-<p>メール: <b>communirybrisbane@gmail.com</b></p>
+<p>メール: <b>communitybrisbane@gmail.com</b></p>
 <p>Instagram: <b>@count_taku</b></p>
 `;
 
@@ -394,7 +394,7 @@ const PRIVACY_EN = `
 <p>The Operator may update this Privacy Policy at any time. Significant changes will be notified within the App. Continued use after changes constitutes acceptance of the updated policy.</p>
 <p class="font-bold text-sm text-gray-800">Article 12 (Contact)</p>
 <p>For privacy-related inquiries, please contact us at:</p>
-<p>Email: <b>communirybrisbane@gmail.com</b></p>
+<p>Email: <b>communitybrisbane@gmail.com</b></p>
 <p>Instagram: <b>@count_taku</b></p>
 `;
 
@@ -406,7 +406,7 @@ const LEGAL_NOTICE_JA = `
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">サービス名</td><td class="py-2 text-gray-600">Days Count in AUS</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">運営者</td><td class="py-2 text-gray-600">Count.（岳尾拓馬 / 個人運営）</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">所在地</td><td class="py-2 text-gray-600">請求があった場合に遅滞なく開示いたします</td></tr>
-    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">連絡先</td><td class="py-2 text-gray-600">メール: communirybrisbane@gmail.com<br/>Instagram: @count_taku</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">連絡先</td><td class="py-2 text-gray-600">メール: communitybrisbane@gmail.com<br/>Instagram: @count_taku</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">販売価格</td><td class="py-2 text-gray-600">無料（全機能を無償で提供）</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">サービス以外の必要料金</td><td class="py-2 text-gray-600">インターネット接続料金はお客様のご負担となります</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">支払方法</td><td class="py-2 text-gray-600">該当なし（無料サービス）</td></tr>
@@ -425,7 +425,7 @@ const LEGAL_NOTICE_EN = `
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Service Name</td><td class="py-2 text-gray-600">Days Count in AUS</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Operator</td><td class="py-2 text-gray-600">Count. (Takuma Takeo / Individual)</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Address</td><td class="py-2 text-gray-600">Will be disclosed without delay upon request</td></tr>
-    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Contact</td><td class="py-2 text-gray-600">Email: communirybrisbane@gmail.com<br/>Instagram: @count_taku</td></tr>
+    <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Contact</td><td class="py-2 text-gray-600">Email: communitybrisbane@gmail.com<br/>Instagram: @count_taku</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Price</td><td class="py-2 text-gray-600">Free (all features provided at no charge)</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Additional Costs</td><td class="py-2 text-gray-600">Internet connection fees are borne by the user</td></tr>
     <tr class="border-b border-gray-100"><td class="py-2 pr-3 font-bold text-gray-700 whitespace-nowrap align-top">Payment Method</td><td class="py-2 text-gray-600">Not applicable (free service)</td></tr>
