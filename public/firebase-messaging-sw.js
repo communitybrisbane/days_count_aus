@@ -11,31 +11,35 @@ firebase.initializeApp({
   appId: "1:457409155401:web:b1281bb1e98e9944130a98",
 });
 
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage(async (payload) => {
-  // Check if any app window is currently visible (foreground)
-  const windowClients = await clients.matchAll({
-    type: "window",
-    includeUncontrolled: true,
-  });
-  const hasVisibleClient = windowClients.some(
-    (client) => client.visibilityState === "visible"
-  );
-
-  // If app is open, skip OS notification — in-app toast handles it
-  if (hasVisibleClient) return;
-
+// Use raw push event for full control over notification display
+self.addEventListener("push", (event) => {
+  const payload = event.data?.json?.() || {};
   const d = payload.data || {};
-  const title = d.title || "Days Count in AUS";
-  const link = d.link || "/home";
-  const options = {
-    body: d.body || "",
-    icon: d.icon || "/icons/icon-192x192.png",
-    badge: "/icons/icon-192x192.png",
-    data: { link },
-  };
-  self.registration.showNotification(title, options);
+
+  // If no data, let Firebase SDK handle it
+  if (!d.title) return;
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // Check if any app window is focused/visible
+      const isAppOpen = windowClients.some(
+        (c) => c.visibilityState === "visible" || c.focused
+      );
+
+      // App is open — in-app toast handles it, skip OS notification
+      if (isAppOpen) return;
+
+      // App is closed — show OS notification
+      const title = d.title || "Days Count in AUS";
+      const link = d.link || "/home";
+      return self.registration.showNotification(title, {
+        body: d.body || "",
+        icon: d.icon || "/icons/icon-192x192.png",
+        badge: "/icons/icon-192x192.png",
+        data: { link },
+      });
+    })
+  );
 });
 
 // Handle notification click — navigate to the link
