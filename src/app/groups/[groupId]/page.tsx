@@ -341,9 +341,9 @@ export default function GroupChatPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh">
-      {/* Header */}
-      <div className="sticky top-0 bg-forest/95 backdrop-blur-md border-b border-forest-light/20 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+    <div className="h-dvh flex flex-col overflow-hidden">
+      {/* Fixed header — Row 1 only */}
+      <div className="shrink-0 bg-forest/95 backdrop-blur-md border-b border-forest-light/20 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/groups")} className="w-10 h-10 flex items-center justify-center text-white/60 text-xl -ml-2">
             ←
@@ -400,52 +400,6 @@ export default function GroupChatPage() {
             ) : null}
           </div>
         </div>
-
-        {/* Goal banner */}
-        {group.goal ? (
-          <div className="mt-2 bg-forest-light/20 rounded-lg px-3 py-1.5 border border-accent-orange/20">
-            <p className="text-[10px] font-bold text-accent-orange mb-0.5">Goal / Rules</p>
-            <p className="text-xs text-white/70 leading-snug">{group.goal}</p>
-          </div>
-        ) : (
-          <div className="mt-2 bg-forest-light/10 rounded-lg px-3 py-2 border border-dashed border-white/20">
-            {isLeader ? (
-              <button
-                onClick={() => { setEditGoal(""); setShowSettings(true); }}
-                className="w-full text-xs text-white/40 text-center"
-              >
-                Set community goals & rules →
-              </button>
-            ) : (
-              <p className="text-xs text-white/40 text-center">No community goals or rules set yet</p>
-            )}
-          </div>
-        )}
-
-        {/* Member list */}
-        {isMember && (
-          <div className="flex gap-3 mt-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {group.memberIds.map((uid) => {
-              const mp = memberProfiles[uid];
-              return (
-                <div key={uid} className="flex flex-col items-center min-w-[56px]">
-                  <button onClick={() => router.push(uid === user?.uid ? "/mypage" : `/user/${uid}`)} className="flex flex-col items-center">
-                    <Avatar photoURL={mp?.photoURL} displayName={mp?.displayName || "?"} uid={uid} size={44} />
-                    <span className="text-[10px] text-white/60 truncate max-w-[56px] mt-0.5">
-                      {mp?.displayName || "..."}
-                    </span>
-                  </button>
-                  {group.creatorId === uid && (
-                    <span className="text-[8px] text-accent-orange">Leader</span>
-                  )}
-                  {isLeader && uid !== user?.uid && (
-                    <button onClick={() => handleKick(uid)} className="text-[8px] text-red-400">kick</button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Leader settings modal */}
@@ -573,8 +527,56 @@ export default function GroupChatPage() {
         </>
       )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Scrollable area: Goal + Members + Messages */}
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+        {/* Goal banner */}
+        {group.goal ? (
+          <div className="mx-4 mt-3 bg-forest-light/20 rounded-lg px-3 py-1.5 border border-accent-orange/20">
+            <p className="text-[10px] font-bold text-accent-orange mb-0.5">Goal / Rules</p>
+            <p className="text-xs text-white/70 leading-snug">{group.goal}</p>
+          </div>
+        ) : (
+          <div className="mx-4 mt-3 bg-forest-light/10 rounded-lg px-3 py-2 border border-dashed border-white/20">
+            {isLeader ? (
+              <button
+                onClick={() => { setEditGoal(""); setShowSettings(true); }}
+                className="w-full text-xs text-white/40 text-center"
+              >
+                Set community goals & rules →
+              </button>
+            ) : (
+              <p className="text-xs text-white/40 text-center">No community goals or rules set yet</p>
+            )}
+          </div>
+        )}
+
+        {/* Member list */}
+        {isMember && (
+          <div className="flex gap-3 px-4 mt-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            {group.memberIds.map((uid) => {
+              const mp = memberProfiles[uid];
+              return (
+                <div key={uid} className="flex flex-col items-center min-w-[56px]">
+                  <button onClick={() => router.push(uid === user?.uid ? "/mypage" : `/user/${uid}`)} className="flex flex-col items-center">
+                    <Avatar photoURL={mp?.photoURL} displayName={mp?.displayName || "?"} uid={uid} size={44} />
+                    <span className="text-[10px] text-white/60 truncate max-w-[56px] mt-0.5">
+                      {mp?.displayName || "..."}
+                    </span>
+                  </button>
+                  {group.creatorId === uid && (
+                    <span className="text-[8px] text-accent-orange">Leader</span>
+                  )}
+                  {isLeader && uid !== user?.uid && (
+                    <button onClick={() => handleKick(uid)} className="text-[8px] text-red-400">kick</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Messages */}
+        <div className="p-4 space-y-4">
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.uid;
           const sender = memberProfiles[msg.senderId];
@@ -682,6 +684,7 @@ export default function GroupChatPage() {
           );
         })}
         <div ref={bottomRef} />
+        </div>
       </div>
 
       {/* Input */}
