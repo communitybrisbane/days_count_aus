@@ -15,7 +15,7 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, MAIN_MODE_OPTIONS, NAV_HEIGHT } from "@/lib/constants";
+import { FOCUS_MODES, MAIN_MODE_OPTIONS, REGIONS, NAV_HEIGHT } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import BottomNav from "@/components/layout/BottomNav";
@@ -27,6 +27,8 @@ import { rankPosts, markSeen } from "@/lib/feedScore";
 
 const PAGE_SIZE = 20;
 
+type SortTab = "new" | "popular" | "following";
+
 export default function ExplorePage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, privateData, loading, following } = useAuth();
@@ -35,12 +37,15 @@ export default function ExplorePage() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [filter, setFilter] = useState<string>("");
+  const [regionFilter, setRegionFilter] = useState<string>("");
+  const [sortTab, setSortTab] = useState<SortTab>("new");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
   const [searchTag, setSearchTag] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [trendingTags, setTrendingTags] = useState<{ tag: string; count: number }[]>([]);
+  const [showRegionPicker, setShowRegionPicker] = useState(false);
   const snapContainerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
@@ -61,7 +66,15 @@ export default function ExplorePage() {
         if (filter) {
           constraints.push(where("mode", "==", filter));
         }
-        constraints.push(orderBy("createdAt", "desc"));
+        if (regionFilter) {
+          constraints.push(where("region", "==", regionFilter));
+        }
+        // Sort: popular uses likeCount, others use createdAt
+        if (sortTab === "popular") {
+          constraints.push(orderBy("likeCount", "desc"));
+        } else {
+          constraints.push(orderBy("createdAt", "desc"));
+        }
         if (!reset && lastDocRef.current) {
           constraints.push(startAfter(lastDocRef.current));
         }
@@ -78,6 +91,11 @@ export default function ExplorePage() {
           );
         }
 
+        // Following tab: filter to only followed users' posts
+        if (sortTab === "following") {
+          newPosts = newPosts.filter((p) => following.includes(p.userId));
+        }
+
         // Client-side filter: user/region OR tag match
         if (searchUserIds !== null || searchTag) {
           const tagQuery = searchTag ? searchTag.replace(/^#/, "") : "";
@@ -88,8 +106,8 @@ export default function ExplorePage() {
           });
         }
 
-        // Score-based ranking (skip when searching — just show matches)
-        if (searchUserIds === null && !searchTag) {
+        // Score-based ranking only for "new" tab without search
+        if (sortTab === "new" && searchUserIds === null && !searchTag) {
           newPosts = rankPosts(
             newPosts,
             following,
@@ -120,7 +138,7 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [filter, user, profile, privateData, following, searchUserIds, searchTag]
+    [filter, regionFilter, sortTab, user, profile, privateData, following, searchUserIds, searchTag]
   );
 
   // Search handler — #tag, username (partial), or city/region
@@ -206,7 +224,7 @@ export default function ExplorePage() {
       setHasMore(true);
       fetchPosts(true);
     }
-  }, [user, filter, fetchPosts]);
+  }, [user, filter, regionFilter, sortTab, fetchPosts]);
 
   useEffect(() => {
     const el = scrollAreaRef.current;
@@ -253,6 +271,17 @@ export default function ExplorePage() {
     }
   };
 
+  const clearAll = () => {
+    setSearchQuery("");
+    setSearchUserIds(null);
+    setSearchTag(null);
+    setFilter("");
+    setRegionFilter("");
+    setSearchFocused(false);
+  };
+
+  const hasActiveFilter = !!(searchQuery || filter || regionFilter);
+
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
       <div
@@ -272,9 +301,9 @@ export default function ExplorePage() {
               className="flex-1 bg-transparent text-sm outline-none placeholder-white/30 text-white"
             />
             {showWarn && <span className="text-red-400 text-[10px] font-bold shrink-0">English only</span>}
-            {(searchQuery || filter || searchFocused) && (
+            {(hasActiveFilter || searchFocused) && (
               <button
-                onClick={() => { setSearchQuery(""); setSearchUserIds(null); setSearchTag(null); setFilter(""); setSearchFocused(false); }}
+                onClick={clearAll}
                 className="text-white/40 text-lg leading-none shrink-0 w-8 h-8 flex items-center justify-center"
               >
                 &times;
@@ -282,6 +311,62 @@ export default function ExplorePage() {
             )}
           </div>
         </div>
+
+        {/* Sort tabs: New / Popular / Following */}
+        <div className="flex px-4 gap-1 pb-2">
+          {(["new", "popular", "following"] as SortTab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSortTab(tab)}
+              className={`flex-1 py-1.5 rounded-full text-xs font-bold text-center transition-all ${
+                sortTab === tab
+                  ? "bg-accent-orange text-white"
+                  : "bg-forest-light/20 text-white/50"
+              }`}
+            >
+              {tab === "new" ? "New" : tab === "popular" ? "Popular" : "Following"}
+            </button>
+          ))}
+          {/* Region filter button */}
+          <button
+            onClick={() => setShowRegionPicker(!showRegionPicker)}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              regionFilter
+                ? "bg-accent-orange text-white"
+                : "bg-forest-light/20 text-white/50"
+            }`}
+          >
+            {regionFilter || "Area"}
+          </button>
+        </div>
+
+        {/* Region picker dropdown */}
+        {showRegionPicker && (
+          <div className="px-4 pb-2">
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => { setRegionFilter(""); setShowRegionPicker(false); }}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                  !regionFilter ? "bg-accent-orange text-white" : "bg-white/10 text-white/70"
+                }`}
+              >
+                All
+              </button>
+              {REGIONS.filter((r) => r !== "Other").map((r) => (
+                <button
+                  key={r}
+                  onClick={() => { setRegionFilter(r); setShowRegionPicker(false); }}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                    regionFilter === r ? "bg-accent-orange text-white" : "bg-white/10 text-white/70"
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Mode filter chips — shown on search focus or when filter active */}
         {(searchFocused || filter) && (
           <div className="px-4 pb-2 space-y-1.5">
@@ -347,7 +432,11 @@ export default function ExplorePage() {
               <IconEucalyptus size={40} className="text-white/40 mx-auto" />
             </div>
             <p className="text-white/60">
-              {searchQuery ? "No posts found" : "Post your first entry and start counting!"}
+              {searchQuery || hasActiveFilter
+                ? "No posts found"
+                : sortTab === "following"
+                ? "Follow someone to see their posts here"
+                : "Post your first entry and start counting!"}
             </p>
           </div>
         )}
