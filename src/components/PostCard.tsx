@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
 import XPToast from "./XPToast";
@@ -281,7 +281,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   const LikersModal = () => (
     <>
       <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowLikers(false)} />
-      <div className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl max-h-[60dvh] flex flex-col animate-slide-up">
+      <div className="fixed inset-x-0 z-[60] bg-white rounded-t-2xl max-h-[60dvh] flex flex-col animate-slide-up" style={{ bottom: NAV_HEIGHT }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 className="font-bold text-sm">Likes ({likeCount})</h3>
           <button onClick={() => setShowLikers(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center">&times;</button>
