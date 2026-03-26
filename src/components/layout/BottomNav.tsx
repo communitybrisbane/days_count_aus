@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import Avatar from "@/components/Avatar";
 import { IconHome, IconDiary, IconCamera, IconGroup } from "@/components/icons";
 
@@ -16,6 +17,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
   const pathname = usePathname();
   const router = useRouter();
   const { profile, user } = useAuth();
+  const { unreadCount } = useUnreadGroups(user?.uid, profile?.groupIds || []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (href: string) =>
@@ -83,8 +85,13 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
         </button>
 
         {/* GROUPS */}
-        <Link href="/groups" className="flex items-center justify-center w-10 h-10">
+        <Link href="/groups" className="relative flex items-center justify-center w-10 h-10">
           <IconGroup size={20} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </Link>
 
         {/* MY */}

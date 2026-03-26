@@ -30,9 +30,10 @@ interface GroupCardProps {
   canJoin?: boolean;
   onJoined?: () => void;
   showGoal?: boolean;
+  hasUnread?: boolean;
 }
 
-export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal }: GroupCardProps) {
+export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, hasUnread }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
@@ -114,6 +115,9 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
             )}
           </div>
 
+          {hasUnread && (
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+          )}
           {!group.isOfficial && isFull && (
             <span className="bg-red-100 text-red-500 text-xs font-bold px-2 py-1 rounded-full shrink-0">
               FULL

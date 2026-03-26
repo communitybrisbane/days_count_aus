@@ -9,6 +9,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { fetchAdminConfig } from "@/lib/services/users";
+import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import GroupCard from "@/components/GroupCard";
@@ -19,6 +20,7 @@ import type { Group, LiveSession } from "@/types";
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, loading, refreshProfile } = useAuth();
+  const { unreadSet } = useUnreadGroups(user?.uid, profile?.groupIds || []);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -267,6 +269,7 @@ export default function GroupsPage() {
                     group={group}
                     currentUserId={user?.uid}
                     leaderName={leaderNames[group.creatorId]}
+                    hasUnread={unreadSet.has(group.id)}
                   />
                 ))}
 
