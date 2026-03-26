@@ -45,6 +45,9 @@ export async function joinOfficialGroup(uid: string, mode: string) {
     memberIds: arrayUnion(uid),
     memberCount: increment(1),
   });
+  await updateDoc(firestoreDoc(db, "users", uid), {
+    groupIds: arrayUnion(group.id),
+  });
 }
 
 /**
@@ -60,5 +63,8 @@ export async function leaveOfficialGroup(uid: string, mode: string) {
   await updateDoc(firestoreDoc(db, "groups", group.id), {
     memberIds: arrayRemove(uid),
     memberCount: increment(-1),
+  });
+  await updateDoc(firestoreDoc(db, "users", uid), {
+    groupIds: arrayRemove(group.id),
   });
 }

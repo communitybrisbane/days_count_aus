@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { collection, getDocs, getDoc, doc, query, orderBy, where, limit } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, query, orderBy, where, limit, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
@@ -42,7 +42,20 @@ export default function GroupsPage() {
 
   useEffect(() => {
     if (user) {
-      fetchGroups();
+      fetchGroups().then(() => {
+        // Self-heal: if mode group ID is missing from user's groupIds, add it
+        if (profile?.mainMode && profile.groupIds) {
+          setGroups((currentGroups) => {
+            const modeGroup = currentGroups.find((g) => g.isOfficial && !g.iconUrl && g.mode === profile.mainMode);
+            if (modeGroup && !profile.groupIds!.includes(modeGroup.id)) {
+              updateDoc(doc(db, "users", user.uid), { groupIds: arrayUnion(modeGroup.id) })
+                .then(() => refreshProfile())
+                .catch(() => {});
+            }
+            return currentGroups;
+          });
+        }
+      });
       fetchAdminConfig().then((data) => {
         if (data?.liveSession) setLiveSession(data.liveSession as LiveSession);
       }).catch(console.error);
