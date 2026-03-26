@@ -91,7 +91,7 @@ export default function MyPage() {
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
-      <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト with geometric bg */}
       <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
         {/* Geometric background for profile header */}
@@ -156,7 +156,7 @@ export default function MyPage() {
 
           {/* Groups */}
           {userGroups.length > 0 && (
-            <div className="flex gap-3 mt-3 w-full justify-center">
+            <div className="flex gap-3 mt-3 w-full justify-center overflow-x-hidden max-w-full">
               {userGroups.map((g) => {
                 const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(g.mode || ""));
                 return (
