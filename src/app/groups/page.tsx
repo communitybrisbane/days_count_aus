@@ -20,7 +20,7 @@ import type { Group, LiveSession } from "@/types";
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, loading, refreshProfile } = useAuth();
-  const { unreadMap } = useUnreadGroups(user?.uid, profile?.groupIds || []);
+  const { unreadMap, liveDataMap } = useUnreadGroups(user?.uid, profile?.groupIds || []);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -270,6 +270,7 @@ export default function GroupsPage() {
                     currentUserId={user?.uid}
                     leaderName={leaderNames[group.creatorId]}
                     unreadCount={unreadMap.get(group.id) || 0}
+                    liveMessageText={liveDataMap.get(group.id)?.lastMessageText}
                   />
                 ))}
 

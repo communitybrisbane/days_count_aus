@@ -31,9 +31,10 @@ interface GroupCardProps {
   onJoined?: () => void;
   showGoal?: boolean;
   unreadCount?: number;
+  liveMessageText?: string;
 }
 
-export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0 }: GroupCardProps) {
+export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
@@ -107,8 +108,8 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
                 <span className="ml-auto shrink-0">{formatTime(group.lastMessageAt)}</span>
               )}
             </div>
-            {group.lastMessageText && (
-              <p className={`text-xs mt-0.5 truncate ${unreadCount > 0 ? "text-gray-600 font-medium" : "text-gray-400"}`}>{group.lastMessageText}</p>
+            {(liveMessageText || group.lastMessageText) && (
+              <p className={`text-xs mt-0.5 truncate ${unreadCount > 0 ? "text-gray-600 font-medium" : "text-gray-400"}`}>{liveMessageText || group.lastMessageText}</p>
             )}
             {!group.lastMessageText && showGoal && group.goal && (
               <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{group.goal}</p>

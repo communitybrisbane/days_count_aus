@@ -4,17 +4,25 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, onSnapshot, collection, query, where, getCountFromServer, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+export interface GroupLiveData {
+  lastMessageText?: string;
+  lastMessageBy?: string;
+  lastMessageAt?: Timestamp;
+  unreadCount: number;
+}
+
 /**
- * Listens to group docs in real-time and counts unread messages
- * by comparing with the user's lastRead timestamp.
- * Returns per-group unread counts and total count.
+ * Listens to group docs in real-time and counts unread messages.
+ * Also returns live lastMessageText/At/By for each group.
  */
 export function useUnreadGroups(userId: string | undefined, groupIds: string[]) {
   const [unreadMap, setUnreadMap] = useState<Map<string, number>>(new Map());
+  const [liveDataMap, setLiveDataMap] = useState<Map<string, GroupLiveData>>(new Map());
 
   useEffect(() => {
     if (!userId || groupIds.length === 0) {
       setUnreadMap(new Map());
+      setLiveDataMap(new Map());
       return;
     }
 
@@ -36,7 +44,6 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
       }
     };
 
-    // Fetch lastRead for all groups once, then set up listeners
     Promise.all(
       groupIds.map(async (gid) => {
         try {
@@ -49,18 +56,19 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
     ).then(() => {
       if (cancelled) return;
 
-      // Set up real-time listeners on group docs
       for (const gid of groupIds) {
         const unsub = onSnapshot(
           doc(db, "groups", gid),
           async (snap) => {
-            if (cancelled) return;
-            if (!snap.exists()) return;
+            if (cancelled || !snap.exists()) return;
+            const data = snap.data();
 
-            const lastMessageAt = snap.data().lastMessageAt as Timestamp | null;
+            const lastMessageAt = data.lastMessageAt as Timestamp | null;
+            const lastMessageText = data.lastMessageText as string | undefined;
+            const lastMessageBy = data.lastMessageBy as string | undefined;
             const readAt = lastReadAtMap.get(gid);
 
-            // Quick check: if no messages or already read, skip count query
+            // No messages or already read
             if (!lastMessageAt || (readAt && lastMessageAt.toMillis() <= readAt.toMillis())) {
               setUnreadMap((prev) => {
                 if ((prev.get(gid) || 0) === 0) return prev;
@@ -68,16 +76,25 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
                 next.set(gid, 0);
                 return next;
               });
+              setLiveDataMap((prev) => {
+                const next = new Map(prev);
+                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
+                return next;
+              });
               return;
             }
 
-            // Count unread messages
             const count = await countUnread(gid);
             if (cancelled) return;
             setUnreadMap((prev) => {
               if (prev.get(gid) === count) return prev;
               const next = new Map(prev);
               next.set(gid, count);
+              return next;
+            });
+            setLiveDataMap((prev) => {
+              const next = new Map(prev);
+              next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: count });
               return next;
             });
           },
@@ -96,5 +113,5 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
   let totalUnread = 0;
   unreadMap.forEach((count) => { totalUnread += count; });
 
-  return { unreadMap, totalUnread };
+  return { unreadMap, liveDataMap, totalUnread };
 }
