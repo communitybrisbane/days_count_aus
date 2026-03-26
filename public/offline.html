@@ -7,6 +7,9 @@
   <title>Offline — days-count</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+      background: #1A3C2E;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: linear-gradient(135deg, #1A3C2E 0%, #2D6B4F 50%, #1A3C2E 100%);
@@ -17,6 +20,8 @@
       align-items: center;
       justify-content: center;
       padding: 2rem;
+      padding-top: max(2rem, env(safe-area-inset-top, 0px));
+      padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
       text-align: center;
     }
     .icon {
