@@ -27,6 +27,9 @@ import { reportPost } from "@/lib/services/posts";
 import { blockUser } from "@/lib/services/users";
 import type { Post } from "@/types";
 
+// Global profile cache — shared across all PostCard instances, avoids duplicate fetches
+const profileCache = new Map<string, { displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean }>();
+
 interface PostCardProps {
   post: Post;
   onDelete?: () => void;
@@ -92,16 +95,24 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
 
   useEffect(() => {
     async function fetchAuthor() {
+      // Check global cache first
+      const cached = profileCache.get(post.userId);
+      if (cached) {
+        setAuthorProfile(cached);
+        return;
+      }
       const snap = await getDoc(doc(db, "users", post.userId));
       if (snap.exists()) {
         const data = snap.data();
-        setAuthorProfile({
+        const p = {
           displayName: data.displayName,
           photoURL: data.photoURL,
           uid: data.uid,
           region: data.region || "",
           showRegion: data.showRegion !== false,
-        });
+        };
+        profileCache.set(post.userId, p);
+        setAuthorProfile(p);
       }
     }
     fetchAuthor();
@@ -116,20 +127,26 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
     checkLike();
   }, [user, post.id]);
 
-  // Fetch recent likers for avatar preview (max 3)
+  // Fetch recent likers for avatar preview (max 3) — uses global cache
   useEffect(() => {
     if (post.likeCount === 0) return;
     async function fetchRecentLikers() {
       try {
         const q = query(collection(db, "posts", post.id, "likes"), orderBy("createdAt", "desc"), limit(3));
         const snap = await getDocs(q);
-        const profiles: { uid: string; photoURL: string }[] = [];
-        for (const likeDoc of snap.docs) {
-          const userSnap = await getDoc(doc(db, "users", likeDoc.id));
-          if (userSnap.exists()) {
-            profiles.push({ uid: likeDoc.id, photoURL: userSnap.data().photoURL || "" });
-          }
-        }
+        const profiles = await Promise.all(
+          snap.docs.map(async (likeDoc) => {
+            const cached = profileCache.get(likeDoc.id);
+            if (cached) return { uid: likeDoc.id, photoURL: cached.photoURL };
+            const userSnap = await getDoc(doc(db, "users", likeDoc.id));
+            if (userSnap.exists()) {
+              const data = userSnap.data();
+              profileCache.set(likeDoc.id, { displayName: data.displayName, photoURL: data.photoURL, uid: data.uid, region: data.region || "", showRegion: data.showRegion !== false });
+              return { uid: likeDoc.id, photoURL: data.photoURL || "" };
+            }
+            return { uid: likeDoc.id, photoURL: "" };
+          })
+        );
         setRecentLikers(profiles);
       } catch { /* ignore */ }
     }

@@ -34,10 +34,11 @@ service cloud.firestore {
                        'weekStreak', 'lastCompletedWeekStart'
                      ]);
 
-      // Other user update: XP grant from like system only
+      // Other user update: XP grant from like system only (+5 fixed)
       allow update: if isAuth()
                      && request.auth.uid != userId
-                     && changed().hasOnly(['totalXP']);
+                     && changed().hasOnly(['totalXP'])
+                     && request.resource.data.totalXP == resource.data.totalXP + 5;
 
       // Private subcollection: blockedUsers, fcmToken — owner only
       match /private/{docId} {
@@ -48,9 +49,9 @@ service cloud.firestore {
                           .hasOnly(['blockedUsers', 'fcmToken', 'notificationPrefs']);
       }
 
-      // Following subcollection
+      // Following subcollection — owner only (follower list intentionally hidden per SPEC)
       match /following/{targetId} {
-        allow read: if isAuth();
+        allow read: if isOwner(userId);
         allow create: if isOwner(userId);
         allow delete: if isOwner(userId);
       }
@@ -89,7 +90,7 @@ service cloud.firestore {
                        (request.time < resource.data.editableUntil
                         && changed().hasOnly(['content', 'mode'])
                         && request.resource.data.content is string
-                        && request.resource.data.content.size() >= 1
+                        && request.resource.data.content.size() >= 0
                         && request.resource.data.content.size() <= 500)
                      );
 
@@ -123,7 +124,8 @@ service cloud.firestore {
         allow read: if isAuth();
         allow create: if isAuth() && request.auth.uid == likeId
                        && resource == null
-                       && get(/databases/$(database)/documents/posts/$(postId)).data.visibility == 'public';
+                       && get(/databases/$(database)/documents/posts/$(postId)).data.visibility == 'public'
+                       && get(/databases/$(database)/documents/posts/$(postId)).data.status == 'active';
         allow delete: if isAuth() && request.auth.uid == likeId;
       }
 
@@ -249,10 +251,12 @@ service cloud.firestore {
         allow update: if isAuth()
                       && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
-        // Sender can edit text or unsend their own message
+        // Sender can edit text or unsend their own message (re-validate length)
         allow update: if isAuth()
                       && request.auth.uid == resource.data.senderId
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'edited', 'unsent']);
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'edited', 'unsent'])
+                      && request.resource.data.text is string
+                      && (request.resource.data.unsent == true || (request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 100));
       }
     }
 

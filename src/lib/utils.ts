@@ -1,3 +1,8 @@
+/** Check if URL is a safe http(s) link */
+export function isSafeUrl(url: string): boolean {
+  return /^https?:\/\//.test(url);
+}
+
 /** Today's date as YYYY-MM-DD string */
 export function getTodayStr(): string {
   const d = new Date();

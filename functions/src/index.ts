@@ -6,6 +6,7 @@ import * as nodemailer from "nodemailer";
 
 const gmailUser = defineSecret("GMAIL_USER");
 const gmailPass = defineSecret("GMAIL_PASS");
+const adminEmail = defineSecret("ADMIN_EMAIL");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -93,7 +94,7 @@ export const moderatePost = onDocumentCreated(
 
     if (shouldHide) {
       console.log(
-        `[MODERATION] Hiding post ${postId}: matched=${JSON.stringify(matched)}, toxicity=${toxicityScore}`
+        `[MODERATION] Hiding post ${postId}: matchCount=${matched.length}, toxicity=${toxicityScore}`
       );
 
       await db.doc(`posts/${postId}`).update({ status: "hidden" });
@@ -112,8 +113,6 @@ export const moderatePost = onDocumentCreated(
 );
 
 // ─── Email helper ───
-const ADMIN_EMAIL = "communitybrisbane@gmail.com";
-
 async function sendReportEmail(subject: string, body: string) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -125,7 +124,7 @@ async function sendReportEmail(subject: string, body: string) {
 
   await transporter.sendMail({
     from: `"Days Count" <${gmailUser.value()}>`,
-    to: ADMIN_EMAIL,
+    to: adminEmail.value(),
     subject,
     text: body,
   });
@@ -135,15 +134,12 @@ async function sendReportEmail(subject: string, body: string) {
 export const checkReportThreshold = onDocumentCreated(
   {
     document: "posts/{postId}/reports/{reporterId}",
-    secrets: [gmailUser, gmailPass],
+    secrets: [gmailUser, gmailPass, adminEmail],
   },
   async (event) => {
-    console.log("[REPORT] checkReportThreshold triggered", JSON.stringify(event.params));
-
     const postId = event.params.postId;
     const reporterId = event.params.reporterId;
     const reportData = event.data?.data();
-    console.log("[REPORT] reportData:", JSON.stringify(reportData));
 
     const postRef = db.doc(`posts/${postId}`);
     const postSnap = await postRef.get();
@@ -153,29 +149,32 @@ export const checkReportThreshold = onDocumentCreated(
       return;
     }
     const data = postSnap.data()!;
-    console.log("[REPORT] Post found, author:", data.userId);
 
     // Count reports
     const reportsSnap = await db.collection(`posts/${postId}/reports`).count().get();
     const reportCount = reportsSnap.data().count;
 
-    // Send email notification for every report
-    try {
-      const reporterSnap = await db.doc(`users/${reporterId}`).get();
-      const reporterName = reporterSnap.exists ? (reporterSnap.data()!.displayName || reporterId) : reporterId;
+    // Send email notification only on 1st report and when threshold (3) is reached
+    if (reportCount === 1 || reportCount === 3) {
+      try {
+        const reporterSnap = await db.doc(`users/${reporterId}`).get();
+        const reporterName = reporterSnap.exists ? (reporterSnap.data()!.displayName || reporterId) : reporterId;
 
-      await sendReportEmail(
-        `[Report] Post reported (${reportCount} total)`,
-        `Post ID: ${postId}\n` +
-        `Reporter: ${reporterName}\n` +
-        `Reason: ${reportData?.reason || "N/A"}\n` +
-        `Report count: ${reportCount}/3\n` +
-        `Post content: ${(data.content || "").slice(0, 200)}\n` +
-        `Post author: ${data.userId}\n` +
-        `${reportCount >= 3 ? ">>> AUTO-HIDDEN <<<" : ""}`
-      );
-    } catch (e) {
-      console.error("[REPORT_EMAIL] Failed to send:", e);
+        await sendReportEmail(
+          reportCount >= 3
+            ? `[Report] Post AUTO-HIDDEN (${reportCount} reports)`
+            : `[Report] Post reported (1st report)`,
+          `Post ID: ${postId}\n` +
+          `Reporter: ${reporterName}\n` +
+          `Reason: ${reportData?.reason || "N/A"}\n` +
+          `Report count: ${reportCount}/3\n` +
+          `Post content: ${(data.content || "").slice(0, 200)}\n` +
+          `Post author: ${data.userId}\n` +
+          `${reportCount >= 3 ? ">>> AUTO-HIDDEN <<<" : ""}`
+        );
+      } catch (e) {
+        console.error("[REPORT_EMAIL] Failed to send:", e);
+      }
     }
 
     // Already restricted
@@ -203,6 +202,10 @@ export const checkReportThreshold = onDocumentCreated(
 );
 
 // ─── Cloud Function: Like notification ───
+// In-memory cooldown to prevent notification flooding (per Cloud Function instance)
+const likeNotifCooldown = new Map<string, number>();
+const LIKE_NOTIF_COOLDOWN_MS = 60_000; // 1 min cooldown per author
+
 export const onLikeCreated = onDocumentCreated(
   "posts/{postId}/likes/{likerId}",
   async (event) => {
@@ -219,6 +222,13 @@ export const onLikeCreated = onDocumentCreated(
 
     // Don't notify if user liked their own post
     if (authorId === likerId) return;
+
+    // Rate-limit notifications per author (prevent rapid like spam from multiple users)
+    const now = Date.now();
+    const lastNotif = likeNotifCooldown.get(authorId) || 0;
+    if (now - lastNotif < LIKE_NOTIF_COOLDOWN_MS) return;
+    likeNotifCooldown.set(authorId, now);
+    setTimeout(() => likeNotifCooldown.delete(authorId), LIKE_NOTIF_COOLDOWN_MS);
 
     // Get liker's display name
     const likerSnap = await db.doc(`users/${likerId}`).get();
@@ -373,6 +383,10 @@ export const cleanupHiddenPosts = onSchedule(
 );
 
 // ─── Cloud Function: Group message notification ───
+// Per-group notification cooldown to prevent message spam flooding
+const groupNotifCooldown = new Map<string, number>();
+const GROUP_NOTIF_COOLDOWN_MS = 10_000; // 10 sec cooldown per group
+
 export const onGroupMessageCreated = onDocumentCreated(
   "groups/{groupId}/messages/{messageId}",
   async (event) => {
@@ -383,6 +397,13 @@ export const onGroupMessageCreated = onDocumentCreated(
     const msgData = snap.data();
     const senderId = msgData.senderId as string;
     const text = (msgData.text as string) || "";
+
+    // Rate-limit notifications per group (prevent rapid message spam)
+    const now = Date.now();
+    const lastNotif = groupNotifCooldown.get(groupId) || 0;
+    if (now - lastNotif < GROUP_NOTIF_COOLDOWN_MS) return;
+    groupNotifCooldown.set(groupId, now);
+    setTimeout(() => groupNotifCooldown.delete(groupId), GROUP_NOTIF_COOLDOWN_MS);
 
     // Get group info
     const groupSnap = await db.doc(`groups/${groupId}`).get();

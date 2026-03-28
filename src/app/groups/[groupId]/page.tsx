@@ -33,6 +33,7 @@ import { FocusModeIcon, IconKangaroo, IconCamera, IconEdit } from "@/components/
 import type { Group } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
+import { emitGroupRead } from "@/hooks/useUnreadGroups";
 
 interface Message {
   id: string;
@@ -128,29 +129,37 @@ export default function GroupChatPage() {
         readAt: serverTimestamp(),
         muted,
       }).catch(() => {});
+      // Notify all useUnreadGroups instances (e.g., BottomNav badge)
+      emitGroupRead(groupId);
     }
   }, [user, groupId, messages.length]);
 
+  // Fetch member profiles — only fetch new/unknown IDs, cache results
   useEffect(() => {
     if (!group) return;
     async function fetchMembers() {
-      const profiles: Record<string, any> = {};
-      // Fetch current members + message senders (may include deleted accounts)
       const senderIds = messages.map((m) => m.senderId);
       const allIds = [...new Set([...group!.memberIds, ...senderIds])];
-      for (const uid of allIds) {
-        if (profiles[uid]) continue;
-        const snap = await getDoc(doc(db, "users", uid));
+      // Only fetch IDs we don't already have
+      const missingIds = allIds.filter((uid) => !memberProfiles[uid]);
+      if (missingIds.length === 0) return;
+
+      const snaps = await Promise.all(
+        missingIds.map((uid) => getDoc(doc(db, "users", uid)))
+      );
+      const newProfiles: Record<string, any> = {};
+      snaps.forEach((snap, i) => {
         if (snap.exists()) {
-          profiles[uid] = snap.data();
+          newProfiles[missingIds[i]] = snap.data();
         } else {
-          profiles[uid] = { displayName: "Deleted Account", _deleted: true };
+          newProfiles[missingIds[i]] = { displayName: "Deleted Account", _deleted: true };
         }
-      }
-      setMemberProfiles(profiles);
+      });
+      setMemberProfiles((prev) => ({ ...prev, ...newProfiles }));
     }
     fetchMembers();
-  }, [group, messages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group?.memberIds?.join(","), messages.length]);
 
   const isOfficial = !!group?.isOfficial;
   const isModeGroup = isOfficial && !group?.iconUrl;

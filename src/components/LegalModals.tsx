@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { fetchLegalDoc, type LegalDoc } from "@/lib/services/users";
 
 interface LegalModalProps {
@@ -76,7 +77,7 @@ function LegalModalShell({
               <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
             </div>
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: body }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }} />
           )}
         </div>
       </div>

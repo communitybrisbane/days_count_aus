@@ -5,7 +5,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { calculateLevel, levelProgress, xpForLevel, getTodayStr } from "@/lib/utils";
+import { calculateLevel, levelProgress, xpForLevel, getTodayStr, isSafeUrl } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
 import { fetchTotalLikesAndWeekly } from "@/lib/services/posts";
 import { fetchAdminConfig, saveFCMToken } from "@/lib/services/users";
@@ -284,7 +284,7 @@ export default function HomePage() {
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-bold ${c.title}`}>{ann.title}</p>
                     {ann.body && <p className="text-xs text-white/60 mt-0.5 leading-snug">{ann.body}</p>}
-                    {ann.linkUrl && (
+                    {ann.linkUrl && isSafeUrl(ann.linkUrl) && (
                       <a
                         href={ann.linkUrl}
                         target="_blank"

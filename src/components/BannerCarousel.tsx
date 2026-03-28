@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { isSafeUrl } from "@/lib/utils";
 
 interface Banner {
   id: string;
@@ -76,7 +77,7 @@ export default function BannerCarousel({ location, bannerImageUrl }: BannerCarou
       >
         {displayBanners.map((banner) => (
           <div key={banner.id} className="w-full shrink-0">
-            {banner.linkUrl ? (
+            {banner.linkUrl && isSafeUrl(banner.linkUrl) ? (
               <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer">
                 <img
                   src={banner.imageUrl}

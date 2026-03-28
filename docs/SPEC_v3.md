@@ -53,7 +53,14 @@
 - **PWAインストールバナー**: 未インストールユーザーに毎回表示（z-[200]で最前面）。iOS向けはビジュアルステップガイド（Step 1: Share → Step 2: Add to Home Screen → Step 3: Add）をSVGアイコン+アニメーション矢印で案内。Android向けは `beforeinstallprompt` ネイティブプロンプト使用。
 - **オフラインフォールバック**: Service Worker が `offline.html` をキャッシュ。ナビゲーション失敗時にブランドデザインの「You're Offline」ページ（Retryボタン付き）を表示。スクロール完全無効化。
 - **OG画像**: `opengraph-image.tsx` で動的生成（1200×630px）。アプリアイコン + "days-count" テキスト + タグライン + Working Holiday / Journal / Community ピル。カンガルー透かし。
-- **COOP ヘッダー**: Google OAuth popup 対応のため `next.config.ts` で `Cross-Origin-Opener-Policy: same-origin-allow-popups` を設定。
+- **セキュリティヘッダー** (`next.config.ts`):
+  - `Cross-Origin-Opener-Policy: same-origin-allow-popups`（Google OAuth popup 対応）
+  - `X-Content-Type-Options: nosniff`（MIMEスニッフィング防止）
+  - `X-Frame-Options: DENY`（クリックジャッキング防止）
+  - `Referrer-Policy: strict-origin-when-cross-origin`（リファラー漏洩防止）
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`（不要なブラウザ機能の無効化）
+- **HTMLサニタイゼーション**: Legal文書の `dangerouslySetInnerHTML` 表示時に DOMPurify でサニタイズ（XSS防止）。
+- **URL検証**: バナー・お知らせのリンクURLは `isSafeUrl()` で `https?://` プロトコルのみ許可（`javascript:` スキーム等をブロック）。
 - **SEOメタデータ**: 各ルート（home, explore, mypage, groups, settings, login, post）に `layout.tsx` でページ固有の `title` と `description` を設定。
 - **エラーUI**: ルートの `error.tsx` でランタイムエラー時にブランドデザインのリトライ画面を表示。
 - **アクセシビリティ**: モーダルに `role="dialog" aria-modal="true"`、アイコンボタンに `aria-label`、オーバーレイに `aria-hidden="true"`、トーストに `aria-live="polite"` を全コンポーネントに適用。
@@ -613,25 +620,25 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 ### Users
 - **読み取り**: 認証済みユーザーは全ユーザーを読み取り可。
 - **作成・削除**: 本人のみ。
-- **更新（本人）**: ホワイトリスト制。変更可能フィールド: `displayName`, `photoURL`, `region`, `goal`, `mainMode`, `departureDate`, `returnStartDate`, `status`, `weeklyGoal`, `groupIds`, `currentStreak`, `lastPostAt`, `totalXP`, `dailyLikeCount`, `lastLikeDate`, `streakWarningSent`。`isPro`, `createdAt`, `uid` は不変。
-- **更新（他人）**: `totalXP` のみ（いいねシステム用）。`groupIds` の同期は Cloud Function `syncGroupMembership` が担当。
+- **更新（本人）**: ホワイトリスト制。変更可能フィールド: `displayName`, `displayNameLower`, `photoURL`, `region`, `showRegion`, `goal`, `mainMode`, `departureDate`, `returnStartDate`, `status`, `weeklyGoal`, `groupIds`, `currentStreak`, `lastPostAt`, `totalXP`, `dailyLikeCount`, `lastLikeDate`, `streakWarningSent`, `weekStreak`, `lastCompletedWeekStart`。`isPro`, `createdAt`, `uid` は不変。
+- **更新（他人）**: `totalXP` のみ（いいねシステム用、+5固定のインクリメントのみ許可）。`groupIds` の同期は Cloud Function `syncGroupMembership` が担当。
 
 ### Users > Private
 - 読み取り・作成・更新すべて本人のみ。更新は `blockedUsers`, `fcmToken`, `notificationPrefs` のみ。
 
 ### Users > Following
-- 読み取り: 認証済み全員。作成・削除: 本人のみ。
+- 読み取り: **本人のみ**（フォロワーリストのプライバシー保護）。作成・削除: 本人のみ。
 
 ### Posts
 - **読み取り**: 自分の投稿は常に閲覧可。他人の投稿は `status == "active"` かつ `visibility == "public"` のみ。
-- **作成**: 認証済み + `userId` が自身 + `content` 1〜500文字 + `status == "active"` + `reportCount == 0` + `likeCount == 0`。
-- **更新（作成者）**: (1) `imageUrl` のみ（投稿後の画像アップロード用）、または (2) `editableUntil` 内で `content` + `mode` のみ（1〜500文字）。
+- **作成**: 認証済み + `userId` が自身 + `content` 0〜500文字（画像のみ投稿で空文字許可） + `status == "active"` + `reportCount == 0` + `likeCount == 0`。
+- **更新（作成者）**: (1) `imageUrl` のみ（投稿後の画像アップロード用）、または (2) `editableUntil` 内で `content` + `mode` のみ（0〜500文字）。
 - **更新（いいね）**: 認証済み + `visibility == "public"` + `likeCount` の +1/-1 のみ。
 - **更新（通報）**: 他人の投稿 + `visibility == "public"` + `reportCount` +1、または `reportCount` +1 + `status: "hidden"`（3件以上）。
 - **削除**: 作成者本人のみ。
 
 ### Posts > Likes
-- 読み取り: 認証済み全員。作成: 自分のUID = ドキュメントID。削除: 自分のいいねのみ。
+- 読み取り: 認証済み全員。作成: 自分のUID = ドキュメントID + 対象投稿が `public` かつ `active` であること。削除: 自分のいいねのみ。
 
 ### Posts > Reports
 - 読み取り: 不可。作成: 認証済み + 自分のUID = ドキュメントID（重複防止）。
@@ -651,7 +658,8 @@ Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darw
 
 ### Groups > Messages
 - 読み取り・作成: グループメンバーのみ。作成時は `senderId` = 自身、`text` 1〜100文字。
-- 更新（リアクション）: グループメンバーのみ。
+- 更新（リアクション）: グループメンバーのみ。`reactions` フィールドのみ変更可。
+- 更新（送信者編集/取り消し）: 送信者のみ。`text`, `edited`, `unsent` フィールドのみ。取り消し時（`unsent == true`）はテキスト長制約を免除。
 
 ### Reports
 - 読み取り: 不可。作成: 認証済み + `reporterId` = 自身 + `resolved` = false。
@@ -801,7 +809,7 @@ src/
     └── next-pwa.d.ts           # PWA型定義
 
 firestore.rules                 # Firestoreセキュリティルール
-next.config.ts                  # Next.js設定（COOPヘッダー + Sentry）
+next.config.ts                  # Next.js設定（セキュリティヘッダー + Sentry）
 sentry.client.config.ts         # Sentry クライアント設定
 sentry.server.config.ts         # Sentry サーバー設定
 sentry.edge.config.ts           # Sentry Edge設定
@@ -822,11 +830,11 @@ public/
 | 関数名 | トリガー | 機能 |
 |---|---|---|
 | `moderatePost` | `onDocumentCreated("posts/{postId}")` | 投稿自動モデレーション。禁止語句チェック + 毒性スコア計算。該当時は `status: "hidden"` に更新 + ログ記録。 |
-| `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。`reportCount` を記録。 |
-| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいね通知。投稿者にFCMプッシュ通知「{likerName} liked your post」を送信。自己いいねはスキップ。`notificationPrefs.likes` を尊重。無効トークンは自動クリーニング。 |
+| `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。`reportCount` を記録。管理者メール通知は1件目と3件目のみ送信（スパム防止）。管理者メールは `ADMIN_EMAIL` シークレット（Firebase Secret Manager）で管理。 |
+| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいね通知。投稿者にFCMプッシュ通知「{likerName} liked your post」を送信。自己いいねはスキップ。`notificationPrefs.likes` を尊重。無効トークンは自動クリーニング。**レート制限**: 同一投稿者への通知は60秒間クールダウン。 |
 | `checkStreaks` | `onSchedule("every 1 hours")` | ストリーク管理。48時間超過でリセット。42時間経過時にFCM警告通知。`notificationPrefs.streakWarning` を尊重。 |
 | `cleanupHiddenPosts` | `onSchedule("every day 03:00")` | 非表示投稿の30日後自動削除（100件/回）。 |
-| `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージ通知。送信者以外の全メンバーにFCM通知。`notificationPrefs.groupMessage` を尊重。 |
+| `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージ通知。送信者以外の全メンバーにFCM通知。`notificationPrefs.groupMessage` を尊重。**レート制限**: 同一グループへの通知は10秒間クールダウン。 |
 | `syncGroupMembership` | `onDocumentUpdated("groups/{groupId}")` | メンバー除外時の `groupIds` 同期。キック/退出で除外されたユーザーの `groupIds` から自動削除。 |
 
 ---
@@ -853,5 +861,6 @@ public/
 | v3 | 2025-03-10 | Phase 1〜9 実装完了。実装詳細・ルート・ファイル構成・未実装項目を追記。 |
 | v3 改訂 | 2026-03-12 | 現在の実装に完全準拠して全面書き直し。主な差分: レベル計算式を `sqrt(TotalXP/4)+1` に修正、投稿テキストを統合 `content` フィールド（400文字）に変更、投稿に `visibility`（public/private）と `status`（active/hidden/pending）を追加、フォロー機能・公式グループ・投稿モデレーション（自動非表示）・禁止語句フィルター・ブロックUI を追記、グループ作成条件を Lv.5 に修正、自己いいね（XP付与なし）を明記、ダブルタップいいね・2ステップ投稿フロー・画像圧縮仕様を追記、Firestore構造に `users/private`・`users/following`・`posts/reports`・`groups/lastRead`・`banners`・`moderation_config` を追加、セキュリティルールを実装準拠で全面更新、アカウント削除手順を拡充。 |
 | v3 改訂2 | 2026-03-17 | いいねシステム刷新（無制限いいね、XP上限5回/日、タップ位置アニメーション、いいね一覧モーダル、楽観的UI、XP取り消し廃止）。フィードアルゴリズム導入（スコアベースランキング + localStorage既読追跡）。フォロー楽観的UI更新。公開プロフィールUI刷新（MyPageと統一、ブロック/アンブロックトグル）。モードカラー統一（WH=amber、その他=blue、全6画面）。Live SessionをHOMEからCommunityタブへ移動。HOME画面リファクタ（WeeklyChallenge抽出、ストリーク火消去）。右スワイプで閉じるジェスチャー（useSwipeDismiss、GPU加速）。いいね通知Cloud Function（onLikeCreated、未デプロイ）。新規ファイル: feedScore.ts, WeeklyChallenge.tsx, useSwipeDismiss.ts, AsciiWarn.tsx, useAsciiInput.ts。 |
+| v3 改訂5 | 2026-03-27 | セキュリティ監査・強化。Firestoreルール: XP更新を+5固定に制限、フォローリスト読み取りをオーナーのみに制限、いいね作成時にpublic+active検証、メッセージ取消し時のテキスト長制約免除。Cloud Functions: 管理者メールをFirebase Secret Manager (`ADMIN_EMAIL`) で管理、通報メール送信を1件目+3件目のみに最適化、いいね通知60秒クールダウン、グループ通知10秒クールダウン、個人情報ログ削除。クライアント: セキュリティヘッダー5種追加（X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP）、DOMPurify導入（Legal文書XSS防止）、`isSafeUrl()` でリンクURL検証。Firebase最適化: PostCardプロフィールキャッシュ（モジュールレベルMap）、未読グループバッジをローカルタイムスタンプ比較に変更（getCountFromServer廃止）、グループメンバー差分フェッチ（Promise.all）。 |
 | v3 改訂4 | 2026-03-27 | コード品質・パフォーマンス・UX大規模改善。共通コンポーネント抽出（PostDetailModal, PostGrid, ModeFilterBar, FollowingModal, ProfileGroups, postUtils）。PWAインストールバナー（iOSビジュアルステップガイド、毎回表示、z-[200]最前面）。OG画像リデザイン（アプリアイコン+カンガルー使用、opengraph-image.tsx）。manifest short_name変更（"days-count"）。オフラインフォールバック（Service Worker + offline.html）。ローディングスピナー刷新（カンガルー7匹公転+自転アニメーション）。エラーページ追加（error.tsx）。SEOメタデータ追加（7ページにlayout.tsx）。アクセシビリティ改善（12ファイル、aria属性追加）。Firestore並列化（ホーム画面Promise.all、投稿ページPromise.all）。Explore検索キャッシュ化。画像lazy loading全コンポーネント追加。投稿ページモードボタン重複解消。 |
 | v3 改訂3 | 2026-03-17 | Cloud Functions全7つデプロイ（moderatePost, checkReportThreshold, onLikeCreated, checkStreaks, cleanupHiddenPosts, onGroupMessageCreated, syncGroupMembership）。通知システム強化（NotificationToast UI、設定画面にトグル3種、通知種別ごとのPrefs対応）。Firestoreセキュリティルール全面監査・強化（groupIds他人更新禁止、フィールドホワイトリスト厳格化）。Legal文書をFirestore管理に移行（legal_docsコレクション）。XPバランス調整（除数4→1.5、Lv.90=10ヶ月目標）。グループ解放レベル変更（参加Lv.13、作成Lv.20、初回ボーナス考慮）。PWA本番対応（OGP、iOS standalone、manifest強化、robots.txt、sitemap.xml）。Sentry導入。カスタムドメイン days-count.com 設定。オンボーディングUI改善（必須/任意マーカー、グリッドレイアウト、英語日付入力）。 |
