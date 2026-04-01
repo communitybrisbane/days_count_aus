@@ -758,7 +758,11 @@ export default function GroupChatPage() {
             <input
               type="text"
               value={text}
-              onChange={(e) => setText(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
+              onChange={(e) => {
+                const v = sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT);
+                if (URL_PATTERN.test(v)) return;
+                setText(v);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Message..."
               maxLength={MESSAGE_CHAR_LIMIT}
