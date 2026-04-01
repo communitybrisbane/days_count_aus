@@ -9,6 +9,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { fetchAdminConfig } from "@/lib/services/users";
+import { joinOfficialGroup } from "@/lib/groups";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -44,13 +45,13 @@ export default function GroupsPage() {
   useEffect(() => {
     if (user) {
       fetchGroups().then(() => {
-        // Self-heal: if mode group ID is missing from user's groupIds, add it
-        if (profile?.mainMode && profile.groupIds) {
+        // Self-heal: if not a member of mode group, join it (both memberIds + groupIds)
+        if (profile?.mainMode) {
           setGroups((currentGroups) => {
             const modeGroup = currentGroups.find((g) => g.isOfficial && !g.iconUrl && g.mode === profile.mainMode);
-            if (modeGroup && !profile.groupIds!.includes(modeGroup.id)) {
-              updateDoc(doc(db, "users", user.uid), { groupIds: arrayUnion(modeGroup.id) })
-                .then(() => refreshProfile())
+            if (modeGroup && !modeGroup.memberIds?.includes(user.uid)) {
+              joinOfficialGroup(user.uid, profile.mainMode)
+                .then(() => { refreshProfile(); fetchGroups(); })
                 .catch(() => {});
             }
             return currentGroups;
@@ -103,11 +104,16 @@ export default function GroupsPage() {
   const canJoinCommunity = level >= GROUP_JOIN_LEVEL;
   const userGroups = groups.filter((g) => !g.isOfficial);
   const isModeGroup = (g: Group) => g.isOfficial && !g.iconUrl;
-  const myJoinedGroups = groups.filter((g) =>
-    isModeGroup(g)
-      ? g.mode === profile?.mainMode
-      : g.memberIds?.includes(user?.uid || "")
+  // Show mode group only if user is a member OR it matches mainMode (pick first match only)
+  const myModeGroup = groups.find((g) =>
+    isModeGroup(g) && g.mode === profile?.mainMode && g.memberIds?.includes(user?.uid || "")
+  ) || groups.find((g) =>
+    isModeGroup(g) && g.mode === profile?.mainMode
   );
+  const myJoinedGroups = [
+    ...(myModeGroup ? [myModeGroup] : []),
+    ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
+  ];
   const myJoinedExtra = myJoinedGroups.filter((g) => !isModeGroup(g));
   const hasCreatedGroup = groups.some((g) => !g.isOfficial && g.creatorId === user?.uid);
   const maxSlots = getMaxCommunitySlots(level);

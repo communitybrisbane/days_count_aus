@@ -137,13 +137,16 @@ export async function deleteAccount(user: User): Promise<void> {
   const groupsSnap = await getDocs(memberGroupsQ);
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();
-    if (data.creatorId === uid) {
+    const isModeGroup = data.isOfficial && !data.iconUrl;
+    if (data.creatorId === uid && !isModeGroup) {
+      // Close user-created groups when leader deletes account
       await updateDoc(groupDoc.ref, {
         isClosed: true,
         memberIds: arrayRemove(uid),
         memberCount: increment(-1),
       });
     } else {
+      // Mode groups: just leave (never close). Other groups: leave normally.
       await updateDoc(groupDoc.ref, {
         memberIds: arrayRemove(uid),
         memberCount: increment(-1),

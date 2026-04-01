@@ -81,6 +81,9 @@ export default function GroupChatPage() {
             memberIds: arrayUnion(user.uid),
             memberCount: increment(1),
           });
+          await updateDoc(doc(db, "users", user.uid), {
+            groupIds: arrayUnion(groupId),
+          });
           data.memberIds = [...data.memberIds, user.uid];
           data.memberCount = data.memberCount + 1;
         } catch (err) {

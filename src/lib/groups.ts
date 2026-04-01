@@ -34,7 +34,7 @@ export async function fetchUserGroups(groupIds: string[]): Promise<Group[]> {
 }
 
 /**
- * Find the official group doc for a given mode.
+ * Find the official MODE group doc for a given mode (no icon).
  * Returns Group or null.
  */
 export async function getOfficialGroup(mode: string): Promise<Group | null> {
@@ -46,8 +46,10 @@ export async function getOfficialGroup(mode: string): Promise<Group | null> {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const d = snap.docs[0];
-  return { id: d.id, ...d.data() } as Group;
+  // Only return mode groups (no icon) — skip icon-based official groups
+  const modeDoc = snap.docs.find((d) => !d.data().iconUrl);
+  if (!modeDoc) return null;
+  return { id: modeDoc.id, ...modeDoc.data() } as Group;
 }
 
 /**
@@ -59,8 +61,6 @@ export async function joinOfficialGroup(uid: string, mode: string) {
   if (!group) return;
   const memberIds = group.memberIds || [];
   if (memberIds.includes(uid)) return;
-  // Icon-based official groups have member cap; mode groups (no iconUrl) are unlimited
-  if (group.iconUrl && memberIds.length >= MAX_GROUP_MEMBERS) return;
 
   const { doc: firestoreDoc } = await import("firebase/firestore");
   await updateDoc(firestoreDoc(db, "groups", group.id), {
