@@ -282,20 +282,24 @@ async function sendStreakWarning(
   }
 }
 
-// ─── Scheduled: Streak warning & reset (UTC calendar-date based) ───
-// Matches client logic: streak continues only if lastPostAt date === yesterday (UTC).
+// ─── Scheduled: Streak warning & reset (Sydney local time based) ───
+// Matches client logic: streak continues only if lastPostAt date === yesterday.
 // Reset: lastPostAt date < yesterday → streak = 0
-// Warning 1: UTC 20:00+ (4h before midnight) — first nudge
-// Warning 2: UTC 23:00+ (1h before midnight) — final urgent
+// Warning 1: Sydney 20:00 (evening nudge)
+// Warning 2: Sydney 23:00 (final urgent — 1h before midnight)
 export const checkStreaks = onSchedule(
   { schedule: "every 1 hours", timeZone: "Australia/Sydney" },
   async () => {
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const yesterday = new Date(now);
+    // Use Sydney local time for hour check (handles AEST/AEDT automatically)
+    const sydneyTime = new Date(now.toLocaleString("en-US", { timeZone: "Australia/Sydney" }));
+    const sydneyHour = sydneyTime.getHours();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const toDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const todayStr = toDateStr(sydneyTime);
+    const yesterday = new Date(sydneyTime);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
-    const utcHour = now.getUTCHours();
+    const yesterdayStr = toDateStr(yesterday);
 
     // Get users with active streaks
     const usersSnap = await db
@@ -310,7 +314,7 @@ export const checkStreaks = onSchedule(
       const data = userDoc.data();
       if (!data.lastPostAt) continue;
 
-      const lastPostDateStr = new Date(data.lastPostAt).toISOString().slice(0, 10);
+      const lastPostDateStr = toDateStr(new Date(new Date(data.lastPostAt).toLocaleString("en-US", { timeZone: "Australia/Sydney" })));
 
       if (lastPostDateStr === todayStr) {
         // Posted today — streak is safe, nothing to do
@@ -325,15 +329,15 @@ export const checkStreaks = onSchedule(
         // Posted yesterday but not today — check if we need to warn
         const warnLevel = data.streakWarningSent || 0;
 
-        // Final warning: UTC 23:00+ (1h left)
-        if (utcHour >= 23 && warnLevel < 2) {
+        // Final warning: Sydney 23:00+ (1h left)
+        if (sydneyHour >= 23 && warnLevel < 2) {
           const sent = await sendStreakWarning(userDoc, "🦘 Hey, only 1 hour left!? 🦘", "Please… I'm about to cry 🥺");
           if (sent) {
             await userDoc.ref.update({ streakWarningSent: 2 });
             warned++;
           }
-        // First warning: UTC 20:00+ (4h left)
-        } else if (utcHour >= 20 && warnLevel < 1) {
+        // First warning: Sydney 20:00+ (4h left)
+        } else if (sydneyHour >= 20 && warnLevel < 1) {
           const sent = await sendStreakWarning(userDoc, "🦘 No post today…? 🦘", "I'm lonely… post something! 🥹");
           if (sent) {
             await userDoc.ref.update({ streakWarningSent: 1 });
@@ -351,7 +355,7 @@ export const checkStreaks = onSchedule(
     for (const userDoc of recentSnap.docs) {
       const data = userDoc.data();
       if (!data.lastPostAt) continue;
-      const lastPostDateStr = new Date(data.lastPostAt).toISOString().slice(0, 10);
+      const lastPostDateStr = toDateStr(new Date(new Date(data.lastPostAt).toLocaleString("en-US", { timeZone: "Australia/Sydney" })));
       if (lastPostDateStr === todayStr) {
         await userDoc.ref.update({ streakWarningSent: 0 });
       }
