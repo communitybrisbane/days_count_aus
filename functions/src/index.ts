@@ -12,14 +12,8 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ─── Banned words list (fallback; can be overridden from Firestore moderation_config/main) ───
-const DEFAULT_BANNED_WORDS = [
-  // English
-  "fuck", "shit", "bitch", "asshole", "nigger", "faggot", "cunt", "whore",
-  "retard", "kill yourself", "kys", "die",
-  // Japanese
-  "死ね", "殺す", "ゴミ", "クソ", "馬鹿",
-  // Spam patterns
-  "buy now", "click here", "free money", "earn cash",
+const DEFAULT_BANNED_WORDS: string[] = [
+  // Managed via Firestore moderation_config/main.bannedWords
 ];
 
 /**
