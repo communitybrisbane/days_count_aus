@@ -4,6 +4,7 @@ import {
   updateDoc,
   deleteDoc,
   collection,
+  collectionGroup,
   query,
   where,
   limit,
@@ -69,7 +70,7 @@ export async function deleteAccount(user: User): Promise<void> {
     throw e;
   }
 
-  // 2. Delete all user posts (loop to handle >500)
+  // 2. Delete all user posts + their likes/reports subcollections
   let hasMore = true;
   while (hasMore) {
     const postsQ = query(collection(db, "posts"), where("userId", "==", uid), limit(500));
@@ -77,6 +78,26 @@ export async function deleteAccount(user: User): Promise<void> {
     if (postsSnap.docs.length === 0) {
       hasMore = false;
     } else {
+      // Delete subcollections (likes, reports) for each post
+      for (const postDoc of postsSnap.docs) {
+        try {
+          const likesSnap = await getDocs(collection(db, "posts", postDoc.id, "likes"));
+          if (likesSnap.docs.length > 0) {
+            const likesBatch = writeBatch(db);
+            likesSnap.docs.forEach((d) => likesBatch.delete(d.ref));
+            await likesBatch.commit();
+          }
+        } catch {}
+        try {
+          const reportsSnap = await getDocs(collection(db, "posts", postDoc.id, "reports"));
+          if (reportsSnap.docs.length > 0) {
+            const reportsBatch = writeBatch(db);
+            reportsSnap.docs.forEach((d) => reportsBatch.delete(d.ref));
+            await reportsBatch.commit();
+          }
+        } catch {}
+      }
+      // Delete the post documents
       const batch = writeBatch(db);
       postsSnap.docs.forEach((d) => batch.delete(d.ref));
       await batch.commit();
@@ -96,22 +117,57 @@ export async function deleteAccount(user: User): Promise<void> {
     await deleteObject(ref(storage, `avatars/${uid}.jpg`));
   } catch {}
 
-  // 5. Leave all groups (leader → close, member → leave)
+  // 5. Delete likes this user left on OTHER people's posts + fix likeCount
+  try {
+    const likesQ = query(collectionGroup(db, "likes"), where("userId", "==", uid), limit(500));
+    const likesSnap = await getDocs(likesQ);
+    if (likesSnap.docs.length > 0) {
+      const likesBatch = writeBatch(db);
+      likesSnap.docs.forEach((d) => {
+        likesBatch.delete(d.ref);
+        const postRef = d.ref.parent.parent;
+        if (postRef) likesBatch.update(postRef, { likeCount: increment(-1) });
+      });
+      await likesBatch.commit();
+    }
+  } catch {}
+
+  // 6. Leave all groups + clean up messages & lastRead
   const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid), limit(50));
   const groupsSnap = await getDocs(memberGroupsQ);
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();
     if (data.creatorId === uid) {
-      await updateDoc(groupDoc.ref, { isClosed: true });
+      await updateDoc(groupDoc.ref, {
+        isClosed: true,
+        memberIds: arrayRemove(uid),
+        memberCount: increment(-1),
+      });
     } else {
       await updateDoc(groupDoc.ref, {
         memberIds: arrayRemove(uid),
         memberCount: increment(-1),
       });
     }
+
+    // Delete lastRead tracking
+    try {
+      await deleteDoc(doc(db, "groups", groupDoc.id, "lastRead", uid));
+    } catch {}
+
+    // Delete messages by this user
+    try {
+      const msgsQ = query(collection(db, "groups", groupDoc.id, "messages"), where("userId", "==", uid), limit(500));
+      const msgsSnap = await getDocs(msgsQ);
+      if (msgsSnap.docs.length > 0) {
+        const msgBatch = writeBatch(db);
+        msgsSnap.docs.forEach((d) => msgBatch.delete(d.ref));
+        await msgBatch.commit();
+      }
+    } catch {}
   }
 
-  // 6. Delete following subcollection
+  // 7. Delete following subcollection
   try {
     const followingSnap = await getDocs(collection(db, "users", uid, "following"));
     if (followingSnap.docs.length > 0) {
@@ -121,15 +177,15 @@ export async function deleteAccount(user: User): Promise<void> {
     }
   } catch {}
 
-  // 7. Delete private subcollection (fcmToken, blockedUsers)
+  // 8. Delete private subcollection (fcmToken, blockedUsers)
   try {
     await deleteDoc(doc(db, "users", uid, "private", "config"));
   } catch {}
 
-  // 8. Delete user document
+  // 9. Delete user document
   await deleteDoc(doc(db, "users", uid));
 
-  // 9. Delete Firebase Auth account (must be last)
+  // 10. Delete Firebase Auth account (must be last)
   await deleteUser(user);
 }
 
