@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getDocs, arrayUnion } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, query, where, getDocs, arrayUnion } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,12 +104,22 @@ export default function CreateGroupPage() {
 
     setSubmitting(true);
     try {
-      // Check group limit based on level
+      // Check group limit: count only non-mode groups that still exist
       const currentGroupIds = profile?.groupIds || [];
       const lvl = calculateLevel(profile?.totalXP || 0);
       const maxSlots = getMaxCommunitySlots(lvl);
-      // currentGroupIds includes mode group, so community count = total - 1
-      if (currentGroupIds.length - 1 >= maxSlots) {
+      let communityCount = 0;
+      await Promise.all(currentGroupIds.map(async (gid) => {
+        try {
+          const snap = await getDoc(doc(db, "groups", gid));
+          if (snap.exists) {
+            const g = snap.data();
+            const isModeGroup = g?.isOfficial && !g?.iconUrl;
+            if (!isModeGroup) communityCount++;
+          }
+        } catch {}
+      }));
+      if (communityCount >= maxSlots) {
         alert("Level up to unlock more community slots.");
         setSubmitting(false);
         return;
