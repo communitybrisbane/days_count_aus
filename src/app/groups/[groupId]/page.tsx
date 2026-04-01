@@ -62,6 +62,7 @@ export default function GroupChatPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showLinkWarn, setShowLinkWarn] = useState(false);
   const [muted, setMuted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
@@ -754,13 +755,18 @@ export default function GroupChatPage() {
       {isMember && (
         <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
           {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
+          {showLinkWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">Links are not allowed</p>}
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={text}
               onChange={(e) => {
                 const v = sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT);
-                if (URL_PATTERN.test(v)) return;
+                if (URL_PATTERN.test(v)) {
+                  setShowLinkWarn(true);
+                  setTimeout(() => setShowLinkWarn(false), 2000);
+                  return;
+                }
                 setText(v);
               }}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
