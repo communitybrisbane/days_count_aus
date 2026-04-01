@@ -84,7 +84,8 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
             const readAt = lastReadAtMapRef.current.get(gid);
 
             // Determine unread: if lastMessageAt is newer than readAt, mark as 1 (has unread)
-            const hasUnread = lastMessageAt && (!readAt || lastMessageAt.toMillis() > readAt.toMillis());
+            // If readAt is null (never opened / just joined), treat as no unread
+            const hasUnread = lastMessageAt && readAt && lastMessageAt.toMillis() > readAt.toMillis();
             const unreadCount = hasUnread ? 1 : 0;
 
             setUnreadMap((prev) => {
