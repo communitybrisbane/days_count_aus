@@ -1,7 +1,7 @@
 export const FOCUS_MODES = [
   { id: "english", label: "English", icon: "english", description: "IELTS, speaking, language exchange" },
   { id: "skill", label: "Skill", icon: "skill", description: "Coding, AI, SNS, portfolio" },
-  { id: "adventure", label: "Challenge", icon: "adventure", description: "Road trips, English interviews, new cities" },
+  { id: "challenge", label: "Challenge", icon: "challenge", description: "Road trips, English interviews, new cities" },
   { id: "work", label: "Work", icon: "work", description: "Farm, cafe job, 88 days" },
   { id: "chill", label: "Chill", icon: "chill", description: "Beach, surfing, cafes, daily vibes" },
 ] as const;
@@ -13,12 +13,12 @@ export const MAIN_MODE_OPTIONS = FOCUS_MODES;
 
 /** Map legacy mode IDs to new IDs */
 export const LEGACY_MODE_MAP: Record<string, string> = {
-  enjoying: "adventure",
-  challenging: "adventure",
+  enjoying: "challenge",
+  challenging: "challenge",
+  adventure: "challenge",
   skills: "skill",
   "social-media": "chill",
   daily: "chill",
-  challenge: "adventure",
 };
 
 /** Resolve a mode ID, mapping legacy IDs to new ones */
@@ -31,7 +31,7 @@ export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {
   work: ["#work", "#farm", "#barista", "#warehouse", "#harvest", "#jobhunt", "#resume", "#interview", "#RSA", "#ABN", "#taxreturn", "#payslip", "#kitchenhand", "#cleaner", "#ubereats", "#88days"],
   english: ["#english", "#study", "#ielts", "#speaking", "#conversation", "#slang", "#accent", "#grammar", "#TOEIC", "#cambly", "#languageexchange", "#pronunciation", "#podcast"],
   skill: ["#skill", "#coding", "#cooking", "#design", "#portfolio", "#photography", "#barista", "#youtube", "#editing", "#marketing", "#freelance", "#certification", "#gym"],
-  adventure: ["#adventure", "#travel", "#roadtrip", "#beach", "#camping", "#hiking", "#diving", "#surfing", "#wildlife", "#greatbarrierreef", "#uluru", "#byron", "#bluemountains", "#whitsundays"],
+  challenge: ["#challenge", "#travel", "#roadtrip", "#beach", "#camping", "#hiking", "#diving", "#surfing", "#wildlife", "#greatbarrierreef", "#uluru", "#byron", "#bluemountains", "#whitsundays"],
   chill: ["#chill", "#daily", "#cooking", "#sharehouse", "#routine", "#selfcare", "#cafe", "#weekend", "#grocery", "#homesick", "#Netflix", "#flatwhite", "#sunset", "#bbq", "#laundry"],
 };
 export const HASHTAG_MAX = 5;
@@ -41,7 +41,7 @@ export const MILESTONES = [30, 100, 200, 365] as const;
 export const GRADIENTS = [
   "from-blue-500 to-cyan-400",         // english
   "from-violet-500 to-purple-400",     // skill
-  "from-emerald-500 to-teal-400",      // adventure
+  "from-emerald-500 to-teal-400",      // challenge
   "from-orange-500 to-amber-400",      // work
   "from-stone-400 to-warm-gray-400",   // chill
 ] as const;

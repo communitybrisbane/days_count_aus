@@ -297,7 +297,7 @@ export function FocusModeIcon({ modeId, ...props }: IconProps & { modeId: string
     case "work": return <IconCoin {...props} />;
     case "english": return <IconSpeaking {...props} />;
     case "skill": return <IconLaptop {...props} />;
-    case "adventure": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
+    case "challenge": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
     case "chill": return <IconCoffee {...props} />;
     // Legacy modes
     case "enjoying": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;

@@ -21,7 +21,7 @@ type Phase = "pre-departure" | "in-australia" | "post-return";
 const GOAL_PLACEHOLDERS: Record<string, string> = {
   english: "e.g. Order coffee without Google Translate",
   skill: "e.g. Build an app while in a WH",
-  adventure: "e.g. Roadtrip from Sydney to Cairns",
+  challenge: "e.g. Roadtrip from Sydney to Cairns",
   work: "e.g. Save $10k before going home",
   chill: "e.g. Find my favourite beach",
 };

@@ -454,7 +454,7 @@ export default function PostPage() {
 
         {/* Mode selection */}
         <div className="px-4 mt-3">
-          {[["english", "skill", "adventure"], ["work", "chill"]].map((row, ri) => (
+          {[["english", "skill", "challenge"], ["work", "chill"]].map((row, ri) => (
             <div key={ri} className={`flex gap-1.5 ${ri === 0 ? "mb-1.5" : ""}`}>
               {FOCUS_MODES.filter((m) => row.includes(m.id)).map((m) => (
                 <button

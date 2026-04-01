@@ -158,7 +158,7 @@ export default function GroupsPage() {
                 >
                   All
                 </button>
-                {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "adventure"].includes(m.id)).map((m) => (
+                {MAIN_MODE_OPTIONS.filter((m) => ["english", "skill", "challenge"].includes(m.id)).map((m) => (
                   <button
                     key={m.id}
                     onClick={() => setModeFilter(m.id)}

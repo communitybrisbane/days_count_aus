@@ -160,8 +160,10 @@ export default function CreateGroupPage() {
     }
   };
 
+  const canSubmit = groupName.trim() && mode && iconBlob && goal.trim() && !groupNameError && !submitting;
+
   return (
-    <div className="min-h-dvh" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <div className="h-dvh flex flex-col">
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
@@ -169,7 +171,9 @@ export default function CreateGroupPage() {
           onCancel={() => setCropSrc("")}
         />
       )}
-      <div className="flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
+
+      {/* Header */}
+      <div className="shrink-0 flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
         <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M13 4L7 10L13 16" />
@@ -194,7 +198,7 @@ export default function CreateGroupPage() {
               </div>
               <div className="flex gap-3">
                 <span className="text-accent-orange font-bold shrink-0">3.</span>
-                <p><span className="font-bold text-white/80">Max 10 members</span> per group. Quality over quantity.</p>
+                <p><span className="font-bold text-white/80">Max 12 members</span> per group. Quality over quantity.</p>
               </div>
               <div className="flex gap-3">
                 <span className="text-accent-orange font-bold shrink-0">4.</span>
@@ -219,144 +223,126 @@ export default function CreateGroupPage() {
           </button>
         </div>
       ) : (
-      <div className="p-6">
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Group Icon */}
-        <div className="flex flex-col items-center">
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Group Icon <span className="text-red-400">*</span>
-          </label>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-20 h-20 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden active:border-accent-orange transition-colors"
-          >
-            {iconPreview ? (
-              <img src={iconPreview} alt="Icon" className="w-full h-full object-cover" />
-            ) : (
-              <IconCamera size={28} className="text-white/40" />
-            )}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          {iconPreview && (
-            <button
-              type="button"
-              onClick={() => { setIconBlob(null); setIconPreview(""); }}
-              className="text-xs text-white/40 mt-1"
-            >
-              Remove
-            </button>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Group Name <span className="text-red-400">*</span>
-          </label>
-          <input
-            type="text"
-            maxLength={GROUP_NAME_MAX}
-            value={groupName}
-            onChange={(e) => setGroupName(sanitize(e.target.value))}
-            className={`w-full border rounded-lg px-4 py-3 bg-forest-light/10 text-white focus:outline-none focus:ring-2 focus:ring-accent-orange ${
-              groupNameError ? "border-red-400" : "border-forest-light/30"
-            }`}
-            required
-          />
-          <AsciiWarn show={showWarn} />
-          {groupNameError ? (
-            <p className="text-xs text-red-400 mt-1">{groupNameError}</p>
-          ) : (
-            <p className="text-xs text-white/40 mt-1 text-right">{groupName.length}/30</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Focus Mode <span className="text-red-400">*</span>
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {FOCUS_MODES.map((m) => (
+        <>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {/* Icon + Name — same row */}
+            <div className="flex items-start gap-3">
               <button
-                key={m.id}
                 type="button"
-                onClick={() => setMode(m.id)}
-                className={`flex flex-col items-center p-3 rounded-xl ${
-                  mode === m.id
-                    ? "bg-accent-orange text-white"
-                    : "bg-white text-forest-mid"
-                }`}
+                onClick={() => fileInputRef.current?.click()}
+                className="w-14 h-14 shrink-0 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden active:border-accent-orange transition-colors"
               >
-                <FocusModeIcon modeId={m.id} size={24} />
-                <span className="text-xs">{m.label}</span>
+                {iconPreview ? (
+                  <img src={iconPreview} alt="Icon" className="w-full h-full object-cover" />
+                ) : (
+                  <IconCamera size={22} className="text-white/40" />
+                )}
               </button>
-            ))}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <div className="flex-1">
+                <input
+                  type="text"
+                  maxLength={GROUP_NAME_MAX}
+                  value={groupName}
+                  onChange={(e) => setGroupName(sanitize(e.target.value))}
+                  placeholder="Group Name *"
+                  className={`w-full border rounded-lg px-3 py-2.5 bg-forest-light/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30 ${
+                    groupNameError ? "border-red-400" : "border-forest-light/30"
+                  }`}
+                  required
+                />
+                <AsciiWarn show={showWarn} />
+                {groupNameError ? (
+                  <p className="text-[10px] text-red-400 mt-0.5">{groupNameError}</p>
+                ) : (
+                  <p className="text-[10px] text-white/30 mt-0.5 text-right">{groupName.length}/{GROUP_NAME_MAX}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Mode — horizontal scroll */}
+            <div>
+              <p className="text-xs font-medium text-white/60 mb-1.5">Focus Mode *</p>
+              <div className="flex gap-1.5">
+                {FOCUS_MODES.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setMode(m.id)}
+                    className={`flex-1 flex flex-col items-center py-2 rounded-xl text-xs transition-all ${
+                      mode === m.id
+                        ? "bg-accent-orange text-white"
+                        : "bg-white text-forest-mid"
+                    }`}
+                  >
+                    <FocusModeIcon modeId={m.id} size={20} />
+                    <span className="mt-0.5">{m.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Join Type — compact */}
+            <div>
+              <p className="text-xs font-medium text-white/60 mb-1.5">Who can join? *</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setJoinType("open")}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
+                    joinType === "open"
+                      ? "bg-accent-orange text-white"
+                      : "bg-white text-forest-mid"
+                  }`}
+                >
+                  Anyone welcome
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setJoinType("friends")}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
+                    joinType === "friends"
+                      ? "bg-accent-orange text-white"
+                      : "bg-white text-forest-mid"
+                  }`}
+                >
+                  Friends only
+                </button>
+              </div>
+            </div>
+
+            {/* Goal */}
+            <div>
+              <p className="text-xs font-medium text-white/60 mb-1">Goal / Rules *</p>
+              <textarea
+                value={goal}
+                onChange={(e) => setGoal(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
+                maxLength={200}
+                rows={2}
+                placeholder="What's the group's goal or rules?"
+                className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
+              />
+              <p className="text-[10px] text-white/30 mt-0.5 text-right">{goal.length}/200</p>
+            </div>
           </div>
-        </div>
 
-        {/* Join Type */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Who can join? <span className="text-red-400">*</span>
-          </label>
-          <div className="flex gap-2">
+          {/* Fixed bottom button */}
+          <div className="shrink-0 px-4 py-3 border-t border-forest-light/20" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
             <button
-              type="button"
-              onClick={() => setJoinType("open")}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                joinType === "open"
-                  ? "bg-accent-orange text-white"
-                  : "bg-white text-forest-mid"
-              }`}
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="w-full bg-accent-orange text-white font-bold py-3 rounded-full disabled:opacity-40 active:scale-[0.98]"
             >
-              Anyone welcome
-            </button>
-            <button
-              type="button"
-              onClick={() => setJoinType("friends")}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                joinType === "friends"
-                  ? "bg-accent-orange text-white"
-                  : "bg-white text-forest-mid"
-              }`}
-            >
-              Friends only
+              {submitting ? "Creating..." : "Create"}
             </button>
           </div>
-        </div>
-
-        {/* Goal / Memo */}
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-1">
-            Goal / Rules <span className="text-red-400">*</span>
-          </label>
-          <textarea
-            value={goal}
-            onChange={(e) => setGoal(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
-            maxLength={200}
-            rows={3}
-            placeholder="What's the group's goal or rules?"
-            className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
-          />
-          <p className="text-xs text-white/40 mt-1 text-right">{goal.length}/200</p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={submitting || !groupName.trim() || !mode || !iconBlob || !goal.trim() || !!groupNameError}
-          className="w-full bg-accent-orange text-white font-bold py-3 rounded-full disabled:opacity-50"
-        >
-          {submitting ? "Creating..." : "Create"}
-        </button>
-      </form>
-      </div>
+        </>
       )}
     </div>
   );
