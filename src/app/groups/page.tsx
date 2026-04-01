@@ -12,6 +12,7 @@ import { fetchAdminConfig } from "@/lib/services/users";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { GroupListSkeleton } from "@/components/Skeleton";
 import GroupCard from "@/components/GroupCard";
 import { IconSearch, IconUsers, IconLock, FocusModeIcon } from "@/components/icons";
 import BannerCarousel from "@/components/BannerCarousel";
@@ -219,7 +220,7 @@ export default function GroupsPage() {
       {!showSearch && (
         <div className="flex-1 overflow-y-auto">
           {loadingGroups ? (
-            <div className="p-4"><LoadingSpinner size="sm" /></div>
+            <GroupListSkeleton />
           ) : (
             <>
               {/* Study Meeting */}

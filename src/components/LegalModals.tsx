@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import DOMPurify from "dompurify";
+import { useEffect, useState, useMemo } from "react";
 import { fetchLegalDoc, type LegalDoc } from "@/lib/services/users";
 
 interface LegalModalProps {
@@ -38,6 +37,9 @@ function LegalModalShell({
     return () => { cancelled = true; };
   }, [docId]);
 
+  const [DOMPurify, setDOMPurify] = useState<typeof import("dompurify").default | null>(null);
+  useEffect(() => { import("dompurify").then((m) => setDOMPurify(() => m.default)); }, []);
+
   const title = lang === "ja" ? titleJa : titleEn;
   const body = lang === "ja"
     ? content?.contentJa || fallbackJa
@@ -72,7 +74,7 @@ function LegalModalShell({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 text-xs text-gray-600 leading-relaxed space-y-3" style={{ scrollbarWidth: "none" }}>
-          {!loaded ? (
+          {!loaded || !DOMPurify ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
             </div>

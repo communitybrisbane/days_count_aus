@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   doc,
   getDoc,
@@ -46,7 +47,7 @@ const roundedClass = (listRounded?: "top" | "bottom" | "none") => {
   return "rounded-none";
 };
 
-export default function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
+function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
   const { user, profile, following, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
   const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean } | null>(null);
   const [liked, setLiked] = useState(false);
@@ -89,9 +90,13 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
   }, [liked, user, profile, onDoubleTap]);
 
   const resolvedMode = resolveMode(post.mode || "");
-  const modeInfo = FOCUS_MODES.find((m) => m.id === resolvedMode);
-  const gradientIdx = resolvedMode ? FOCUS_MODES.findIndex((m) => m.id === resolvedMode) : 0;
-  const gradient = GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0];
+  const modeInfo = useMemo(() => FOCUS_MODES.find((m) => m.id === resolvedMode), [resolvedMode]);
+  const gradient = useMemo(() => {
+    const idx = resolvedMode ? FOCUS_MODES.findIndex((m) => m.id === resolvedMode) : 0;
+    return GRADIENTS[idx >= 0 ? idx : 0];
+  }, [resolvedMode]);
+  const uniqueRecentLikers = useMemo(() => recentLikers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i), [recentLikers]);
+  const uniqueLikers = useMemo(() => likers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i), [likers]);
 
   useEffect(() => {
     async function fetchAuthor() {
@@ -223,14 +228,19 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
     try {
       const q = query(collection(db, "posts", post.id, "likes"), orderBy("createdAt", "desc"), limit(50));
       const snap = await getDocs(q);
-      const profiles: { uid: string; displayName: string; photoURL: string }[] = [];
-      for (const likeDoc of snap.docs) {
-        const userSnap = await getDoc(doc(db, "users", likeDoc.id));
-        if (userSnap.exists()) {
-          const d = userSnap.data();
-          profiles.push({ uid: likeDoc.id, displayName: d.displayName || "Unknown", photoURL: d.photoURL || "" });
-        }
-      }
+      const profiles = await Promise.all(
+        snap.docs.map(async (likeDoc) => {
+          const cached = profileCache.get(likeDoc.id);
+          if (cached) return { uid: likeDoc.id, displayName: cached.displayName, photoURL: cached.photoURL };
+          const userSnap = await getDoc(doc(db, "users", likeDoc.id));
+          if (userSnap.exists()) {
+            const d = userSnap.data();
+            profileCache.set(likeDoc.id, { displayName: d.displayName, photoURL: d.photoURL, uid: d.uid, region: d.region || "", showRegion: d.showRegion !== false });
+            return { uid: likeDoc.id, displayName: d.displayName || "Unknown", photoURL: d.photoURL || "" };
+          }
+          return { uid: likeDoc.id, displayName: "Unknown", photoURL: "" };
+        })
+      );
       setLikers(profiles);
     } catch (e) {
       console.error("Failed to load likers:", e);
@@ -311,7 +321,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
           ) : likers.length === 0 ? (
             <p className="text-center text-gray-400 py-8 text-sm">No likes yet</p>
           ) : (
-            likers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i).map((liker) => (
+            uniqueLikers.map((liker) => (
               <Link
                 key={liker.uid}
                 href={`/user/${liker.uid}`}
@@ -335,7 +345,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
         <XPToast xp={xpGained} show={showXP} />
         <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
           {post.imageUrl ? (
-            <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" loading="lazy" />
+            <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
           ) : (
             <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-3`}>
               <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4">
@@ -444,7 +454,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
       {/* Image or gradient card */}
       <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
         {post.imageUrl ? (
-          <img src={post.imageUrl} alt="Post" className="w-full aspect-square object-cover" loading="lazy" />
+          <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
         ) : (
           <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
             <p className="text-white text-center font-medium text-sm leading-relaxed">
@@ -507,7 +517,7 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
             >
               {recentLikers.length > 0 && (
                 <div className="flex items-center -space-x-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-                  {recentLikers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i).map((liker) => (
+                  {uniqueRecentLikers.map((liker) => (
                     <Avatar key={liker.uid} photoURL={liker.photoURL} displayName="" uid={liker.uid} size={18} className="ring-1.5 ring-white shrink-0" />
                   ))}
                 </div>
@@ -597,3 +607,5 @@ export default function PostCard({ post, onDelete, showActions = true, listRound
     </div>
   );
 }
+
+export default memo(PostCard);

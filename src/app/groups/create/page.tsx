@@ -10,7 +10,8 @@ import { FOCUS_MODES, GROUP_NAME_MAX, GROUP_CREATE_LEVEL, getMaxCommunitySlots }
 import { calculateLevel } from "@/lib/utils";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
-import ImageCropper from "@/components/ImageCropper";
+import dynamic from "next/dynamic";
+const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import { compressImage } from "@/lib/imageUtils";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";

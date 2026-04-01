@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FOCUS_MODES, resolveMode } from "@/lib/constants";
 import { getPostThumb } from "@/lib/postUtils";
 import { FocusModeIcon, IconLock } from "@/components/icons";
@@ -23,7 +24,7 @@ export default function PostGrid({ posts, onSelect }: Props) {
             className="relative aspect-square overflow-hidden"
           >
             {thumb.type === "image" ? (
-              <img src={thumb.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+              <Image src={thumb.url} alt="" fill className="object-cover" sizes="25vw" />
             ) : (
               <div className={`w-full h-full bg-gradient-to-br ${thumb.gradient} flex items-center justify-center`}>
                 {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={24} className="text-white" />}

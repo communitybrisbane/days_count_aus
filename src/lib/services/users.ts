@@ -97,7 +97,7 @@ export async function deleteAccount(user: User): Promise<void> {
   } catch {}
 
   // 5. Leave all groups (leader → close, member → leave)
-  const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid));
+  const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid), limit(50));
   const groupsSnap = await getDocs(memberGroupsQ);
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();

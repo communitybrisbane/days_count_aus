@@ -64,6 +64,7 @@ export async function fetchWeeklyHistory(uid: string, weeks: number = 12): Promi
     where("status", "==", "active"),
     where("createdAt", ">=", Timestamp.fromDate(oldestTuesday)),
     orderBy("createdAt", "desc"),
+    limit(500),
   );
   const snap = await getDocs(q);
 

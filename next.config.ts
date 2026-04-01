@@ -3,6 +3,13 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "firebasestorage.googleapis.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+    ],
+  },
   async headers() {
     return [
       {

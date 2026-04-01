@@ -11,9 +11,12 @@ import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
 import { uploadAvatar, deleteAccount, submitReport, unblockUser } from "@/lib/services/users";
-import ImageCropper from "@/components/ImageCropper";
+import dynamic from "next/dynamic";
 import ConfirmModal from "@/components/ConfirmModal";
-import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
+const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
+const TermsModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.TermsModal })), { ssr: false });
+const PrivacyModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.PrivacyModal })), { ssr: false });
+const LegalNoticeModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.LegalNoticeModal })), { ssr: false });
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 

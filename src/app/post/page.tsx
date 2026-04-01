@@ -8,7 +8,8 @@ import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, 
 import { calculateLevel } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
 import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount } from "@/lib/services/posts";
-import ImageCropper from "@/components/ImageCropper";
+import dynamic from "next/dynamic";
+const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";

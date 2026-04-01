@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { doc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
@@ -34,7 +35,7 @@ interface GroupCardProps {
   liveMessageText?: string;
 }
 
-export default function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText }: GroupCardProps) {
+export default memo(function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
@@ -81,7 +82,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
       >
         <div className="flex items-center gap-3 px-4 py-3">
           {group.iconUrl ? (
-            <img src={group.iconUrl} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" loading="lazy" />
+            <Image src={group.iconUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover shrink-0" />
           ) : (
             <div className="w-12 h-12 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0">
               <FocusModeIcon modeId={resolveMode(group.mode || "challenge")} size={26} className="text-forest-mid" />
@@ -136,7 +137,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
           <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl overflow-hidden max-w-sm mx-auto shadow-xl" role="dialog" aria-modal="true">
             <div className="flex flex-col items-center pt-6 pb-4 px-6">
               {group.iconUrl ? (
-                <img src={group.iconUrl} alt="" className="w-20 h-20 rounded-full object-cover mb-3" loading="lazy" />
+                <Image src={group.iconUrl} alt="" width={80} height={80} className="w-20 h-20 rounded-full object-cover mb-3" />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-forest-light/20 flex items-center justify-center mb-3">
                   <FocusModeIcon modeId={resolveMode(group.mode || "challenge")} size={40} className="text-forest-mid" />
@@ -202,4 +203,4 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
       )}
     </>
   );
-}
+})

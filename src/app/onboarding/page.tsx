@@ -10,7 +10,8 @@ import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from 
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup } from "@/lib/groups";
-import ImageCropper from "@/components/ImageCropper";
+import dynamic from "next/dynamic";
+const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";

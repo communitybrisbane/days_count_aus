@@ -1,12 +1,20 @@
 /* eslint-disable no-undef */
 
-// ─── Offline fallback ───
-const CACHE_NAME = "offline-v1";
+// ─── Cache strategy ───
+const STATIC_CACHE = "static-v2";
 const OFFLINE_URL = "/offline.html";
+
+// Static assets to pre-cache
+const PRECACHE_URLS = [
+  OFFLINE_URL,
+  "/icons/icon-192x192.png",
+  "/icons/kangaroo-like.png",
+  "/icons/apple-touch-icon.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll([OFFLINE_URL, "/icons/icon-192x192.png"]))
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
   );
   self.skipWaiting();
 });
@@ -14,27 +22,42 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  // Only intercept navigation requests (HTML pages)
-  if (event.request.mode !== "navigate") return;
+  const url = new URL(event.request.url);
 
-  // Skip offline fallback on localhost (dev environment)
-  if (self.location.hostname === "localhost") return;
+  // Skip on localhost
+  if (url.hostname === "localhost") return;
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Only fallback if we got a genuine network error, not HTTP errors
-        return response;
+  // Static assets: cache-first (icons, fonts, images from same origin)
+  if (url.origin === self.location.origin && /\.(png|jpg|svg|ico|woff2?)$/i.test(url.pathname)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        });
       })
-      .catch(() => caches.match(OFFLINE_URL))
-  );
+    );
+    return;
+  }
+
+  // Navigation requests: network-first with offline fallback
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+    );
+    return;
+  }
 });
 
 // ─── Firebase Cloud Messaging ───

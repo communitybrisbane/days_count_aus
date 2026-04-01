@@ -17,8 +17,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, NAV_HEIGHT } from "@/lib/constants";
 import PostCard from "@/components/PostCard";
-import PostDetailModal from "@/components/PostDetailModal";
+import dynamic from "next/dynamic";
+const PostDetailModal = dynamic(() => import("@/components/PostDetailModal"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { ExploreGridSkeleton } from "@/components/Skeleton";
 import BottomNav from "@/components/layout/BottomNav";
 import { IconEucalyptus, IconSearch, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
@@ -343,7 +345,7 @@ export default function ExplorePage() {
           ))}
         </div>
 
-        {loadingPosts && <LoadingSpinner size="sm" />}
+        {loadingPosts && posts.length === 0 ? <ExploreGridSkeleton /> : loadingPosts && <LoadingSpinner size="sm" />}
       </div>
 
       {selectedIndex !== null && (

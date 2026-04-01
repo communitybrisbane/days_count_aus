@@ -26,6 +26,7 @@ import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, resolveMode } from "@/lib/constants";
+import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -392,7 +393,7 @@ export default function GroupChatPage() {
           {/* Group icon — leader can tap to change */}
           <div className="relative shrink-0">
             {group.iconUrl ? (
-              <img src={group.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <Image src={group.iconUrl} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-forest-light/30 flex items-center justify-center">
                 <FocusModeIcon modeId={group.mode || "chill"} size={22} className="text-white/60" />
@@ -607,7 +608,7 @@ export default function GroupChatPage() {
                         }`}
                       >
                         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                          {member?.photoURL && <img src={member.photoURL} alt="" className="w-full h-full object-cover" />}
+                          {member?.photoURL && <Image src={member.photoURL} alt="" fill className="object-cover" />}
                         </div>
                         <span className="text-sm font-medium truncate">{member?.displayName || uid.slice(0, 8)}</span>
                         {transferTarget === uid && <span className="ml-auto text-accent-orange text-xs font-bold">Selected</span>}

@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+import Image from "next/image";
 import { uidToColor, getInitials } from "@/lib/utils";
 
 interface AvatarProps {
@@ -10,17 +12,16 @@ interface AvatarProps {
   className?: string;
 }
 
-export default function Avatar({ photoURL, displayName, uid, size = 40, className = "" }: AvatarProps) {
+export default memo(function Avatar({ photoURL, displayName, uid, size = 40, className = "" }: AvatarProps) {
   if (photoURL) {
     return (
-      <img
+      <Image
         src={photoURL}
         alt={displayName}
         width={size}
         height={size}
         className={`rounded-full object-cover ${className}`}
         style={{ width: size, height: size }}
-        loading="lazy"
       />
     );
   }
@@ -38,4 +39,4 @@ export default function Avatar({ photoURL, displayName, uid, size = 40, classNam
       {getInitials(displayName || "?")}
     </div>
   );
-}
+})

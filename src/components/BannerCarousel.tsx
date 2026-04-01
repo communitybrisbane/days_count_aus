@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, memo } from "react";
+import Image from "next/image";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { isSafeUrl } from "@/lib/utils";
@@ -19,7 +20,7 @@ interface BannerCarouselProps {
   bannerImageUrl?: string;
 }
 
-export default function BannerCarousel({ location, bannerImageUrl }: BannerCarouselProps = {}) {
+export default memo(function BannerCarousel({ location, bannerImageUrl }: BannerCarouselProps = {}) {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -79,10 +80,11 @@ export default function BannerCarousel({ location, bannerImageUrl }: BannerCarou
           <div key={banner.id} className="w-full shrink-0">
             {banner.linkUrl && isSafeUrl(banner.linkUrl) ? (
               <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer">
-                <img
+                <Image
                   src={banner.imageUrl}
                   alt=""
-                  className="w-full aspect-video object-cover" loading="lazy"
+                  width={450} height={253}
+                  className="w-full aspect-video object-cover"
                 />
               </a>
             ) : (
@@ -111,4 +113,4 @@ export default function BannerCarousel({ location, bannerImageUrl }: BannerCarou
       )}
     </div>
   );
-}
+})

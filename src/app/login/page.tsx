@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { signInWithGoogle } from "@/lib/auth";
 import { useEffect, useState } from "react";
-import { TermsModal, PrivacyModal, LegalNoticeModal } from "@/components/LegalModals";
+import dynamic from "next/dynamic";
+const TermsModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.TermsModal })), { ssr: false });
+const PrivacyModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.PrivacyModal })), { ssr: false });
+const LegalNoticeModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.LegalNoticeModal })), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 type ModalType = "terms" | "privacy" | "legal" | null;
