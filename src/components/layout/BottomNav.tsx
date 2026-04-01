@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import Avatar from "@/components/Avatar";
-import { IconHome, IconDiary, IconCamera, IconGroup } from "@/components/icons";
+import { IconHome, IconDiary, IconEdit, IconGroup } from "@/components/icons";
 
 interface BottomNavProps {
   onExploreClick?: () => void;
@@ -52,7 +52,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
               isActive("/post") ? "bg-gradient-to-br from-accent-orange to-accent-orange-dark" : "bg-gradient-to-br from-accent-orange-light to-accent-orange"
             }`}
           >
-            <IconCamera size={30} className="text-white" />
+            <IconEdit size={24} className="text-white" />
           </div>
         </button>
 
