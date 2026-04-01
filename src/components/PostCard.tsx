@@ -210,6 +210,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
               lastLikeDate: today,
             });
+            refreshProfile();
           } catch (e) {
             console.error("[LIKE_XP] Failed to grant send XP:", e);
           }
