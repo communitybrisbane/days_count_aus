@@ -231,7 +231,7 @@ export default function PublicProfilePage() {
 
       {showActionSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowActionSheet(false)}>
-          <div className="w-full max-w-md mx-4 mb-6 space-y-2" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md mx-4 space-y-2" style={{ marginBottom: `calc(${NAV_HEIGHT} + 1.5rem)` }} onClick={(e) => e.stopPropagation()}>
             <div className="bg-forest-mid/95 backdrop-blur-md rounded-2xl overflow-hidden">
               <button
                 onClick={async () => {
