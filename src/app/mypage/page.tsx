@@ -131,7 +131,6 @@ export default function MyPage() {
         ) : (
           <PostGrid posts={filteredPosts} onSelect={setSelectedIndex} />
         )}
-        <div className="shrink-0 h-4" />
       </div>
       </div>
 
