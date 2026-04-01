@@ -90,8 +90,8 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="font-bold text-sm truncate text-forest">{group.groupName}</p>
-              {isModeGroup && <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full">Mode</span>}
-              {group.isOfficial && !isModeGroup && <span className="text-[10px] bg-accent-orange text-white px-1.5 py-0.5 rounded-full">Official</span>}
+              {isModeGroup && <span className="text-[10px] text-gray-400 shrink-0">by mode</span>}
+              {group.isOfficial && !isModeGroup && <span className="text-[10px] text-gray-400 shrink-0">by official</span>}
               {!group.isOfficial && group.joinType === "friends" && <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">Friends only</span>}
               {!group.isOfficial && group.joinType !== "friends" && <span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full shrink-0">Anyone</span>}
               {!group.isOfficial && leaderName && <span className="text-[10px] text-gray-400 shrink-0">by {leaderName}</span>}

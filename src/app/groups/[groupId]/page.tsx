@@ -407,7 +407,7 @@ export default function GroupChatPage() {
                   {modeInfo.label}
                 </span>
               )}
-              <span>· {group.memberCount}{isOfficial ? "" : "/10"}</span>
+              <span>· {group.memberCount}{isModeGroup ? " members" : `/${MAX_GROUP_MEMBERS}`}</span>
               <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white/30 transition-transform ${showDetails ? "rotate-180" : ""}`}>
                 <path d="M5 8L10 13L15 8" />
               </svg>
