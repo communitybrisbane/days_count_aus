@@ -112,7 +112,7 @@ export default function CreateGroupPage() {
       await Promise.all(currentGroupIds.map(async (gid) => {
         try {
           const snap = await getDoc(doc(db, "groups", gid));
-          if (snap.exists) {
+          if (snap.exists()) {
             const g = snap.data();
             const isModeGroup = g?.isOfficial && !g?.iconUrl;
             if (!isModeGroup) communityCount++;
