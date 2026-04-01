@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import Avatar from "@/components/Avatar";
-import { IconHome, IconDiary, IconCamera, IconGroup } from "@/components/icons";
+import { IconHome, IconDiary, IconGroup } from "@/components/icons";
 
 interface BottomNavProps {
   onExploreClick?: () => void;
@@ -80,7 +80,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
               isActive("/post") ? "bg-gradient-to-br from-accent-orange to-accent-orange-dark" : "bg-gradient-to-br from-accent-orange-light to-accent-orange"
             }`}
           >
-            <IconCamera size={30} className="text-white" />
+            <img src="/icons/kangaroo-like.png" alt="" width={30} height={30} draggable={false} style={{ width: 30, height: 30, objectFit: "contain" }} />
           </div>
         </button>
 
