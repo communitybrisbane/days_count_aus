@@ -115,12 +115,12 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
               return;
             }
 
-            // Count actual unread messages (after readAt, not by self)
+            // Count unread messages (after readAt)
+            // Own messages are already handled by isSelf check above
             try {
               const unreadQ = query(
                 collection(db, "groups", gid, "messages"),
                 where("createdAt", ">", readAt),
-                where("senderId", "!=", userId),
                 orderBy("createdAt", "asc")
               );
               const countSnap = await getCountFromServer(unreadQ);
