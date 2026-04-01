@@ -16,14 +16,14 @@ export default function ProfileGroups({ groups, className = "mt-3" }: Props) {
   if (groups.length === 0) return null;
 
   return (
-    <div className={`flex gap-3 w-full justify-center overflow-x-hidden max-w-full ${className}`}>
+    <div className={`flex gap-3 w-full overflow-x-auto scrollbar-hide px-2 ${className}`}>
       {groups.map((g) => {
         const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(g.mode || ""));
         return (
           <button
             key={g.id}
             onClick={() => router.push(`/groups/${g.id}`)}
-            className="flex flex-col items-center gap-1.5 rounded-xl px-4 py-3 min-w-[130px] max-w-[160px] active:bg-forest-light/20 transition-colors"
+            className="flex flex-col items-center gap-1.5 rounded-xl px-4 py-3 min-w-[100px] shrink-0 active:bg-forest-light/20 transition-colors"
           >
             {g.iconUrl ? (
               <img src={g.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" loading="lazy" />
@@ -35,7 +35,6 @@ export default function ProfileGroups({ groups, className = "mt-3" }: Props) {
               <div className="w-10 h-10 rounded-full bg-forest-mid/40" />
             )}
             <p className="text-xs font-bold text-white/80 truncate w-full text-center">{g.groupName}</p>
-            <p className="text-[10px] text-white/40">{g.memberCount}/10</p>
           </button>
         );
       })}
