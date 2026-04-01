@@ -153,6 +153,15 @@ export function IconEdit({ size, className, strokeWidth }: IconProps) {
   );
 }
 
+export function IconPencil({ size, className, strokeWidth }: IconProps) {
+  const d = p({ size, className, strokeWidth });
+  return (
+    <svg width={d.size} height={d.size} viewBox="0 0 24 24" fill="none" className={d.className} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth={d.strokeWidth} />
+    </svg>
+  );
+}
+
 export function IconTrash({ size, className, strokeWidth }: IconProps) {
   const d = p({ size, className, strokeWidth });
   return (
