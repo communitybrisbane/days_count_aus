@@ -46,7 +46,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
   };
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) / 2)" }}>
+    <nav className="fixed left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) / 2)" }}>
       {/* Hidden file input for post image */}
       <input
         ref={fileInputRef}
@@ -59,34 +59,34 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
       <div className="flex items-center justify-around h-10 px-2">
         {/* HOME */}
         <Link href="/home" className="flex items-center justify-center w-10 h-10">
-          <IconHome size={24} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
+          <IconHome size={28} className={isActive("/home") ? "text-accent-orange" : "text-white/40"} />
         </Link>
 
         {/* EXPLORE */}
         {onExploreClick ? (
           <button onClick={onExploreClick} className="flex items-center justify-center w-10 h-10">
-            <IconDiary size={24} className="text-accent-orange" />
+            <IconDiary size={28} className="text-accent-orange" />
           </button>
         ) : (
           <Link href="/explore" className="flex items-center justify-center w-10 h-10">
-            <IconDiary size={24} className={isActive("/explore") ? "text-accent-orange" : "text-white/40"} />
+            <IconDiary size={28} className={isActive("/explore") ? "text-accent-orange" : "text-white/40"} />
           </Link>
         )}
 
         {/* POST — center floating, opens file picker first */}
         <button onClick={handlePostClick} className="flex items-center justify-center -mt-4">
           <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center shadow-long ${
+            className={`w-11 h-11 rounded-full flex items-center justify-center shadow-long ${
               isActive("/post") ? "bg-gradient-to-br from-accent-orange to-accent-orange-dark" : "bg-gradient-to-br from-accent-orange-light to-accent-orange"
             }`}
           >
-            <IconCamera size={26} className="text-white" />
+            <IconCamera size={30} className="text-white" />
           </div>
         </button>
 
         {/* GROUPS */}
         <Link href="/groups" className="relative flex items-center justify-center w-10 h-10">
-          <IconGroup size={24} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
+          <IconGroup size={28} className={isActive("/groups") ? "text-accent-orange" : "text-white/40"} />
           {totalUnread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
               {totalUnread > 99 ? "99+" : totalUnread}
@@ -102,7 +102,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName || "?"}
                 uid={user?.uid || ""}
-                size={26}
+                size={30}
               />
             </div>
           </button>
@@ -113,7 +113,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName || "?"}
                 uid={user?.uid || ""}
-                size={26}
+                size={30}
               />
             </div>
           </Link>
