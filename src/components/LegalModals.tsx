@@ -206,9 +206,9 @@ const TERMS_EN = `
 <p>・Users can report posts or other users. Posts that receive 3 or more reports will be automatically hidden.</p>
 <p>・Posts that have been hidden for more than 30 days may be permanently deleted.</p>
 <p class="font-bold text-sm text-gray-800">Article 7 (Communities)</p>
-<p>・Users at Lv.13 or above can join communities, and users at Lv.20 or above can create them.</p>
-<p>・Each user can join up to 2 communities (excluding official communities).</p>
-<p>・Each community has a maximum of 10 members.</p>
+<p>・Users at Lv.2 or above can join and create communities.</p>
+<p>・The number of communities a user can join increases with their level.</p>
+<p>・Each community has a maximum of 12 members (mode communities have no limit).</p>
 <p>・The leader is responsible for managing the community. If the leader leaves, the community will be disbanded.</p>
 <p>・Messages are limited to 100 characters.</p>
 <p>・The Operator assumes no responsibility for disputes between users in group chats (including defamation, fraud, or leaks of personal information). Users shall resolve such matters among themselves.</p>
