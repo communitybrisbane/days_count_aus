@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, updateDoc, arrayRemove, increment, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -115,8 +115,19 @@ export default function OnboardingPage() {
 
       const today = getTodayStr();
 
+      // Clean up stale data from previous account with same UID
       const existingDoc = await getDoc(doc(db, "users", user.uid));
       if (existingDoc.exists()) {
+        const oldGroupIds: string[] = existingDoc.data().groupIds || [];
+        // Remove this UID from all old groups' memberIds
+        for (const gid of oldGroupIds) {
+          try {
+            await updateDoc(doc(db, "groups", gid), {
+              memberIds: arrayRemove(user.uid),
+              memberCount: increment(-1),
+            });
+          } catch { /* group may not exist */ }
+        }
         await deleteDoc(doc(db, "users", user.uid));
       }
 
