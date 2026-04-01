@@ -246,7 +246,9 @@ service cloud.firestore {
                       && request.resource.data.senderId == request.auth.uid
                       && request.resource.data.text is string
                       && request.resource.data.text.size() >= 1
-                      && request.resource.data.text.size() <= 100;
+                      && request.resource.data.text.size() <= 100
+                      && !request.resource.data.text.matches('.*https?://.*')
+                      && !request.resource.data.text.matches('.*www\\..*');
         // Reaction updates by any member
         allow update: if isAuth()
                       && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
@@ -256,7 +258,9 @@ service cloud.firestore {
                       && request.auth.uid == resource.data.senderId
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'edited', 'unsent'])
                       && request.resource.data.text is string
-                      && (request.resource.data.unsent == true || (request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 100));
+                      && (request.resource.data.unsent == true || (request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 100
+                          && !request.resource.data.text.matches('.*https?://.*')
+                          && !request.resource.data.text.matches('.*www\\..*')));
       }
     }
 

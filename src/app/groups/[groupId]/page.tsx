@@ -266,9 +266,15 @@ export default function GroupChatPage() {
     } : g);
   };
 
+  const URL_PATTERN = /https?:\/\/|www\./i;
+
   const handleSend = async () => {
     if (!user || !text.trim() || !isMember) return;
     const msg = text.trim();
+    if (URL_PATTERN.test(msg)) {
+      alert("Links are not allowed in group chat.");
+      return;
+    }
     setText("");
     await addDoc(collection(db, "groups", groupId, "messages"), {
       senderId: user.uid,
