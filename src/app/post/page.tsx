@@ -412,7 +412,7 @@ export default function PostPage() {
         <div className="px-4 mt-3">
           <textarea
             value={content}
-            onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
+            onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
             maxLength={POST_CONTENT_MAX}
             rows={3}
             placeholder="What happened today? (English only)"

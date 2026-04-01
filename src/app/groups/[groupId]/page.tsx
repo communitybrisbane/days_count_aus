@@ -552,7 +552,7 @@ export default function GroupChatPage() {
               <label className="block text-xs font-medium text-gray-500 mb-1">Goal / Rules</label>
               <textarea
                 value={editGoal}
-                onChange={(e) => setEditGoal(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
+                onChange={(e) => setEditGoal(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
                 maxLength={200}
                 rows={3}
                 placeholder="Write your community's goals or rules"
