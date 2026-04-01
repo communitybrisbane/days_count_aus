@@ -75,13 +75,6 @@ export interface UserPrivate {
   notificationPrefs?: NotificationPrefs;
 }
 
-/** Live Session config (from admin_config/main.liveSession) */
-export interface LiveSession {
-  label: string;
-  url: string;
-  description?: string;
-}
-
 /** Announcement (from admin_config/main.announcements) */
 export interface Announcement {
   title: string;
@@ -92,11 +85,13 @@ export interface Announcement {
   active: boolean;
 }
 
-/** Admin config (admin_config/main) */
+/** Admin config (admin_config/main) — all flat fields editable in Firebase Console */
 export interface AdminConfig {
   announcements?: Announcement[];
   bannerImageUrl?: string;
-  liveSession?: LiveSession;
+  meetingLabel?: string;       // e.g. "Study Session"
+  meetingUrl?: string;         // Zoom URL — empty/missing = offline
+  meetingDescription?: string; // shown when offline
   ai_prompt_template?: string;
 }
 

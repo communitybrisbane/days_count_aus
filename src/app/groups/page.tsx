@@ -15,7 +15,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import GroupCard from "@/components/GroupCard";
 import { IconSearch, IconUsers, IconLock, FocusModeIcon } from "@/components/icons";
 import BannerCarousel from "@/components/BannerCarousel";
-import type { Group, LiveSession } from "@/types";
+import type { Group, AdminConfig } from "@/types";
 
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
@@ -29,7 +29,7 @@ export default function GroupsPage() {
   const [showActionChoice, setShowActionChoice] = useState(false);
 
   const [leaderNames, setLeaderNames] = useState<Record<string, string>>({});
-  const [liveSession, setLiveSession] = useState<LiveSession | null>(null);
+  const [meeting, setMeeting] = useState<{ label: string; url: string; description: string } | null>(null);
 
 
   const fetchGroups = async () => {
@@ -57,7 +57,16 @@ export default function GroupsPage() {
         }
       });
       fetchAdminConfig().then((data) => {
-        if (data?.liveSession) setLiveSession(data.liveSession as LiveSession);
+        if (data) {
+          const cfg = data as AdminConfig;
+          if (cfg.meetingLabel || cfg.meetingUrl) {
+            setMeeting({
+              label: cfg.meetingLabel || "Study Session",
+              url: cfg.meetingUrl || "",
+              description: cfg.meetingDescription || "No session scheduled",
+            });
+          }
+        }
       }).catch(console.error);
     }
   }, [user]);
@@ -214,11 +223,11 @@ export default function GroupsPage() {
           ) : (
             <>
               {/* Study Meeting */}
-              {liveSession && (
+              {meeting && (
                 <div className="px-4 pt-2">
-                  {liveSession.url ? (
+                  {meeting.url ? (
                     <a
-                      href={liveSession.url}
+                      href={meeting.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block bg-gradient-to-br from-forest-mid to-forest rounded-2xl p-4 shadow-lg border border-forest-light/20 active:scale-[0.98] transition-transform"
@@ -230,7 +239,7 @@ export default function GroupsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-bold text-sm text-white truncate">
-                              {liveSession.label || "Study Session"}
+                              {meeting.label}
                             </p>
                             <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
                               <span className="w-1.5 h-1.5 rounded-full bg-white" />
@@ -256,10 +265,10 @@ export default function GroupsPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-sm text-white/40">
-                            {liveSession.label || "Study Session"}
+                            {meeting.label}
                           </p>
                           <p className="text-xs text-white/25 mt-0.5">
-                            {liveSession.description || "No session scheduled"}
+                            {meeting.description}
                           </p>
                         </div>
                         <span className="text-xs font-bold text-white/20 px-3 py-1.5 rounded-full border border-white/10 shrink-0">
