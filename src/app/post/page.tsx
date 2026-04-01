@@ -55,13 +55,6 @@ export default function PostPage() {
     if (!postRegion && profile.region) setPostRegion(profile.region);
   }, [profile, mode, postRegion]);
 
-  // Legacy: pick up image from sessionStorage (if any)
-  useEffect(() => {
-    const stored = sessionStorage.getItem("post_image");
-    if (!stored) return;
-    sessionStorage.removeItem("post_image");
-    setCropSrc(stored);
-  }, []);
 
   const handleModeSelect = (id: string) => {
     setMode(id);

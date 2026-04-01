@@ -58,7 +58,6 @@ export const WEEK_STREAK_MAX = 10;
 export const MAX_GROUP_MEMBERS = 12;
 export const DAILY_LIKE_LIMIT = 5;
 export const POST_EDIT_WINDOW_MS = 5 * 60 * 1000;
-export const DOUBLE_TAP_DELAY_MS = 300;
 export const MESSAGE_CHAR_LIMIT = 100;
 export const POST_CONTENT_MAX = 400;
 export const NICKNAME_MAX = 15;

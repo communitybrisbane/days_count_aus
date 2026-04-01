@@ -302,19 +302,13 @@ export function IconBan({ size, className, strokeWidth }: IconProps) {
 
 export function FocusModeIcon({ modeId, ...props }: IconProps & { modeId: string }) {
   switch (modeId) {
-    // New modes
+    // Current modes
     case "work": return <IconCoin {...props} />;
     case "english": return <IconSpeaking {...props} />;
-    case "skill": return <IconLaptop {...props} />;
-    case "challenge": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
-    case "chill": return <IconCoffee {...props} />;
-    // Legacy modes
-    case "enjoying": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
-    case "challenging": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
-    case "challenge": return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
-    case "skills": return <IconLaptop {...props} />;
-    case "social-media": return <IconCoffee {...props} />;
-    case "daily": return <IconCoffee {...props} />;
+    case "skill": case "skills": return <IconLaptop {...props} />;
+    case "challenge": case "enjoying": case "challenging": case "adventure":
+      return <img src="/icons/kangaroo-like.png" alt="" width={props.size ?? 24} height={props.size ?? 24} className={props.className} draggable={false} style={{ width: props.size ?? 24, height: props.size ?? 24, objectFit: "contain" }} />;
+    case "chill": case "social-media": case "daily": return <IconCoffee {...props} />;
     default: return <IconGlobe {...props} />;
   }
 }

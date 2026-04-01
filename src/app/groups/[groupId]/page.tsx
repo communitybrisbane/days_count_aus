@@ -55,7 +55,7 @@ export default function GroupChatPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
-  const [memberProfiles, setMemberProfiles] = useState<Record<string, any>>({});
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, { displayName?: string; photoURL?: string; totalXP?: number; _deleted?: boolean }>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [editGoal, setEditGoal] = useState("");
   const [editJoinType, setEditJoinType] = useState<"open" | "friends">("open");
@@ -384,7 +384,7 @@ export default function GroupChatPage() {
               <img src={group.iconUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-forest-light/30 flex items-center justify-center">
-                <FocusModeIcon modeId={group.mode || "challenging"} size={22} className="text-white/60" />
+                <FocusModeIcon modeId={group.mode || "chill"} size={22} className="text-white/60" />
               </div>
             )}
             {isLeader && (

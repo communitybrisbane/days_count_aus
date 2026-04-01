@@ -11,6 +11,7 @@ import {
   increment,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { MAX_GROUP_MEMBERS } from "./constants";
 import type { Group } from "@/types";
 
 /**
@@ -58,8 +59,8 @@ export async function joinOfficialGroup(uid: string, mode: string) {
   if (!group) return;
   const memberIds = group.memberIds || [];
   if (memberIds.includes(uid)) return;
-  // Mode groups (no iconUrl) have no member cap; others max 12
-  if (!group.iconUrl && memberIds.length >= 12) return;
+  // Icon-based official groups have member cap; mode groups (no iconUrl) are unlimited
+  if (group.iconUrl && memberIds.length >= MAX_GROUP_MEMBERS) return;
 
   const { doc: firestoreDoc } = await import("firebase/firestore");
   await updateDoc(firestoreDoc(db, "groups", group.id), {

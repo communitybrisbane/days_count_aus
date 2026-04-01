@@ -253,8 +253,13 @@ export async function reportPost(
  * Fetches list from Firestore moderation_config or uses defaults.
  */
 const CLIENT_BANNED_WORDS = [
+  // English
   "fuck", "shit", "bitch", "asshole", "nigger", "faggot", "cunt", "whore",
-  "retard", "kill yourself", "kys",
+  "retard", "kill yourself", "kys", "die",
+  // Japanese
+  "死ね", "殺す", "ゴミ", "クソ", "馬鹿",
+  // Spam patterns
+  "buy now", "click here", "free money", "earn cash",
 ];
 
 let cachedBannedWords: string[] | null = null;
