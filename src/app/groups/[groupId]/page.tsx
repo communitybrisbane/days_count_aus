@@ -304,6 +304,10 @@ export default function GroupChatPage() {
     if (!user) return;
     const msgRef = doc(db, "groups", groupId, "messages", msgId);
     await updateDoc(msgRef, { text: "", unsent: true });
+    // Update group preview if this was the last message
+    await updateDoc(doc(db, "groups", groupId), {
+      lastMessageText: "Message unsent",
+    });
     setActionMenuMsgId(null);
   };
 
