@@ -74,10 +74,10 @@ export function getDayCount(
     return { label: "D", number: diff };
   }
 
-  // post-return: count from app start date (createdAt)
+  // post-return: count from app start date (createdAt) — use local date
   if (createdAt) {
-    const start = new Date(createdAt.toISOString().slice(0, 10) + "T00:00:00");
-    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const startLocal = new Date(createdAt.getFullYear(), createdAt.getMonth(), createdAt.getDate());
+    const diff = Math.floor((now.getTime() - startLocal.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     return { label: "D", number: diff };
   }
 
