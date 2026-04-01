@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,44 +17,17 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
   const router = useRouter();
   const { profile, user } = useAuth();
   const { totalUnread } = useUnreadGroups(user?.uid, profile?.groupIds || []);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
 
   const handlePostClick = () => {
-    // If already on post page, do nothing special
     if (isActive("/post")) return;
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset input so same file can be re-selected
-    e.target.value = "";
-    if (file) {
-      // Store blob URL (avoids sessionStorage size limit for large photos)
-      const blobUrl = URL.createObjectURL(file);
-      sessionStorage.setItem("post_image", blobUrl);
-      router.push("/post");
-    } else {
-      // User cancelled file picker — navigate without image
-      sessionStorage.removeItem("post_image");
-      router.push("/post");
-    }
+    router.push("/post");
   };
 
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50">
-      {/* Hidden file input for post image */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelected}
-        className="hidden"
-      />
-
       <div className="flex items-center justify-around h-10 px-2">
         {/* HOME */}
         <Link href="/home" className="flex items-center justify-center w-10 h-10">
@@ -73,7 +45,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
           </Link>
         )}
 
-        {/* POST — center floating, opens file picker first */}
+        {/* POST — center floating */}
         <button onClick={handlePostClick} className="flex items-center justify-center -mt-4">
           <div
             className={`w-11 h-11 rounded-full flex items-center justify-center shadow-long ${

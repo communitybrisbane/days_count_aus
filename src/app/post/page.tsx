@@ -54,7 +54,7 @@ export default function PostPage() {
     if (!postRegion && profile.region) setPostRegion(profile.region);
   }, [profile, mode, postRegion]);
 
-  // Pick up image from BottomNav file picker (sessionStorage)
+  // Legacy: pick up image from sessionStorage (if any)
   useEffect(() => {
     const stored = sessionStorage.getItem("post_image");
     if (!stored) return;
@@ -390,33 +390,34 @@ export default function PostPage() {
             </div>
           </div>
 
-          {/* Image area — tappable to select/change */}
-          <div
-            className="relative cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {imagePreview ? (
+          {/* Image area — shown only if image selected */}
+          {imagePreview && (
+            <div
+              className="relative cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
               <div className="relative group">
                 <img src={imagePreview} alt="" className="w-full aspect-square object-cover" />
                 <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
                   <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change photo</span>
                 </div>
               </div>
-            ) : (
-              <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2 relative`}>
-                <IconCamera size={28} className="text-white/40" />
-                <p className="text-white/40 text-xs font-medium">Tap to add photo (required)</p>
-              </div>
-            )}
-            {visibility === "private" && (
-              <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1 flex items-center gap-1.5 text-xs">
-                <IconLock size={18} />
-              </div>
-            )}
-          </div>
+              {visibility === "private" && (
+                <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1 flex items-center gap-1.5 text-xs">
+                  <IconLock size={18} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Content + tags — matches PostCard */}
           <div className="p-3">
+            {!imagePreview && visibility === "private" && (
+              <div className="flex items-center gap-1 text-gray-400 mb-1.5">
+                <IconLock size={14} />
+                <span className="text-xs">Private</span>
+              </div>
+            )}
             {content.trim() && (
               <p className="text-sm text-gray-700">{content}</p>
             )}
@@ -509,6 +510,29 @@ export default function PostPage() {
             </div>
           </div>
         )}
+
+        {/* Photo picker — at the end of the form */}
+        <div className="px-4 mt-3">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl transition-all active:scale-[0.98] ${
+              imagePreview
+                ? "bg-accent-orange/20 text-accent-orange border border-accent-orange/30"
+                : "bg-white text-forest-mid"
+            }`}
+          >
+            <IconCamera size={18} />
+            <span className="text-sm font-bold">{imagePreview ? "Change Photo" : "Add Photo (optional)"}</span>
+          </button>
+          {imagePreview && (
+            <button
+              onClick={() => { setImageBlob(null); setImagePreview(""); }}
+              className="w-full mt-1.5 py-2 text-xs text-white/40 active:text-white/60"
+            >
+              Remove photo
+            </button>
+          )}
+        </div>
 
         {/* Spacer for bottom */}
         <div className="h-8" />
