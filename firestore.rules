@@ -180,14 +180,14 @@ service cloud.firestore {
                      && request.resource.data.memberCount == resource.data.memberCount - 1;
 
       // Join: add self to memberIds, increment memberCount
-      // Official groups with iconUrl (non-mode) have no cap; all others max 10
+      // Mode groups (isOfficial && no iconUrl) have no cap; all others max 12
       allow update: if isAuth()
                      && !(request.auth.uid in resource.data.memberIds)
                      && request.auth.uid in request.resource.data.memberIds
                      && changed().hasOnly(['memberIds', 'memberCount'])
                      && request.resource.data.memberCount == resource.data.memberCount + 1
                      && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
-                     && ((resource.data.isOfficial == true && resource.data.iconUrl != '')
+                     && ((resource.data.isOfficial == true && (!('iconUrl' in resource.data) || resource.data.iconUrl == ''))
                          || resource.data.memberCount < 12);
 
       // Leave (non-leader): remove self from memberIds, decrement memberCount

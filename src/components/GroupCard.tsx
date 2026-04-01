@@ -38,7 +38,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
-  const isFull = group.memberCount >= MAX_GROUP_MEMBERS;
+  const isFull = !isModeGroup && group.memberCount >= MAX_GROUP_MEMBERS;
   const isMember = group.memberIds?.includes(currentUserId || "");
 
   const [joining, setJoining] = useState(false);
@@ -103,7 +103,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
                   {modeInfo.label}
                 </span>
               )}
-              <span>· {group.isOfficial && !isModeGroup ? `${group.memberCount} members` : `${group.memberCount}/${MAX_GROUP_MEMBERS}`}</span>
+              <span>· {isModeGroup ? `${group.memberCount} members` : `${group.memberCount}/${MAX_GROUP_MEMBERS}`}</span>
               {group.lastMessageAt && (
                 <span className="ml-auto shrink-0">{formatTime(group.lastMessageAt)}</span>
               )}
@@ -121,7 +121,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
-          {!group.isOfficial && isFull && (
+          {isFull && (
             <span className="bg-red-100 text-red-500 text-xs font-bold px-2 py-1 rounded-full shrink-0">
               FULL
             </span>
@@ -164,7 +164,7 @@ export default function GroupCard({ group, currentUserId, leaderName, canJoin, o
                 )}
                 <span className="flex items-center gap-1 bg-gray-100 px-2.5 py-1 rounded-full text-xs">
                   <IconUsers size={12} />
-                  {group.memberCount}/{MAX_GROUP_MEMBERS}
+                  {isModeGroup ? `${group.memberCount} members` : `${group.memberCount}/${MAX_GROUP_MEMBERS}`}
                 </span>
               </div>
               {group.goal && (
