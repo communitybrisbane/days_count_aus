@@ -199,12 +199,20 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
         if (!isOwnPost && hasXPQuota) {
-          await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
-          await updateDoc(doc(db, "users", user.uid), {
-            totalXP: increment(LIKE_SEND_XP),
-            dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
-            lastLikeDate: today,
-          });
+          try {
+            await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
+          } catch (e) {
+            console.error("[LIKE_XP] Failed to grant receive XP:", e);
+          }
+          try {
+            await updateDoc(doc(db, "users", user.uid), {
+              totalXP: increment(LIKE_SEND_XP),
+              dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
+              lastLikeDate: today,
+            });
+          } catch (e) {
+            console.error("[LIKE_XP] Failed to grant send XP:", e);
+          }
           setXpGained(LIKE_SEND_XP);
           setShowXP(true);
           setTimeout(() => setShowXP(false), 1500);
@@ -212,7 +220,8 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           setShowLikeToast(true);
           setTimeout(() => setShowLikeToast(false), 2000);
         }
-      } catch {
+      } catch (e) {
+        console.error("[LIKE] Failed:", e);
         // Revert on failure
         setLiked(false);
         setLikeCount((c) => c - 1);
