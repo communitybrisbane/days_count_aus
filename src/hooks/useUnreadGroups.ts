@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { doc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
+import { useEffect, useState, useRef } from "react";
+import { doc, getDoc, onSnapshot, collection, query, where, orderBy, getCountFromServer, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export interface GroupLiveData {
@@ -17,9 +17,8 @@ export function emitGroupRead(groupId: string) {
 }
 
 /**
- * Listens to group docs in real-time and determines unread status.
- * Uses local comparison (lastMessageAt vs lastReadAt) instead of
- * getCountFromServer to minimize Firestore reads.
+ * Listens to group docs in real-time and counts unread messages.
+ * Uses getCountFromServer to get actual unread count (excluding own messages).
  */
 export function useUnreadGroups(userId: string | undefined, groupIds: string[]) {
   const [unreadMap, setUnreadMap] = useState<Map<string, number>>(new Map());
@@ -74,7 +73,7 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
       for (const gid of groupIds) {
         const unsub = onSnapshot(
           doc(db, "groups", gid),
-          (snap) => {
+          async (snap) => {
             if (cancelled || !snap.exists()) return;
             const data = snap.data();
 
@@ -83,22 +82,76 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
             const lastMessageBy = data.lastMessageBy as string | undefined;
             const readAt = lastReadAtMapRef.current.get(gid);
 
-            // Determine unread: if lastMessageAt is newer than readAt, mark as 1 (has unread)
-            // If readAt is null (never opened / just joined), treat as no unread
-            const hasUnread = lastMessageAt && readAt && lastMessageAt.toMillis() > readAt.toMillis();
-            const unreadCount = hasUnread ? 1 : 0;
+            // Skip if last message was sent by self
+            const isSelf = lastMessageBy === userId;
+            if (isSelf) {
+              setUnreadMap((prev) => {
+                if ((prev.get(gid) || 0) === 0) return prev;
+                const next = new Map(prev);
+                next.set(gid, 0);
+                return next;
+              });
+              setLiveDataMap((prev) => {
+                const next = new Map(prev);
+                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
+                return next;
+              });
+              return;
+            }
 
-            setUnreadMap((prev) => {
-              if ((prev.get(gid) || 0) === unreadCount) return prev;
-              const next = new Map(prev);
-              next.set(gid, unreadCount);
-              return next;
-            });
-            setLiveDataMap((prev) => {
-              const next = new Map(prev);
-              next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount });
-              return next;
-            });
+            // If no readAt (never opened) or no new messages, count = 0
+            if (!readAt || !lastMessageAt || lastMessageAt.toMillis() <= readAt.toMillis()) {
+              setUnreadMap((prev) => {
+                if ((prev.get(gid) || 0) === 0) return prev;
+                const next = new Map(prev);
+                next.set(gid, 0);
+                return next;
+              });
+              setLiveDataMap((prev) => {
+                const next = new Map(prev);
+                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
+                return next;
+              });
+              return;
+            }
+
+            // Count actual unread messages (after readAt, not by self)
+            try {
+              const unreadQ = query(
+                collection(db, "groups", gid, "messages"),
+                where("createdAt", ">", readAt),
+                where("senderId", "!=", userId),
+                orderBy("createdAt", "asc")
+              );
+              const countSnap = await getCountFromServer(unreadQ);
+              const unreadCount = countSnap.data().count;
+
+              if (cancelled) return;
+              setUnreadMap((prev) => {
+                if ((prev.get(gid) || 0) === unreadCount) return prev;
+                const next = new Map(prev);
+                next.set(gid, unreadCount);
+                return next;
+              });
+              setLiveDataMap((prev) => {
+                const next = new Map(prev);
+                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount });
+                return next;
+              });
+            } catch {
+              // Fallback: just mark as 1 unread
+              setUnreadMap((prev) => {
+                if ((prev.get(gid) || 0) === 1) return prev;
+                const next = new Map(prev);
+                next.set(gid, 1);
+                return next;
+              });
+              setLiveDataMap((prev) => {
+                const next = new Map(prev);
+                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 1 });
+                return next;
+              });
+            }
           },
           () => { /* ignore errors */ }
         );
