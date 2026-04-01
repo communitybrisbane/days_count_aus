@@ -21,9 +21,19 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Only intercept navigation requests (HTML pages)
   if (event.request.mode !== "navigate") return;
+
+  // Skip offline fallback on localhost (dev environment)
+  if (self.location.hostname === "localhost") return;
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+    fetch(event.request)
+      .then((response) => {
+        // Only fallback if we got a genuine network error, not HTTP errors
+        return response;
+      })
+      .catch(() => caches.match(OFFLINE_URL))
   );
 });
 
