@@ -10,8 +10,6 @@ import {
   limit,
   getDocs,
   writeBatch,
-  addDoc,
-  serverTimestamp,
   arrayUnion,
   arrayRemove,
   increment,
@@ -27,8 +25,6 @@ import {
 import { db, storage } from "@/lib/firebase";
 import { getCurrentTuesday } from "@/lib/utils";
 import type { UserProfile, NotificationPrefs } from "@/types";
-import { compressImage } from "@/lib/imageUtils";
-import { POST_IMAGE_SIZE } from "@/lib/constants";
 
 export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, "users", uid));
@@ -190,28 +186,6 @@ export async function deleteAccount(user: User): Promise<void> {
 
   // 10. Delete Firebase Auth account (must be last)
   await deleteUser(user);
-}
-
-export async function submitReport(
-  reporterId: string,
-  targetUserId: string,
-  reason: string,
-  imageFile: File
-): Promise<void> {
-  const compressed = await compressImage(imageFile, { maxSize: POST_IMAGE_SIZE });
-  const imgRef = ref(storage, `reports/${reporterId}_${Date.now()}.jpg`);
-  await uploadBytes(imgRef, compressed, { contentType: "image/jpeg" });
-  const imageUrl = await getDownloadURL(imgRef);
-
-  await addDoc(collection(db, "reports"), {
-    reporterId,
-    targetUserId,
-    targetPostId: "",
-    reason,
-    imageUrl,
-    createdAt: serverTimestamp(),
-    resolved: false,
-  });
 }
 
 export async function blockUser(myUid: string, targetUid: string): Promise<void> {

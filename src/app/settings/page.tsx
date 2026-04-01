@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from 
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, submitReport, unblockUser } from "@/lib/services/users";
+import { uploadAvatar, deleteAccount, unblockUser } from "@/lib/services/users";
 import dynamic from "next/dynamic";
 import ConfirmModal from "@/components/ConfirmModal";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
@@ -34,20 +34,13 @@ export default function SettingsPage() {
   const [showRegion, setShowRegion] = useState(profile?.showRegion !== false);
   const [saving, setSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
-  const [activeSection, setActiveSection] = useState<"profile" | "blocked" | "report" | null>(null);
+  const [activeSection, setActiveSection] = useState<"profile" | "blocked" | null>(null);
   const [blockedProfiles, setBlockedProfiles] = useState<{ uid: string; displayName: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
 
   // Image crop
   const [cropSrc, setCropSrc] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Report
-  const [reportTarget, setReportTarget] = useState("");
-  const [reportReason, setReportReason] = useState("");
-  const [reportImage, setReportImage] = useState<File | null>(null);
-  const [reportImagePreview, setReportImagePreview] = useState("");
-  const reportFileRef = useRef<HTMLInputElement>(null);
 
   // Legal modals
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -182,38 +175,6 @@ export default function SettingsPage() {
         alert("Deletion failed. Please try again.");
       }
       setDeleting(false);
-    }
-  };
-
-  const handleReportImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setReportImage(file);
-    setReportImagePreview(URL.createObjectURL(file));
-  };
-
-  const [reportError, setReportError] = useState("");
-
-  const handleReport = async () => {
-    if (!user || !reportTarget.trim() || !reportReason.trim() || !reportImage) return;
-    setReportError("");
-    try {
-      // Resolve username to UID (case-insensitive)
-      const q = query(collection(db, "users"), where("displayNameLower", "==", reportTarget.trim().toLowerCase()));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        setReportError("User not found");
-        return;
-      }
-      const targetUid = snap.docs[0].id;
-      await submitReport(user.uid, targetUid, reportReason.trim(), reportImage);
-      setReportTarget("");
-      setReportReason("");
-      setReportImage(null);
-      setReportImagePreview("");
-      setActiveSection(null);
-    } catch (e) {
-      console.error("Failed to submit report:", e);
     }
   };
 
@@ -431,35 +392,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Report — Accordion */}
-        <button
-          onClick={() => toggle("report")}
-          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
-        >
-          <span className="font-medium text-sm text-white/80">Report</span>
-          <span className="text-white/30 text-sm">{activeSection === "report" ? "▲" : "▼"}</span>
-        </button>
-        {activeSection === "report" && (
-          <div className="px-4 py-3 space-y-2 bg-forest-light/10 border-b border-forest-light/15">
-            <input type="text" placeholder="Username" value={reportTarget} onChange={(e) => { setReportTarget(sanitize(e.target.value)); setReportError(""); }}
-              className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none placeholder-white/30" />
-            {reportError && <p className="text-xs text-red-400">{reportError}</p>}
-            <input type="text" placeholder="Reason for report" value={reportReason} onChange={(e) => setReportReason(sanitize(e.target.value))}
-              className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none placeholder-white/30" />
-            <div>
-              <button onClick={() => reportFileRef.current?.click()}
-                className="text-xs text-forest-mid border border-forest-mid px-3 py-1.5 rounded-full">
-                {reportImagePreview ? "Change image" : "Attach screenshot (required)"}
-              </button>
-              <input ref={reportFileRef} type="file" accept="image/*" onChange={handleReportImage} className="hidden" />
-              {reportImagePreview && (
-                <img src={reportImagePreview} alt="" className="mt-2 w-20 h-20 object-cover rounded-lg border border-forest-light/30" />
-              )}
-            </div>
-            <button onClick={handleReport} disabled={!reportTarget.trim() || !reportReason.trim() || !reportImage}
-              className="text-sm bg-forest-light/20 text-white/80 px-4 py-2 rounded-full disabled:opacity-50">Submit Report</button>
-          </div>
-        )}
       </div>
 
       {/* フッター直上: Legal links・Log Out・Delete Account */}
