@@ -201,9 +201,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         if (!isOwnPost && hasXPQuota) {
           try {
             await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
-          } catch (e) {
-            console.error("[LIKE_XP] Failed to grant receive XP:", e);
-          }
+          } catch {}
           try {
             await updateDoc(doc(db, "users", user.uid), {
               totalXP: increment(LIKE_SEND_XP),
@@ -211,9 +209,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               lastLikeDate: today,
             });
             refreshProfile();
-          } catch (e) {
-            console.error("[LIKE_XP] Failed to grant send XP:", e);
-          }
+          } catch {}
           setXpGained(LIKE_SEND_XP);
           setShowXP(true);
           setTimeout(() => setShowXP(false), 1500);
