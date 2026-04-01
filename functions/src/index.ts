@@ -505,6 +505,51 @@ export const onGroupMessageCreated = onDocumentCreated(
   }
 );
 
+// ─── Cloud Function: User report email notification ───
+export const onUserReportCreated = onDocumentCreated(
+  {
+    document: "reports/{reportId}",
+    secrets: [gmailUser, gmailPass, adminEmail],
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const data = snap.data();
+    const reporterId = data.reporterId as string;
+    const targetUserId = data.targetUserId as string;
+    const reason = (data.reason as string) || "N/A";
+
+    const [reporterSnap, targetSnap] = await Promise.all([
+      db.doc(`users/${reporterId}`).get(),
+      db.doc(`users/${targetUserId}`).get(),
+    ]);
+    const reporterName = reporterSnap.exists ? (reporterSnap.data()!.displayName || reporterId) : reporterId;
+    const targetName = targetSnap.exists ? (targetSnap.data()!.displayName || targetUserId) : targetUserId;
+
+    const reportsSnap = await db
+      .collection("reports")
+      .where("targetUserId", "==", targetUserId)
+      .where("resolved", "==", false)
+      .count()
+      .get();
+    const reportCount = reportsSnap.data().count;
+
+    try {
+      await sendReportEmail(
+        `[User Report] ${targetName} reported (${reportCount} total)`,
+        `Report ID: ${event.params.reportId}\n` +
+        `Reporter: ${reporterName} (${reporterId})\n` +
+        `Target: ${targetName} (${targetUserId})\n` +
+        `Reason: ${reason}\n` +
+        `Unresolved reports against this user: ${reportCount}`
+      );
+    } catch (e) {
+      console.error("[USER_REPORT_EMAIL] Failed to send:", e);
+    }
+  }
+);
+
 // ─── Cloud Function: Sync groupIds when members are removed (kick/leave) ───
 export const syncGroupMembership = onDocumentUpdated(
   "groups/{groupId}",

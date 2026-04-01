@@ -13,6 +13,8 @@ import {
   arrayUnion,
   arrayRemove,
   increment,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 import {
@@ -196,6 +198,21 @@ export async function blockUser(myUid: string, targetUid: string): Promise<void>
 export async function unblockUser(myUid: string, targetUid: string): Promise<void> {
   const privRef = doc(db, "users", myUid, "private", "config");
   await updateDoc(privRef, { blockedUsers: arrayRemove(targetUid) });
+}
+
+export async function reportUser(
+  reporterId: string,
+  targetUserId: string,
+  reason: string
+): Promise<void> {
+  await addDoc(collection(db, "reports"), {
+    reporterId,
+    targetUserId,
+    targetPostId: "",
+    reason,
+    createdAt: serverTimestamp(),
+    resolved: false,
+  });
 }
 
 export async function saveFCMToken(uid: string, token: string): Promise<void> {
