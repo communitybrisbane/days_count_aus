@@ -246,7 +246,7 @@ export default function GroupsPage() {
                               LIVE
                             </span>
                           </div>
-                          <p className="text-xs text-white/60 mt-0.5">Tap to join the meeting</p>
+                          <p className="text-xs text-white/60 mt-0.5">{meeting.description}</p>
                         </div>
                         <div className="shrink-0">
                           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
