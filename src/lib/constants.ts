@@ -91,8 +91,8 @@ export const POST_XP_DAILY_MAX = 3;
 export const LIKE_SEND_XP = 3;
 export const LIKE_RECEIVE_XP = 5;
 
-/** Bottom navigation bar height (CSS value) — keep in sync with BottomNav h-12 */
-export const NAV_HEIGHT = "2.5rem";
+/** Bottom navigation bar height (CSS value) — keep in sync with BottomNav h-10 + half safe-area */
+export const NAV_HEIGHT = "calc(2.5rem + env(safe-area-inset-bottom, 0px) / 2)";
 
 export const REGIONS = [
   "Sydney",

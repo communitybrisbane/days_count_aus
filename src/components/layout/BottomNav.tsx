@@ -46,7 +46,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
   };
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) / 2)" }}>
       {/* Hidden file input for post image */}
       <input
         ref={fileInputRef}
