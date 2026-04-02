@@ -13,7 +13,7 @@
     "dompurify": "^3.3.3",
     "firebase": "^12.10.0",
     "framer-motion": "^12.35.2",
-    "next": "16.1.6",
+    "next": "^16.2.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-easy-crop": "^5.5.6"
@@ -30,5 +30,9 @@
     "firebase-admin": "^13.7.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@tootallnate/once": "3.0.1",
+    "http-proxy-agent": "7.0.2"
   }
 }
