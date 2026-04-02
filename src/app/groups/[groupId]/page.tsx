@@ -176,7 +176,7 @@ export default function GroupChatPage() {
   const userLevel = profile ? calculateLevel(profile.totalXP) : 0;
 
   const handleJoinAttempt = async () => {
-    if (!user || !group || isFull) return;
+    if (!user || !group || isFull || profile?.restricted) return;
     if (userLevel < 5) {
       alert("You need Lv.5 or higher to join a community.");
       return;
@@ -274,7 +274,7 @@ export default function GroupChatPage() {
   const URL_PATTERN = /https?:\/\/|www\./i;
 
   const handleSend = async () => {
-    if (!user || !text.trim() || !isMember) return;
+    if (!user || !text.trim() || !isMember || profile?.restricted) return;
     const msg = text.trim();
     if (URL_PATTERN.test(msg)) {
       alert("Links are not allowed in group chat.");
@@ -295,7 +295,7 @@ export default function GroupChatPage() {
   };
 
   const handleReaction = async (msgId: string, hasReacted: boolean) => {
-    if (!user) return;
+    if (!user || profile?.restricted) return;
     const msgRef = doc(db, "groups", groupId, "messages", msgId);
     await updateDoc(msgRef, { [`reactions.${user.uid}`]: !hasReacted });
   };
@@ -758,6 +758,7 @@ export default function GroupChatPage() {
       {/* Input */}
       {isMember && (
         <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
+          {profile?.restricted && <p className="text-red-400 text-xs font-bold mb-1 ml-1 text-center">This account has been restricted</p>}
           {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
           {showLinkWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">Links are not allowed</p>}
           <div className="flex items-center gap-2">

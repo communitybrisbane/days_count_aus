@@ -49,6 +49,7 @@ const roundedClass = (listRounded?: "top" | "bottom" | "none") => {
 
 function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
   const { user, profile, following, refreshProfile, optimisticFollow, optimisticUnfollow, patchProfile } = useAuth();
+  const restricted = profile?.restricted === true;
   const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean } | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
@@ -166,7 +167,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
   }, [post.editableUntil, user]);
 
   const handleLike = async () => {
-    if (!user || !profile || likingRef.current) return;
+    if (!user || !profile || likingRef.current || restricted) return;
     likingRef.current = true;
 
     const likeRef = doc(db, "posts", post.id, "likes", user.uid);
@@ -270,7 +271,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
   };
 
   const handleReport = async () => {
-    if (!user) return;
+    if (!user || restricted) return;
     if (!confirm("Report this post as inappropriate?")) return;
     setReportStatus("sending");
     try {
@@ -288,7 +289,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
   };
 
   const handleBlock = async () => {
-    if (!user) return;
+    if (!user || restricted) return;
     if (!confirm(`Block this user? You won't see their posts anymore.`)) return;
     try {
       await blockUser(user.uid, post.userId);
@@ -414,7 +415,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
             <Link href={`/user/${post.userId}`} className="text-sm font-bold truncate">
               {authorProfile?.displayName || "..."}
             </Link>
-            {user && post.userId !== user.uid && (
+            {user && post.userId !== user.uid && !restricted && (
               <button
                 onClick={async (e) => {
                   e.stopPropagation();

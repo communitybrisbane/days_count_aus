@@ -173,7 +173,7 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Follow / Block */}
-          {!isOwn && user && (
+          {!isOwn && user && !myProfile?.restricted && (
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={async () => {

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ForegroundNotification from "@/components/ForegroundNotification";
+import RestrictedBanner from "@/components/RestrictedBanner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -60,6 +61,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <div className="mx-auto max-w-[450px] min-h-dvh bg-forest/80 relative shadow-2xl backdrop-blur-sm overflow-hidden">
+            <RestrictedBanner />
             {children}
           </div>
           <ForegroundNotification />

@@ -58,6 +58,7 @@ export interface UserProfile {
   weekStreak?: number;
   lastCompletedWeekStart?: string;
   lastPostAt?: string;
+  restricted?: boolean;
   createdAt?: Timestamp;
 }
 

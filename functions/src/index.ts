@@ -536,15 +536,29 @@ export const onUserReportCreated = onDocumentCreated(
       .get();
     const reportCount = reportsSnap.data().count;
 
+    // Auto-restrict account at 10 unresolved reports
+    const alreadyRestricted = targetSnap.exists && targetSnap.data()!.restricted === true;
+    if (reportCount >= 10 && !alreadyRestricted) {
+      try {
+        await db.doc(`users/${targetUserId}`).update({ restricted: true });
+        console.log(`[MODERATION] Account restricted: ${targetUserId} (${reportCount} reports)`);
+      } catch (e) {
+        console.error(`[MODERATION] Failed to restrict ${targetUserId}:`, e);
+      }
+    }
+
     try {
       await sendReportEmail(
-        `[User Report] ${targetName} reported (${reportCount} total)`,
+        reportCount >= 10
+          ? `[User Report] ${targetName} ACCOUNT RESTRICTED (${reportCount} reports)`
+          : `[User Report] ${targetName} reported (${reportCount} total)`,
         `Report ID: ${event.params.reportId}\n` +
         `Reporter: ${reporterName} (${reporterId})\n` +
         `Target: ${targetName} (${targetUserId})\n` +
         `Reason: ${reason}\n` +
         (imageUrl ? `Screenshot: ${imageUrl}\n` : "") +
-        `Unresolved reports against this user: ${reportCount}`
+        `Unresolved reports against this user: ${reportCount}\n` +
+        `${reportCount >= 10 ? ">>> ACCOUNT RESTRICTED <<<" : ""}`
       );
     } catch (e) {
       console.error("[USER_REPORT_EMAIL] Failed to send:", e);

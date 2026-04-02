@@ -192,6 +192,15 @@ export default function PostPage() {
     return <LoadingSpinner fullScreen />;
   }
 
+  if (profile.restricted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-dvh gap-3 px-6 text-center">
+        <p className="text-white/40 text-sm">This account has been restricted. Posting is not available.</p>
+        <button onClick={() => router.back()} className="text-sm text-white/30 border border-white/20 px-4 py-1.5 rounded-full">Go back</button>
+      </div>
+    );
+  }
+
   const modeInfo = FOCUS_MODES.find((m) => m.id === mode);
   const gradientIdx = mode ? FOCUS_MODES.findIndex((m) => m.id === mode) : 0;
   const gradient = GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0];
