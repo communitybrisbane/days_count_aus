@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, useRef, memo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { doc, updateDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, increment, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
+import { emitGroupRead } from "@/hooks/useUnreadGroups";
 import { FocusModeIcon, IconUsers } from "@/components/icons";
 import type { Group } from "@/types";
 
@@ -33,9 +34,10 @@ interface GroupCardProps {
   showGoal?: boolean;
   unreadCount?: number;
   liveMessageText?: string;
+  onClearHistory?: (groupId: string) => void;
 }
 
-export default memo(function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText }: GroupCardProps) {
+export default memo(function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText, onClearHistory }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
@@ -44,6 +46,50 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
 
   const [joining, setJoining] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Swipe state
+  const [swipeX, setSwipeX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const swipeThreshold = 60;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+    setSwiping(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+    // Only swipe left, and only if horizontal movement dominates
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+      setSwiping(true);
+      setSwipeX(Math.min(0, dx));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeX < -swipeThreshold) {
+      setSwipeX(-80);
+    } else {
+      setSwipeX(0);
+    }
+    touchStartRef.current = null;
+    setTimeout(() => setSwiping(false), 0);
+  };
+
+  const handleClearHistory = async () => {
+    if (!currentUserId) return;
+    try {
+      await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { readAt: Timestamp.now() }, { merge: true });
+      emitGroupRead(group.id);
+      onClearHistory?.(group.id);
+    } catch (e) {
+      console.error("Clear history failed:", e);
+    }
+    setSwipeX(0);
+  };
 
   const handleJoinClick = async () => {
     if (!currentUserId) return;
@@ -76,10 +122,23 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
 
   return (
     <>
-      <div
-        onClick={handleCardClick}
-        className="block bg-white cursor-pointer active:bg-gray-50 border-b border-gray-100"
-      >
+      <div className="relative overflow-hidden border-b border-gray-100">
+        {/* Clear button behind the card */}
+        {isMember && (
+          <div className="absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center bg-red-500">
+            <button onClick={handleClearHistory} className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
+              Clear
+            </button>
+          </div>
+        )}
+        <div
+          onClick={(e) => { if (!swiping) handleCardClick(); }}
+          onTouchStart={isMember ? handleTouchStart : undefined}
+          onTouchMove={isMember ? handleTouchMove : undefined}
+          onTouchEnd={isMember ? handleTouchEnd : undefined}
+          className="block bg-white cursor-pointer active:bg-gray-50 relative z-[1]"
+          style={{ transform: `translateX(${swipeX}px)`, transition: swiping ? "none" : "transform 0.3s ease" }}
+        >
         <div className="flex items-center gap-3 px-4 py-3">
           {group.iconUrl ? (
             <Image src={group.iconUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover shrink-0" />
@@ -128,6 +187,7 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
             </span>
           )}
         </div>
+      </div>
       </div>
 
       {/* Group preview modal for non-members */}

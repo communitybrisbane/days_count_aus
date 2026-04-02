@@ -324,6 +324,9 @@ export default function GroupsPage() {
                     leaderName={leaderNames[group.creatorId]}
                     unreadCount={unreadMap.get(group.id) || 0}
                     liveMessageText={liveDataMap.get(group.id)?.lastMessageText}
+                    onClearHistory={(gid) => {
+                      setGroups((prev) => prev.map((g) => g.id === gid ? { ...g, lastMessageText: "" } : g));
+                    }}
                   />
                 ))}
 
