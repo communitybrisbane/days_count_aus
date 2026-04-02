@@ -34,6 +34,7 @@ export interface Group {
   lastMessageText?: string;
   lastMessageBy?: string;
   joinType?: "open" | "friends";
+  kickedUserIds?: string[];
 }
 
 export interface UserProfile {
@@ -73,6 +74,7 @@ export interface NotificationPrefs {
 export interface UserPrivate {
   blockedUsers: string[];
   reportedPosts: string[];
+  kickedFrom?: { groupId: string; groupName: string; at: string }[];
   fcmToken: string;
   notificationPrefs?: NotificationPrefs;
 }

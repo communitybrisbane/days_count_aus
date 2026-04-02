@@ -179,6 +179,10 @@ export default function GroupChatPage() {
 
   const handleJoinAttempt = async () => {
     if (!user || !group || isFull || profile?.restricted) return;
+    if (group.kickedUserIds?.includes(user.uid)) {
+      alert("You cannot rejoin this group.");
+      return;
+    }
     if (userLevel < 5) {
       alert("You need Lv.5 or higher to join a community.");
       return;
@@ -268,6 +272,7 @@ export default function GroupChatPage() {
   const handleDisbandGroup = async () => {
     if (!user || !group) return;
     if (!confirm("This will permanently close the group for everyone. Are you sure?")) return;
+    await addSystemMessage("Leader closed the group");
     await updateDoc(doc(db, "groups", groupId), { isClosed: true });
     await updateDoc(doc(db, "users", user.uid), { groupIds: arrayRemove(groupId) });
     await refreshProfile();
@@ -283,8 +288,9 @@ export default function GroupChatPage() {
     await updateDoc(doc(db, "groups", groupId), {
       memberIds: arrayRemove(uid),
       memberCount: increment(-1),
+      kickedUserIds: arrayUnion(uid),
     });
-    // groupIds cleanup for kicked user is handled by syncGroupMembership Cloud Function
+    // groupIds cleanup + kickedFrom notification handled by syncGroupMembership Cloud Function
     setGroup((g) => g ? {
       ...g,
       memberIds: g.memberIds.filter((id) => id !== uid),
@@ -395,16 +401,7 @@ export default function GroupChatPage() {
     return <LoadingSpinner fullScreen />;
   }
 
-  if (group.isClosed) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-dvh p-6">
-        <p className="text-white/60">This community has been disbanded</p>
-        <button onClick={() => router.push("/groups")} className="mt-4 text-accent-orange">
-          Back to Community
-        </button>
-      </div>
-    );
-  }
+  const isClosed = !!group.isClosed;
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
@@ -469,12 +466,14 @@ export default function GroupChatPage() {
                 )}
               </button>
             )}
-            {isLeader && (
+            {isLeader && !isClosed && (
               <button onClick={() => { setEditGoal(group.goal || ""); setShowSettings(true); }} className="w-9 h-9 flex items-center justify-center text-white/50">
                 <IconEdit size={18} />
               </button>
             )}
-            {isModeGroup ? (
+            {isClosed ? (
+              <span className="text-xs text-red-400/70 px-2 py-1">Closed</span>
+            ) : isModeGroup ? (
               <span className="text-xs bg-accent-orange text-white px-2.5 py-1 rounded-full">Official</span>
             ) : isMember ? (
               <button onClick={() => setShowLeaveModal(true)} className="text-sm text-red-400 px-2 py-1">Leave</button>
@@ -794,8 +793,8 @@ export default function GroupChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      {isMember && (
+      {/* Input or closed banner */}
+      {isMember && !isClosed && (
         <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
           {profile?.restricted && <p className="text-red-400 text-xs font-bold mb-1 ml-1 text-center">This account has been restricted</p>}
           {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
@@ -828,6 +827,26 @@ export default function GroupChatPage() {
               </svg>
             </button>
           </div>
+        </div>
+      )}
+      {isMember && isClosed && (
+        <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-3 text-center" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
+          <p className="text-white/40 text-xs mb-2">This group has been closed. You can still read messages.</p>
+          <button
+            onClick={async () => {
+              if (!user) return;
+              await updateDoc(doc(db, "groups", groupId), {
+                memberIds: arrayRemove(user.uid),
+                memberCount: increment(-1),
+              });
+              await updateDoc(doc(db, "users", user.uid), { groupIds: arrayRemove(groupId) });
+              await refreshProfile();
+              router.replace("/groups");
+            }}
+            className="text-sm text-red-400 font-medium px-4 py-1.5 border border-red-400/30 rounded-full"
+          >
+            Leave
+          </button>
         </div>
       )}
     </div>

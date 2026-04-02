@@ -583,6 +583,9 @@ export const syncGroupMembership = onDocumentUpdated(
 
     // Find removed members
     const removedMembers = oldMembers.filter((uid) => !newMembers.includes(uid));
+    const kickedUserIds: string[] = after.kickedUserIds || [];
+    const oldKickedUserIds: string[] = before.kickedUserIds || [];
+    const groupName = after.groupName || "";
 
     for (const uid of removedMembers) {
       try {
@@ -590,6 +593,16 @@ export const syncGroupMembership = onDocumentUpdated(
           groupIds: admin.firestore.FieldValue.arrayRemove(groupId),
         });
         console.log(`[GROUP_SYNC] Removed groupId ${groupId} from user ${uid}`);
+
+        // If user was kicked (newly added to kickedUserIds), write notification
+        if (kickedUserIds.includes(uid) && !oldKickedUserIds.includes(uid)) {
+          await db.doc(`users/${uid}/private/config`).set({
+            kickedFrom: admin.firestore.FieldValue.arrayUnion({
+              groupId, groupName, at: new Date().toISOString(),
+            }),
+          }, { merge: true });
+          console.log(`[GROUP_SYNC] Wrote kickedFrom for user ${uid} from group ${groupId}`);
+        }
       } catch (e) {
         console.error(`[GROUP_SYNC] Failed to update user ${uid}:`, e);
       }

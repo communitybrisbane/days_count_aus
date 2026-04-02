@@ -46,7 +46,8 @@ service cloud.firestore {
         allow create: if isOwner(userId);
         allow update: if isOwner(userId)
                        && request.resource.data.diff(resource.data).affectedKeys()
-                          .hasOnly(['blockedUsers', 'fcmToken', 'notificationPrefs', 'reportedPosts']);
+                          .hasOnly(['blockedUsers', 'fcmToken', 'notificationPrefs', 'reportedPosts', 'kickedFrom']);
+      // Note: kickedFrom is also written by Cloud Function (admin SDK, bypasses rules)
       }
 
       // Following subcollection — owner only (follower list intentionally hidden per SPEC)
@@ -172,10 +173,10 @@ service cloud.firestore {
                      && resource.data.creatorId == request.auth.uid
                      && changed().hasOnly(['goal', 'iconUrl', 'isClosed', 'joinType']);
 
-      // Update by leader: kick a member (memberIds remove + memberCount decrement)
+      // Update by leader: kick a member (memberIds remove + memberCount decrement + kickedUserIds add)
       allow update: if isAuth()
                      && resource.data.creatorId == request.auth.uid
-                     && changed().hasOnly(['memberIds', 'memberCount'])
+                     && changed().hasOnly(['memberIds', 'memberCount', 'kickedUserIds'])
                      && request.resource.data.memberCount == resource.data.memberCount - 1
                      && request.resource.data.memberIds.size() == resource.data.memberIds.size() - 1;
 
@@ -187,6 +188,7 @@ service cloud.firestore {
 
       // Join: add self to memberIds, increment memberCount
       // Mode groups (isOfficial && no iconUrl) have no cap; all others max 12
+      // Kicked users cannot rejoin
       allow update: if isAuth()
                      && !(request.auth.uid in resource.data.memberIds)
                      && request.auth.uid in request.resource.data.memberIds
@@ -194,7 +196,8 @@ service cloud.firestore {
                      && request.resource.data.memberCount == resource.data.memberCount + 1
                      && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
                      && ((resource.data.isOfficial == true && (!('iconUrl' in resource.data) || resource.data.iconUrl == ''))
-                         || resource.data.memberCount < 12);
+                         || resource.data.memberCount < 12)
+                     && (!('kickedUserIds' in resource.data) || !(request.auth.uid in resource.data.kickedUserIds));
 
       // Leave (non-leader): remove self from memberIds, decrement memberCount
       allow update: if isAuth()

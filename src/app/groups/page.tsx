@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { collection, getDocs, getDoc, doc, query, orderBy, where, limit, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, query, orderBy, where, limit, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import type { UserPrivate } from "@/types";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
@@ -21,7 +22,7 @@ import type { Group, AdminConfig } from "@/types";
 
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const { user, profile, privateData, loading, refreshProfile } = useAuth();
   const { unreadMap, liveDataMap } = useUnreadGroups(user?.uid, profile?.groupIds || []);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
@@ -32,6 +33,21 @@ export default function GroupsPage() {
 
   const [leaderNames, setLeaderNames] = useState<Record<string, string>>({});
   const [meeting, setMeeting] = useState<{ label: string; url: string; description: string } | null>(null);
+  const [kickedNotices, setKickedNotices] = useState<{ groupId: string; groupName: string; at: string }[]>([]);
+
+  useEffect(() => {
+    if (privateData?.kickedFrom?.length) {
+      setKickedNotices(privateData.kickedFrom);
+    }
+  }, [privateData?.kickedFrom]);
+
+  const dismissKickNotice = async (groupId: string) => {
+    if (!user) return;
+    const updated = kickedNotices.filter((k) => k.groupId !== groupId);
+    setKickedNotices(updated);
+    const privRef = doc(db, "users", user.uid, "private", "config");
+    await setDoc(privRef, { kickedFrom: updated }, { merge: true });
+  };
 
 
   const fetchGroups = async () => {
@@ -286,6 +302,14 @@ export default function GroupsPage() {
                   )}
                 </div>
               )}
+
+              {/* Kicked notices */}
+              {kickedNotices.map((k) => (
+                <div key={k.groupId} className="mx-4 mt-2 bg-red-500/10 border border-red-400/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <p className="text-xs text-red-400">You were removed from <span className="font-bold">{k.groupName}</span></p>
+                  <button onClick={() => dismissKickNotice(k.groupId)} className="text-white/40 text-sm ml-2 shrink-0">&times;</button>
+                </div>
+              ))}
 
               {/* Group Chat section */}
               <div className="px-4 pt-2">
