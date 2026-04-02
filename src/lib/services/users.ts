@@ -203,13 +203,22 @@ export async function unblockUser(myUid: string, targetUid: string): Promise<voi
 export async function reportUser(
   reporterId: string,
   targetUserId: string,
-  reason: string
+  reason: string,
+  imageFile: File
 ): Promise<void> {
+  const { compressImage } = await import("@/lib/imageUtils");
+  const { POST_IMAGE_SIZE } = await import("@/lib/constants");
+  const compressed = await compressImage(imageFile, { maxSize: POST_IMAGE_SIZE });
+  const imgRef = ref(storage, `reports/${reporterId}_${Date.now()}.jpg`);
+  await uploadBytes(imgRef, compressed, { contentType: "image/jpeg" });
+  const imageUrl = await getDownloadURL(imgRef);
+
   await addDoc(collection(db, "reports"), {
     reporterId,
     targetUserId,
     targetPostId: "",
     reason,
+    imageUrl,
     createdAt: serverTimestamp(),
     resolved: false,
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserPosts } from "@/lib/services/posts";
@@ -33,7 +33,10 @@ export default function PublicProfilePage() {
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [showReportInput, setShowReportInput] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [reportImage, setReportImage] = useState<File | null>(null);
+  const [reportImagePreview, setReportImagePreview] = useState("");
   const [reporting, setReporting] = useState(false);
+  const reportFileRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
 
@@ -266,7 +269,7 @@ export default function PublicProfilePage() {
       )}
 
       {showReportInput && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => { setShowReportInput(false); setReportReason(""); }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => { setShowReportInput(false); setReportReason(""); setReportImage(null); setReportImagePreview(""); }}>
           <div className="w-full max-w-sm bg-forest-mid/95 backdrop-blur-md rounded-2xl p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-white/90 text-center">Report {userData.displayName}</h3>
             <input
@@ -277,27 +280,52 @@ export default function PublicProfilePage() {
               className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30"
               autoFocus
             />
+            <div>
+              <button
+                onClick={() => reportFileRef.current?.click()}
+                className="text-xs text-white/60 border border-forest-light/30 px-3 py-1.5 rounded-full active:bg-white/10"
+              >
+                {reportImagePreview ? "Change screenshot" : "Attach screenshot (required)"}
+              </button>
+              <input
+                ref={reportFileRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setReportImage(file);
+                  setReportImagePreview(URL.createObjectURL(file));
+                }}
+                className="hidden"
+              />
+              {reportImagePreview && (
+                <img src={reportImagePreview} alt="" className="mt-2 w-20 h-20 object-cover rounded-lg border border-forest-light/30" />
+              )}
+            </div>
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowReportInput(false); setReportReason(""); }}
+                onClick={() => { setShowReportInput(false); setReportReason(""); setReportImage(null); setReportImagePreview(""); }}
                 className="flex-1 py-2.5 rounded-full text-sm text-white/60 border border-white/20"
               >
                 Cancel
               </button>
               <button
                 onClick={async () => {
-                  if (!user || !reportReason.trim() || reporting) return;
+                  if (!user || !reportReason.trim() || !reportImage || reporting) return;
                   setReporting(true);
                   try {
-                    await reportUser(user.uid, uid, reportReason.trim());
+                    await reportUser(user.uid, uid, reportReason.trim(), reportImage);
                     setShowReportInput(false);
                     setReportReason("");
+                    setReportImage(null);
+                    setReportImagePreview("");
                   } catch (e) {
                     console.error("Failed to report:", e);
                   }
                   setReporting(false);
                 }}
-                disabled={!reportReason.trim() || reporting}
+                disabled={!reportReason.trim() || !reportImage || reporting}
                 className="flex-1 py-2.5 rounded-full text-sm font-bold bg-accent-orange text-white disabled:opacity-50"
               >
                 {reporting ? "Sending..." : "Submit"}
