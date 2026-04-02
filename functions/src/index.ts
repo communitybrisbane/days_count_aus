@@ -594,6 +594,34 @@ export const syncGroupMembership = onDocumentUpdated(
   }
 );
 
+// ─── Cloud Function: Auto-resolve reports when restriction is lifted ───
+export const onRestrictionLifted = onDocumentUpdated(
+  "users/{userId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    // Only trigger when restricted changes from true to false
+    if (before.restricted !== true || after.restricted !== false) return;
+
+    const userId = event.params.userId;
+    const reportsSnap = await db
+      .collection("reports")
+      .where("targetUserId", "==", userId)
+      .where("resolved", "==", false)
+      .get();
+
+    if (reportsSnap.empty) return;
+
+    const batch = db.batch();
+    reportsSnap.docs.forEach((doc) => batch.update(doc.ref, { resolved: true }));
+    await batch.commit();
+
+    console.log(`[MODERATION] Restriction lifted for ${userId}: resolved ${reportsSnap.size} reports`);
+  }
+);
+
 // ─── Cloud Function: Block sync (unfollow reverse + blockedBy) ───
 export const onBlockListChanged = onDocumentWritten(
   "users/{userId}/private/config",
