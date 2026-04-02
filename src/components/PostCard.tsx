@@ -278,10 +278,14 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       const result = await reportPost(post.id, user.uid, "Inappropriate content");
       if (result === "already_reported") {
         setReportStatus("already");
+        setTimeout(() => setReportStatus(""), 3000);
       } else {
         setReportStatus("done");
+        setTimeout(() => {
+          setReportStatus("");
+          onDelete?.();
+        }, 1500);
       }
-      setTimeout(() => setReportStatus(""), 3000);
     } catch (e) {
       console.error("Report failed:", e);
       setReportStatus("");

@@ -66,7 +66,10 @@ export default function PublicProfilePage() {
             fetchUserGroups(profile.groupIds).then(setUserGroups).catch(() => {});
           }
         }
-        setPosts(allPosts);
+        const visiblePosts = !isOwn && privateData?.reportedPosts?.length
+          ? allPosts.filter((p) => !privateData.reportedPosts.includes(p.id))
+          : allPosts;
+        setPosts(visiblePosts);
         try {
           const ids = await getFollowingIds(uid);
           setFollowingCount(ids.length);

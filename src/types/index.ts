@@ -72,6 +72,7 @@ export interface NotificationPrefs {
 /** Private user data (stored in users/{uid}/private/config) */
 export interface UserPrivate {
   blockedUsers: string[];
+  reportedPosts: string[];
   fcmToken: string;
   notificationPrefs?: NotificationPrefs;
 }

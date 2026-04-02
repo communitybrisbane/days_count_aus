@@ -88,6 +88,12 @@ export default function ExplorePage() {
           );
         }
 
+        if (privateDataRef.current?.reportedPosts?.length) {
+          newPosts = newPosts.filter(
+            (p) => !privateDataRef.current!.reportedPosts.includes(p.id)
+          );
+        }
+
         // Client-side filter: user/region OR tag match
         if (searchUserIds !== null || searchTag) {
           const tagQuery = searchTag ? searchTag.replace(/^#/, "") : "";

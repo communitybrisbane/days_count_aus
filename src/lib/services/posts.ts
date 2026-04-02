@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   Timestamp,
   increment,
+  arrayUnion,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -245,6 +246,10 @@ export async function reportPost(
   await updateDoc(postRef, {
     reportCount: increment(1),
   });
+
+  // Add postId to reporter's reportedPosts for client-side hiding
+  const privateRef = doc(db, "users", reporterId, "private", "config");
+  await setDoc(privateRef, { reportedPosts: arrayUnion(postId) }, { merge: true });
 
   return "reported";
 }

@@ -62,9 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fetch private data (blockedUsers, fcmToken)
     try {
       const privSnap = await getDoc(doc(db, "users", uid, "private", "config"));
-      setPrivateData(privSnap.exists() ? (privSnap.data() as UserPrivate) : { blockedUsers: [], fcmToken: "" });
+      setPrivateData(privSnap.exists() ? (privSnap.data() as UserPrivate) : { blockedUsers: [], reportedPosts: [], fcmToken: "" });
     } catch {
-      setPrivateData({ blockedUsers: [], fcmToken: "" });
+      setPrivateData({ blockedUsers: [], reportedPosts: [], fcmToken: "" });
     }
   };
 
