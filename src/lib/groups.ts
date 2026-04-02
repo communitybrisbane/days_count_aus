@@ -23,11 +23,13 @@ export async function fetchUserGroups(groupIds: string[]): Promise<Group[]> {
   const groups: Group[] = [];
   await Promise.all(
     groupIds.map(async (gid) => {
-      const snap = await getDoc(doc(db, "groups", gid));
-      if (snap.exists()) {
-        const g = { id: snap.id, ...snap.data() } as Group;
-        if (!g.isClosed && (!g.isOfficial || g.iconUrl)) groups.push(g);
-      }
+      try {
+        const snap = await getDoc(doc(db, "groups", gid));
+        if (snap.exists()) {
+          const g = { id: snap.id, ...snap.data() } as Group;
+          if (!g.isClosed && (!g.isOfficial || g.iconUrl)) groups.push(g);
+        }
+      } catch {}
     })
   );
   return groups;

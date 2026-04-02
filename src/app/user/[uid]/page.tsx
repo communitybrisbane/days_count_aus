@@ -52,7 +52,7 @@ export default function PublicProfilePage() {
         if (profile) {
           setUserData(profile);
           if (profile.groupIds?.length) {
-            fetchUserGroups(profile.groupIds).then(setUserGroups);
+            fetchUserGroups(profile.groupIds).then(setUserGroups).catch(() => {});
           }
         }
         setPosts(allPosts);
