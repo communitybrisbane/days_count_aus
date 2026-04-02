@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserPosts } from "@/lib/services/posts";
-import { fetchUserProfile, blockUser, unblockUser, reportUser } from "@/lib/services/users";
+import { fetchUserProfile, blockUser, unblockUser, reportUser, isBlockedBy } from "@/lib/services/users";
 import { fetchUserGroups } from "@/lib/groups";
 import { FOCUS_MODES, resolveMode, NAV_HEIGHT } from "@/lib/constants";
 import { followUser, unfollowUser, getFollowingIds } from "@/lib/follow";
@@ -40,12 +40,22 @@ export default function PublicProfilePage() {
   const reportFileRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
+  const [blockedByTarget, setBlockedByTarget] = useState(false);
 
   const isOwn = user?.uid === uid;
 
   useEffect(() => {
     async function load() {
       try {
+        // Check if this user has blocked the viewer
+        if (user && !isOwn) {
+          const blocked = await isBlockedBy(user.uid, uid);
+          if (blocked) {
+            setBlockedByTarget(true);
+            setLoading(false);
+            return;
+          }
+        }
         const [profile, allPosts] = await Promise.all([
           fetchUserProfile(uid),
           fetchUserPosts(uid, isOwn),
@@ -69,10 +79,19 @@ export default function PublicProfilePage() {
       setLoading(false);
     }
     load();
-  }, [uid, isOwn]);
+  }, [uid, isOwn, user]);
 
   if (loading) {
     return <LoadingSpinner fullScreen />;
+  }
+
+  if (blockedByTarget) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-dvh gap-3">
+        <p className="text-white/40">This user is not available</p>
+        <button onClick={() => router.back()} className="text-sm text-white/30 border border-white/20 px-4 py-1.5 rounded-full">Go back</button>
+      </div>
+    );
   }
 
   if (!userData) {
@@ -241,7 +260,7 @@ export default function PublicProfilePage() {
                 onClick={async () => {
                   if (!user) return;
                   await blockUser(user.uid, uid);
-                  await refreshProfile();
+                  await Promise.all([refreshProfile(), refreshFollowing()]);
                   setShowActionSheet(false);
                   router.back();
                 }}

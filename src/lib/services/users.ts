@@ -193,6 +193,19 @@ export async function deleteAccount(user: User): Promise<void> {
 export async function blockUser(myUid: string, targetUid: string): Promise<void> {
   const privRef = doc(db, "users", myUid, "private", "config");
   await updateDoc(privRef, { blockedUsers: arrayUnion(targetUid) });
+  // Unfollow the target (own following — allowed by rules)
+  try { await deleteDoc(doc(db, "users", myUid, "following", targetUid)); } catch {}
+  // Note: reverse unfollow + blockedBy write handled by Cloud Function
+}
+
+/** Check if targetUid has blocked viewerUid (via blockedBy subcollection written by CF) */
+export async function isBlockedBy(viewerUid: string, targetUid: string): Promise<boolean> {
+  try {
+    const snap = await getDoc(doc(db, "users", viewerUid, "blockedBy", targetUid));
+    return snap.exists();
+  } catch {
+    return false;
+  }
 }
 
 export async function unblockUser(myUid: string, targetUid: string): Promise<void> {

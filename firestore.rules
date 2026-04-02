@@ -55,6 +55,12 @@ service cloud.firestore {
         allow create: if isOwner(userId);
         allow delete: if isOwner(userId);
       }
+
+      // BlockedBy subcollection — written by Cloud Function, readable by owner only
+      match /blockedBy/{blockerUid} {
+        allow read: if isOwner(userId);
+        allow write: if false; // CF uses Admin SDK (bypasses rules)
+      }
     }
 
     // ═══════════════════════════════════════════

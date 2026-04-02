@@ -123,7 +123,7 @@
         { "fieldPath": "isClosed", "order": "ASCENDING" },
         { "fieldPath": "lastMessageAt", "order": "DESCENDING" }
       ]
-    },
+    }
   ],
   "fieldOverrides": [
     {

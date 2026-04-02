@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import * as nodemailer from "nodemailer";
@@ -576,6 +576,49 @@ export const syncGroupMembership = onDocumentUpdated(
       } catch (e) {
         console.error(`[GROUP_SYNC] Failed to update user ${uid}:`, e);
       }
+    }
+  }
+);
+
+// ─── Cloud Function: Block sync (unfollow reverse + blockedBy) ───
+export const onBlockListChanged = onDocumentWritten(
+  "users/{userId}/private/config",
+  async (event) => {
+    const userId = event.params.userId;
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    const oldBlocked: string[] = beforeData?.blockedUsers || [];
+    const newBlocked: string[] = afterData?.blockedUsers || [];
+
+    // Newly blocked users
+    const added = newBlocked.filter((uid) => !oldBlocked.includes(uid));
+    // Unblocked users
+    const removed = oldBlocked.filter((uid) => !newBlocked.includes(uid));
+
+    for (const targetUid of added) {
+      // Remove reverse follow (target was following blocker)
+      try {
+        await db.doc(`users/${targetUid}/following/${userId}`).delete();
+        console.log(`[BLOCK] Removed follow ${targetUid} → ${userId}`);
+      } catch {}
+
+      // Write blockedBy marker so the blocked user knows they can't view this profile
+      try {
+        await db.doc(`users/${targetUid}/blockedBy/${userId}`).set({
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        console.error(`[BLOCK] Failed to write blockedBy for ${targetUid}:`, e);
+      }
+    }
+
+    for (const targetUid of removed) {
+      // Remove blockedBy marker on unblock
+      try {
+        await db.doc(`users/${targetUid}/blockedBy/${userId}`).delete();
+        console.log(`[BLOCK] Removed blockedBy ${userId} from ${targetUid}`);
+      } catch {}
     }
   }
 );
