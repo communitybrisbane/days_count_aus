@@ -422,6 +422,9 @@ export const onGroupMessageCreated = onDocumentCreated(
     const senderId = msgData.senderId as string;
     const text = (msgData.text as string) || "";
 
+    // Skip system messages (join/leave notifications)
+    if (senderId === "system") return;
+
     // Rate-limit notifications per group (prevent rapid message spam)
     const now = Date.now();
     const lastNotif = groupNotifCooldown.get(groupId) || 0;

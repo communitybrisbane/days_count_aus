@@ -249,7 +249,8 @@ service cloud.firestore {
                      && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
         allow create: if isAuth()
                       && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
-                      && request.resource.data.senderId == request.auth.uid
+                      && (request.resource.data.senderId == request.auth.uid
+                          || request.resource.data.senderId == 'system')
                       && request.resource.data.text is string
                       && request.resource.data.text.size() >= 1
                       && request.resource.data.text.size() <= 100

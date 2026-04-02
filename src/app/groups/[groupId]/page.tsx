@@ -198,6 +198,15 @@ export default function GroupChatPage() {
     await performJoin();
   };
 
+  const addSystemMessage = async (text: string) => {
+    await addDoc(collection(db, "groups", groupId, "messages"), {
+      senderId: "system",
+      text,
+      createdAt: serverTimestamp(),
+      reactions: {},
+    });
+  };
+
   const performJoin = async () => {
     if (!user || !group) return;
     await updateDoc(doc(db, "groups", groupId), {
@@ -205,6 +214,7 @@ export default function GroupChatPage() {
       memberCount: increment(1),
     });
     await updateDoc(doc(db, "users", user.uid), { groupIds: arrayUnion(groupId) });
+    await addSystemMessage(`${profile?.displayName || "Someone"} joined the group`);
     setGroup((g) => g ? { ...g, memberIds: [...g.memberIds, user.uid], memberCount: g.memberCount + 1 } : g);
     await refreshProfile();
   };
@@ -230,6 +240,7 @@ export default function GroupChatPage() {
       return;
     }
     // Non-leader leave
+    await addSystemMessage(`${profile?.displayName || "Someone"} left the group`);
     await updateDoc(doc(db, "groups", groupId), {
       memberIds: arrayRemove(user.uid),
       memberCount: increment(-1),
@@ -241,6 +252,8 @@ export default function GroupChatPage() {
 
   const handleTransferAndLeave = async () => {
     if (!user || !group || !transferTarget) return;
+    const targetName = memberProfiles[transferTarget]?.displayName || "Someone";
+    await addSystemMessage(`${profile?.displayName || "Someone"} left the group. ${targetName} is the new leader`);
     await updateDoc(doc(db, "groups", groupId), {
       creatorId: transferTarget,
       memberIds: arrayRemove(user.uid),
@@ -265,6 +278,8 @@ export default function GroupChatPage() {
   const handleKick = async (uid: string) => {
     if (!isLeader || !group) return;
     if (!confirm("Kick this member?")) return;
+    const kickedName = memberProfiles[uid]?.displayName || "A member";
+    await addSystemMessage(`${kickedName} was removed from the group`);
     await updateDoc(doc(db, "groups", groupId), {
       memberIds: arrayRemove(uid),
       memberCount: increment(-1),
@@ -663,6 +678,14 @@ export default function GroupChatPage() {
       {/* Scrollable area: Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5" style={{ scrollbarWidth: "none" }}>
         {messages.map((msg) => {
+          if (msg.senderId === "system") {
+            return (
+              <div key={msg.id} className="flex justify-center py-1">
+                <span className="text-[11px] text-white/30 bg-white/5 px-3 py-1 rounded-full">{msg.text}</span>
+              </div>
+            );
+          }
+
           const isMe = msg.senderId === user?.uid;
           const sender = memberProfiles[msg.senderId];
           const isDeleted = sender?._deleted;
