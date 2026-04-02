@@ -148,8 +148,8 @@ export const checkReportThreshold = onDocumentCreated(
     const reportsSnap = await db.collection(`posts/${postId}/reports`).count().get();
     const reportCount = reportsSnap.data().count;
 
-    // Send email notification only on 1st report and when threshold (3) is reached
-    if (reportCount === 1 || reportCount === 3) {
+    // Send email notification on 1st, 2nd, and 3rd report
+    if (reportCount <= 3) {
       try {
         const reporterSnap = await db.doc(`users/${reporterId}`).get();
         const reporterName = reporterSnap.exists ? (reporterSnap.data()!.displayName || reporterId) : reporterId;
@@ -157,7 +157,7 @@ export const checkReportThreshold = onDocumentCreated(
         await sendReportEmail(
           reportCount >= 3
             ? `[Report] Post AUTO-HIDDEN (${reportCount} reports)`
-            : `[Report] Post reported (1st report)`,
+            : `[Report] Post reported (${reportCount} of 3)`,
           `Post ID: ${postId}\n` +
           `Reporter: ${reporterName}\n` +
           `Reason: ${reportData?.reason || "N/A"}\n` +
