@@ -36,6 +36,7 @@ export default function PublicProfilePage() {
   const [reportImage, setReportImage] = useState<File | null>(null);
   const [reportImagePreview, setReportImagePreview] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
   const reportFileRef = useRef<HTMLInputElement>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
@@ -320,6 +321,8 @@ export default function PublicProfilePage() {
                     setReportReason("");
                     setReportImage(null);
                     setReportImagePreview("");
+                    setReportSent(true);
+                    setTimeout(() => setReportSent(false), 2500);
                   } catch (e) {
                     console.error("Failed to report:", e);
                   }
@@ -332,6 +335,12 @@ export default function PublicProfilePage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {reportSent && (
+        <div className="fixed top-12 left-1/2 z-50 bg-forest-mid/95 backdrop-blur-md text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg animate-fade-in-out">
+          Report sent
         </div>
       )}
 
