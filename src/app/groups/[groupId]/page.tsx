@@ -175,6 +175,8 @@ export default function GroupChatPage() {
 
   const userLevel = profile ? calculateLevel(profile.totalXP) : 0;
 
+  const [showFriendsConfirm, setShowFriendsConfirm] = useState(false);
+
   const handleJoinAttempt = async () => {
     if (!user || !group || isFull || profile?.restricted) return;
     if (userLevel < 5) {
@@ -188,6 +190,10 @@ export default function GroupChatPage() {
         alert("Max 2 groups. Please leave one first.");
         return;
       }
+    }
+    if (group.joinType === "friends") {
+      setShowFriendsConfirm(true);
+      return;
     }
     await performJoin();
   };
@@ -573,6 +579,16 @@ export default function GroupChatPage() {
             </div>
           </div>
         </>
+      )}
+
+      {showFriendsConfirm && (
+        <ConfirmModal
+          title="Friends Only Group"
+          message="This group is for people who know each other. Only join if you're friends with the members."
+          confirmLabel="Join"
+          onConfirm={async () => { setShowFriendsConfirm(false); await performJoin(); }}
+          onCancel={() => setShowFriendsConfirm(false)}
+        />
       )}
 
       {showLeaveModal && (
