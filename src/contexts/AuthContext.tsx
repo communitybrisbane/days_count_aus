@@ -17,6 +17,7 @@ interface AuthContextType {
   refreshFollowing: () => Promise<void>;
   optimisticFollow: (targetUid: string) => void;
   optimisticUnfollow: (targetUid: string) => void;
+  patchProfile: (patch: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   refreshFollowing: async () => {},
   optimisticFollow: () => {},
   optimisticUnfollow: () => {},
+  patchProfile: () => {},
 });
 
 async function fetchProfileWithRetry(uid: string, retries = 3): Promise<UserProfile | null> {
@@ -95,6 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setFollowing((prev) => prev.filter((id) => id !== targetUid));
   };
 
+  const patchProfile = (patch: Partial<UserProfile>) => {
+    setProfile((prev) => prev ? { ...prev, ...patch } : prev);
+  };
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -132,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, profile, privateData, loading, following, refreshProfile, refreshFollowing, optimisticFollow, optimisticUnfollow }}>
+    <AuthContext.Provider value={{ user, profile, privateData, loading, following, refreshProfile, refreshFollowing, optimisticFollow, optimisticUnfollow, patchProfile }}>
       {children}
     </AuthContext.Provider>
   );

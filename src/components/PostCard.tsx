@@ -48,7 +48,7 @@ const roundedClass = (listRounded?: "top" | "bottom" | "none") => {
 };
 
 function PostCard({ post, onDelete, showActions = true, listRounded, compact = false, onDoubleTap }: PostCardProps) {
-  const { user, profile, following, refreshProfile, optimisticFollow, optimisticUnfollow } = useAuth();
+  const { user, profile, following, refreshProfile, optimisticFollow, optimisticUnfollow, patchProfile } = useAuth();
   const [authorProfile, setAuthorProfile] = useState<{ displayName: string; photoURL: string; uid: string; region?: string; showRegion?: boolean } | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
@@ -203,12 +203,17 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
             await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
           } catch {}
           try {
+            const newDailyCount = profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1;
             await updateDoc(doc(db, "users", user.uid), {
               totalXP: increment(LIKE_SEND_XP),
               dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
               lastLikeDate: today,
             });
-            refreshProfile();
+            patchProfile({
+              totalXP: (profile.totalXP ?? 0) + LIKE_SEND_XP,
+              dailyLikeCount: newDailyCount,
+              lastLikeDate: today,
+            });
           } catch {}
           setXpGained(LIKE_SEND_XP);
           setShowXP(true);
