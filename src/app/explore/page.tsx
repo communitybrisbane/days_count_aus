@@ -49,6 +49,12 @@ export default function ExplorePage() {
   const loadingRef = useRef(false);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapCountRef = useRef(0);
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const privateDataRef = useRef(privateData);
+  privateDataRef.current = privateData;
+  const followingRef = useRef(following);
+  followingRef.current = following;
   const fetchPosts = useCallback(
     async (reset = false) => {
       if (loadingRef.current) return;
@@ -76,9 +82,9 @@ export default function ExplorePage() {
 
         let newPosts = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
 
-        if (privateData?.blockedUsers?.length) {
+        if (privateDataRef.current?.blockedUsers?.length) {
           newPosts = newPosts.filter(
-            (p) => !privateData.blockedUsers.includes(p.userId)
+            (p) => !privateDataRef.current!.blockedUsers.includes(p.userId)
           );
         }
 
@@ -96,9 +102,9 @@ export default function ExplorePage() {
         if (sortTab === "new" && searchUserIds === null && !searchTag) {
           newPosts = rankPosts(
             newPosts,
-            following,
-            profile?.mainMode || "",
-            profile?.region || "",
+            followingRef.current,
+            profileRef.current?.mainMode || "",
+            profileRef.current?.region || "",
           );
         }
 
@@ -123,7 +129,7 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [sortTab, modeFilter, profile, privateData, following, searchUserIds, searchTag]
+    [sortTab, modeFilter, searchUserIds, searchTag]
   );
 
   // Cached user list for search — fetch once, filter in memory
