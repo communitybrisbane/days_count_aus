@@ -244,18 +244,18 @@ export default function CreateGroupPage() {
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {/* Icon + Name — same row */}
-            <div className="flex items-start gap-3">
+          <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+            {/* Icon + Name */}
+            <div className="flex flex-col items-center gap-4">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-14 h-14 shrink-0 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden active:border-accent-orange transition-colors"
+                className="w-20 h-20 shrink-0 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center overflow-hidden active:border-accent-orange transition-colors"
               >
                 {iconPreview ? (
                   <img src={iconPreview} alt="Icon" className="w-full h-full object-cover" />
                 ) : (
-                  <IconCamera size={22} className="text-white/40" />
+                  <IconCamera size={28} className="text-white/40" />
                 )}
               </button>
               <input
@@ -265,57 +265,57 @@ export default function CreateGroupPage() {
                 onChange={handleFileSelect}
                 className="hidden"
               />
-              <div className="flex-1">
+              <div className="w-full">
                 <input
                   type="text"
                   maxLength={GROUP_NAME_MAX}
                   value={groupName}
                   onChange={(e) => setGroupName(sanitize(e.target.value))}
                   placeholder="Group Name *"
-                  className={`w-full border rounded-lg px-3 py-2.5 bg-forest-light/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30 ${
+                  className={`w-full border rounded-xl px-4 py-3 bg-forest-light/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30 ${
                     groupNameError ? "border-red-400" : "border-forest-light/30"
                   }`}
                   required
                 />
                 <AsciiWarn show={showWarn} />
                 {groupNameError ? (
-                  <p className="text-[10px] text-red-400 mt-0.5">{groupNameError}</p>
+                  <p className="text-[10px] text-red-400 mt-1">{groupNameError}</p>
                 ) : (
-                  <p className="text-[10px] text-white/30 mt-0.5 text-right">{groupName.length}/{GROUP_NAME_MAX}</p>
+                  <p className="text-[10px] text-white/30 mt-1 text-right">{groupName.length}/{GROUP_NAME_MAX}</p>
                 )}
               </div>
             </div>
 
-            {/* Mode — horizontal scroll */}
+            {/* Mode */}
             <div>
-              <p className="text-xs font-medium text-white/60 mb-1.5">Focus Mode *</p>
-              <div className="flex gap-1.5">
+              <p className="text-xs font-medium text-white/60 mb-2">Focus Mode *</p>
+              <div className="flex gap-2">
                 {FOCUS_MODES.map((m) => (
                   <button
                     key={m.id}
                     type="button"
                     onClick={() => setMode(m.id)}
-                    className={`flex-1 flex flex-col items-center py-2 rounded-xl text-xs transition-all ${
+                    className={`flex-1 flex flex-col items-center py-3 rounded-xl text-xs transition-all ${
                       mode === m.id
                         ? "bg-accent-orange text-white"
                         : "bg-white text-forest-mid"
                     }`}
                   >
-                    <FocusModeIcon modeId={m.id} size={20} />
-                    <span className="mt-0.5">{m.label}</span>
+                    <FocusModeIcon modeId={m.id} size={22} />
+                    <span className="mt-1">{m.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Join Type — compact */}
+            {/* Join Type */}
             <div>
-              <p className="text-xs font-medium text-white/60 mb-1.5">Who can join? *</p>
-              <div className="flex gap-2">
+              <p className="text-xs font-medium text-white/60 mb-2">Who can join? *</p>
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setJoinType("open")}
-                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
+                  className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
                     joinType === "open"
                       ? "bg-accent-orange text-white"
                       : "bg-white text-forest-mid"
@@ -326,7 +326,7 @@ export default function CreateGroupPage() {
                 <button
                   type="button"
                   onClick={() => setJoinType("friends")}
-                  className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
+                  className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
                     joinType === "friends"
                       ? "bg-accent-orange text-white"
                       : "bg-white text-forest-mid"
@@ -339,16 +339,16 @@ export default function CreateGroupPage() {
 
             {/* Goal */}
             <div>
-              <p className="text-xs font-medium text-white/60 mb-1">Goal / Rules *</p>
+              <p className="text-xs font-medium text-white/60 mb-2">Goal / Rules *</p>
               <textarea
                 value={goal}
                 onChange={(e) => setGoal(sanitize(e.target.value, /[^\x20-\x7E\n]/g))}
                 maxLength={200}
-                rows={2}
+                rows={3}
                 placeholder="What's the group's goal or rules?"
-                className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
+                className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
               />
-              <p className="text-[10px] text-white/30 mt-0.5 text-right">{goal.length}/200</p>
+              <p className="text-[10px] text-white/30 mt-1 text-right">{goal.length}/200</p>
             </div>
           </div>
 

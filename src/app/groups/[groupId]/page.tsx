@@ -610,8 +610,8 @@ export default function GroupChatPage() {
                           transferTarget === uid ? "bg-accent-orange/10 border border-accent-orange" : "bg-white border border-gray-200"
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                          {member?.photoURL && <Image src={member.photoURL} alt="" fill className="object-cover" />}
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0 relative">
+                          {member?.photoURL && <Image src={member.photoURL} alt="" width={32} height={32} className="object-cover w-full h-full" />}
                         </div>
                         <span className="text-sm font-medium truncate">{member?.displayName || uid.slice(0, 8)}</span>
                         {transferTarget === uid && <span className="ml-auto text-accent-orange text-xs font-bold">Selected</span>}
