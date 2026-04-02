@@ -519,6 +519,7 @@ export const onUserReportCreated = onDocumentCreated(
     const reporterId = data.reporterId as string;
     const targetUserId = data.targetUserId as string;
     const reason = (data.reason as string) || "N/A";
+    const imageUrl = (data.imageUrl as string) || "";
 
     const [reporterSnap, targetSnap] = await Promise.all([
       db.doc(`users/${reporterId}`).get(),
@@ -542,6 +543,7 @@ export const onUserReportCreated = onDocumentCreated(
         `Reporter: ${reporterName} (${reporterId})\n` +
         `Target: ${targetName} (${targetUserId})\n` +
         `Reason: ${reason}\n` +
+        (imageUrl ? `Screenshot: ${imageUrl}\n` : "") +
         `Unresolved reports against this user: ${reportCount}`
       );
     } catch (e) {
