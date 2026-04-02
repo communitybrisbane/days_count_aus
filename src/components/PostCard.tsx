@@ -20,9 +20,11 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { calculateLevel } from "@/lib/utils";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
 import XPToast from "./XPToast";
+import LevelUpAnimation from "./LevelUpAnimation";
 import { FocusModeIcon, IconKangaroo, IconLock, IconEdit, IconTrash, IconFlag, IconBan } from "./icons";
 import { reportPost } from "@/lib/services/posts";
 import { blockUser } from "@/lib/services/users";
@@ -57,6 +59,8 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
   const [showMenu, setShowMenu] = useState(false);
   const [showXP, setShowXP] = useState(false);
   const [xpGained, setXpGained] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [levelUpTo, setLevelUpTo] = useState(0);
 
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false);
   const [heartPos, setHeartPos] = useState<{ x: number; y: number } | null>(null);
@@ -216,9 +220,19 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               lastLikeDate: today,
             });
           } catch {}
+          const prevLevel = calculateLevel(profile.totalXP ?? 0);
+          const newLevel = calculateLevel((profile.totalXP ?? 0) + LIKE_SEND_XP);
           setXpGained(LIKE_SEND_XP);
           setShowXP(true);
-          setTimeout(() => setShowXP(false), 1500);
+          if (newLevel > prevLevel) {
+            setTimeout(() => {
+              setShowXP(false);
+              setLevelUpTo(newLevel);
+              setShowLevelUp(true);
+            }, 1200);
+          } else {
+            setTimeout(() => setShowXP(false), 1500);
+          }
         } else if (!isOwnPost && !hasXPQuota) {
           setShowLikeToast(true);
           setTimeout(() => setShowLikeToast(false), 2000);
@@ -389,6 +403,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
             <span className="text-[10px] text-white/80">{likeCount}</span>
           </button>
         </div>
+        <LevelUpAnimation level={levelUpTo} show={showLevelUp} onClose={() => setShowLevelUp(false)} />
       </div>
     );
   }
@@ -601,6 +616,9 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Likers modal */}
       {showLikers && <LikersModal />}
+
+      {/* Level up animation */}
+      <LevelUpAnimation level={levelUpTo} show={showLevelUp} onClose={() => setShowLevelUp(false)} />
 
       {/* Report status toast */}
       {reportStatus && (
