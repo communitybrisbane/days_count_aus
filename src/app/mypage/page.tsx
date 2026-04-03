@@ -70,42 +70,45 @@ export default function MyPage() {
           <IconSettings size={24} />
         </button>
 
-        <div className="flex flex-col items-center pt-8 relative">
-          {/* アバター */}
-          <div className="ring-3 ring-accent-orange/40 rounded-full">
-            <Avatar
-              photoURL={profile.photoURL}
-              displayName={profile.displayName}
-              uid={user!.uid}
-              size={96}
-            />
-          </div>
+        <div className="pt-12 relative">
+          <div className="flex items-start gap-4 px-1">
+            {/* 左: アバター */}
+            <div className="ring-3 ring-accent-orange/40 rounded-full shrink-0">
+              <Avatar
+                photoURL={profile.photoURL}
+                displayName={profile.displayName}
+                uid={user!.uid}
+                size={96}
+              />
+            </div>
 
-          {/* レベル + 名前 */}
-          <h2 className="text-xl font-bold mt-2 truncate max-w-[80%] text-center text-white/90">
-            <span className="text-accent-orange">Lv.{level}</span> {profile.displayName}
-          </h2>
+            {/* 右: 名前 + ステータス */}
+            <div className="flex-1 min-w-0 pt-1">
+              <h2 className="text-lg font-bold truncate text-white/90">
+                <span className="text-accent-orange">Lv.{level}</span> {profile.displayName}
+              </h2>
+
+              <div className="flex gap-8 mt-2 text-center">
+                <div>
+                  <p className="font-bold text-lg text-white/90">{posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
+                  <p className="text-xs text-white/40">Likes</p>
+                </div>
+                <div>
+                  <p className="font-bold text-lg text-white/90">{profile.currentStreak ?? 0}</p>
+                  <p className="text-xs text-white/40">Streak</p>
+                </div>
+                <button onClick={() => setShowFollowing(true)}>
+                  <p className="font-bold text-lg text-white/90">{following.length}</p>
+                  <p className="text-xs text-white/40">Following</p>
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* ゴール */}
           {profile.goal && (
-            <p className="text-lg font-bold text-white/80 mt-2 text-center max-w-[85%] leading-snug">{profile.goal}</p>
+            <p className="text-xl font-bold text-white/80 mt-5 text-center mx-auto leading-snug">{profile.goal}</p>
           )}
-
-          {/* Likes / Streak / Following */}
-          <div className="flex gap-8 mt-3 text-center">
-            <div>
-              <p className="font-bold text-base text-white/90">{posts.reduce((sum, p) => sum + (p.likeCount || 0), 0)}</p>
-              <p className="text-[11px] text-white/40">Likes</p>
-            </div>
-            <div>
-              <p className="font-bold text-base text-white/90">{profile.currentStreak ?? 0}</p>
-              <p className="text-[11px] text-white/40">Streak</p>
-            </div>
-            <button onClick={() => setShowFollowing(true)}>
-              <p className="font-bold text-base text-white/90">{following.length}</p>
-              <p className="text-[11px] text-white/40">Following</p>
-            </button>
-          </div>
 
           <ProfileGroups groups={userGroups} />
         </div>
