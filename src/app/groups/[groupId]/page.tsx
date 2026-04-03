@@ -136,12 +136,13 @@ export default function GroupChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mark as read when viewing messages (preserve clearedAt)
+  // Mark as read when viewing messages (preserve clearedAt via merge)
   useEffect(() => {
     if (user && isMemberNow && messages.length > 0) {
-      const data: Record<string, unknown> = { readAt: serverTimestamp(), muted };
-      if (clearedAt) data.clearedAt = clearedAt;
-      setDoc(doc(db, "groups", groupId, "lastRead", user.uid), data).catch(() => {});
+      setDoc(doc(db, "groups", groupId, "lastRead", user.uid), {
+        readAt: serverTimestamp(),
+        muted,
+      }, { merge: true }).catch(() => {});
       emitGroupRead(groupId);
     }
   }, [user, groupId, messages.length]);
