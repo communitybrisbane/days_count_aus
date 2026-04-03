@@ -23,7 +23,7 @@ import type { Group, AdminConfig } from "@/types";
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, privateData, loading, refreshProfile } = useAuth();
-  const { unreadMap, liveDataMap, clearedGroupIds } = useUnreadGroups(user?.uid, profile?.groupIds || []);
+  const { unreadMap, liveDataMap, clearedGroupIds, mutedGroupIds } = useUnreadGroups(user?.uid, profile?.groupIds || []);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -332,6 +332,7 @@ export default function GroupsPage() {
                     unreadCount={unreadMap.get(group.id) || 0}
                     liveMessageText={liveDataMap.get(group.id)?.lastMessageText}
                     cleared={clearedGroupIds.has(group.id)}
+                    muted={mutedGroupIds.has(group.id)}
                     onClearHistory={(gid) => {
                       setGroups((prev) => prev.map((g) => g.id === gid ? { ...g, lastMessageText: "" } : g));
                     }}

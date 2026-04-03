@@ -21,6 +21,11 @@ export function emitGroupCleared(groupId: string) {
   window.dispatchEvent(new CustomEvent("group-cleared", { detail: groupId }));
 }
 
+/** Notify that a group's mute state was toggled */
+export function emitGroupMuteToggle(groupId: string, muted: boolean) {
+  window.dispatchEvent(new CustomEvent("group-mute-toggle", { detail: { groupId, muted } }));
+}
+
 /**
  * Listens to group docs in real-time and counts unread messages.
  * Uses getCountFromServer to get actual unread count (excluding own messages).
@@ -31,6 +36,7 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
   const lastReadAtMapRef = useRef<Map<string, Timestamp | null>>(new Map());
   const clearedAtMapRef = useRef<Map<string, Timestamp | null>>(new Map());
   const [clearedGroupIds, setClearedGroupIds] = useState<Set<string>>(new Set());
+  const [mutedGroupIds, setMutedGroupIds] = useState<Set<string>>(new Set());
 
   // Listen for "group-read" events from other components (e.g., group chat page)
   useEffect(() => {
@@ -68,11 +74,21 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
       });
       setClearedGroupIds((prev) => new Set(prev).add(gid));
     };
+    const muteHandler = (e: Event) => {
+      const { groupId: gid, muted } = (e as CustomEvent<{ groupId: string; muted: boolean }>).detail;
+      setMutedGroupIds((prev) => {
+        const next = new Set(prev);
+        if (muted) next.add(gid); else next.delete(gid);
+        return next;
+      });
+    };
     window.addEventListener("group-read", handler);
     window.addEventListener("group-cleared", clearHandler);
+    window.addEventListener("group-mute-toggle", muteHandler);
     return () => {
       window.removeEventListener("group-read", handler);
       window.removeEventListener("group-cleared", clearHandler);
+      window.removeEventListener("group-mute-toggle", muteHandler);
     };
   }, []);
 
@@ -92,6 +108,9 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
           const snap = await getDoc(doc(db, "groups", gid, "lastRead", userId));
           lastReadAtMapRef.current.set(gid, snap.exists() ? (snap.data().readAt as Timestamp) : null);
           clearedAtMapRef.current.set(gid, snap.exists() ? (snap.data().clearedAt as Timestamp ?? null) : null);
+          if (snap.exists() && snap.data().muted) {
+            setMutedGroupIds((prev) => new Set(prev).add(gid));
+          }
         } catch {
           lastReadAtMapRef.current.set(gid, null);
           clearedAtMapRef.current.set(gid, null);
@@ -215,5 +234,5 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
   let totalUnread = 0;
   unreadMap.forEach((count) => { totalUnread += count; });
 
-  return { unreadMap, liveDataMap, totalUnread, clearedGroupIds };
+  return { unreadMap, liveDataMap, totalUnread, clearedGroupIds, mutedGroupIds };
 }

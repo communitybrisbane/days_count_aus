@@ -6,7 +6,7 @@ import Image from "next/image";
 import { doc, updateDoc, arrayUnion, increment, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
-import { emitGroupRead, emitGroupCleared } from "@/hooks/useUnreadGroups";
+import { emitGroupCleared, emitGroupMuteToggle } from "@/hooks/useUnreadGroups";
 import { FocusModeIcon, IconUsers } from "@/components/icons";
 import type { Group } from "@/types";
 
@@ -35,10 +35,11 @@ interface GroupCardProps {
   unreadCount?: number;
   liveMessageText?: string;
   cleared?: boolean;
+  muted?: boolean;
   onClearHistory?: (groupId: string) => void;
 }
 
-export default memo(function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText, cleared, onClearHistory }: GroupCardProps) {
+export default memo(function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText, cleared, muted = false, onClearHistory }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
   const isModeGroup = group.isOfficial && !group.iconUrl;
@@ -48,7 +49,7 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
   const [joining, setJoining] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Swipe state
+  // Swipe state — supports both left (clear) and right (mute)
   const [swipeX, setSwipeX] = useState(0);
   const [swiping, setSwiping] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -63,16 +64,18 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
     if (!touchStartRef.current) return;
     const dx = e.touches[0].clientX - touchStartRef.current.x;
     const dy = e.touches[0].clientY - touchStartRef.current.y;
-    // Only swipe left, and only if horizontal movement dominates
     if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
       setSwiping(true);
-      setSwipeX(Math.min(0, dx));
+      // Clamp: left max -80, right max +80
+      setSwipeX(Math.max(-80, Math.min(80, dx)));
     }
   };
 
   const handleTouchEnd = () => {
     if (swipeX < -swipeThreshold) {
-      setSwipeX(-80);
+      setSwipeX(-80); // Show clear button
+    } else if (swipeX > swipeThreshold) {
+      setSwipeX(80); // Show mute button
     } else {
       setSwipeX(0);
     }
@@ -89,6 +92,18 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
       onClearHistory?.(group.id);
     } catch (e) {
       console.error("Clear history failed:", e);
+    }
+    setSwipeX(0);
+  };
+
+  const handleToggleMute = async () => {
+    if (!currentUserId) return;
+    const newMuted = !muted;
+    try {
+      await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { muted: newMuted }, { merge: true });
+      emitGroupMuteToggle(group.id, newMuted);
+    } catch (e) {
+      console.error("Toggle mute failed:", e);
     }
     setSwipeX(0);
   };
@@ -125,7 +140,34 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
   return (
     <>
       <div className="relative overflow-hidden border-b border-gray-100">
-        {/* Clear button behind the card */}
+        {/* Mute button behind card (left side, revealed on right swipe) */}
+        {isMember && (
+          <div className="absolute left-0 top-0 bottom-0 w-20 flex items-center justify-center bg-gray-500">
+            <button onClick={handleToggleMute} className="w-full h-full flex flex-col items-center justify-center text-white text-xs font-bold gap-1">
+              {muted ? (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  ON
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+                    <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14" />
+                    <path d="M18 8a6 6 0 0 0-9.33-5" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                  OFF
+                </>
+              )}
+            </button>
+          </div>
+        )}
+        {/* Clear button behind card (right side, revealed on left swipe) */}
         {isMember && (
           <div className="absolute right-0 top-0 bottom-0 w-20 flex items-center justify-center bg-red-500">
             <button onClick={handleClearHistory} className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
@@ -142,13 +184,26 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
           style={{ transform: `translateX(${swipeX}px)`, transition: swiping ? "none" : "transform 0.3s ease" }}
         >
         <div className="flex items-center gap-3 px-4 py-3">
-          {group.iconUrl ? (
-            <Image src={group.iconUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover shrink-0" />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-forest-light/20 flex items-center justify-center shrink-0">
-              <FocusModeIcon modeId={resolveMode(group.mode || "challenge")} size={26} className="text-forest-mid" />
-            </div>
-          )}
+          {/* Group icon with mute badge */}
+          <div className="relative shrink-0">
+            {group.iconUrl ? (
+              <Image src={group.iconUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-forest-light/20 flex items-center justify-center">
+                <FocusModeIcon modeId={resolveMode(group.mode || "challenge")} size={26} className="text-forest-mid" />
+              </div>
+            )}
+            {muted && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+                  <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="font-bold text-sm truncate text-forest">{group.groupName}</p>
