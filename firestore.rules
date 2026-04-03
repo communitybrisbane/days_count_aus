@@ -86,16 +86,15 @@ service cloud.firestore {
                      && request.resource.data.reportCount == 0
                      && request.resource.data.likeCount == 0;
 
-      // Update by owner: imageUrl only (for post-create upload), OR content/mode within edit window
+      // Update by owner: imageUrl only (for post-create upload), OR editable fields (no time limit)
       allow update: if isAuth()
                      && resource.data.userId == request.auth.uid
                      && (
                        // Case 1: attach image after creation (imageUrl only)
                        changed().hasOnly(['imageUrl'])
                        ||
-                       // Case 2: edit content/mode within time limit
-                       (request.time < resource.data.editableUntil
-                        && changed().hasOnly(['content', 'mode'])
+                       // Case 2: edit post fields (no time limit)
+                       (changed().hasOnly(['content', 'mode', 'tags', 'region', 'visibility', 'dayNumber'])
                         && request.resource.data.content is string
                         && request.resource.data.content.size() >= 0
                         && request.resource.data.content.size() <= 500)
