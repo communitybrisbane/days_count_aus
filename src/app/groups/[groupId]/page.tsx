@@ -11,6 +11,7 @@ import {
   collection,
   addDoc,
   query,
+  where,
   orderBy,
   limit,
   limitToLast,
@@ -99,46 +100,48 @@ export default function GroupChatPage() {
     if (user) fetchGroup().catch((err) => console.error("fetchGroup error:", err));
   }, [groupId, user]);
 
-  // Real-time messages — only subscribe after confirmed as member
+  // Load lastRead (muted/clearedAt) FIRST, then subscribe to messages
   const isMemberNow = group?.memberIds?.includes(user?.uid || "");
+  const [lastReadLoaded, setLastReadLoaded] = useState(false);
+
   useEffect(() => {
-    if (!isMemberNow) return;
-    const q = query(
-      collection(db, "groups", groupId, "messages"),
+    if (!user) return;
+    setLastReadLoaded(false);
+    getDoc(doc(db, "groups", groupId, "lastRead", user.uid)).then((snap) => {
+      if (snap.exists()) {
+        setMuted(!!snap.data().muted);
+        if (snap.data().clearedAt) setClearedAt(snap.data().clearedAt as Timestamp);
+      }
+    }).catch(() => {}).finally(() => setLastReadLoaded(true));
+  }, [user, groupId]);
+
+  // Real-time messages — only subscribe after lastRead is loaded
+  useEffect(() => {
+    if (!isMemberNow || !lastReadLoaded) return;
+    const constraints = [
       orderBy("createdAt", "asc"),
-      limitToLast(100)
-    );
+      ...(clearedAt ? [where("createdAt", ">", clearedAt)] : []),
+      limitToLast(100),
+    ];
+    const q = query(collection(db, "groups", groupId, "messages"), ...constraints);
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Message)));
     }, (err) => {
       console.warn("Messages listener error:", err);
     });
     return unsub;
-  }, [groupId, isMemberNow]);
+  }, [groupId, isMemberNow, lastReadLoaded, clearedAt]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Load muted state
-  useEffect(() => {
-    if (!user) return;
-    getDoc(doc(db, "groups", groupId, "lastRead", user.uid)).then((snap) => {
-      if (snap.exists()) {
-        setMuted(!!snap.data().muted);
-        if (snap.data().clearedAt) setClearedAt(snap.data().clearedAt as Timestamp);
-      }
-    }).catch(() => {});
-  }, [user, groupId]);
-
-  // Mark as read when viewing messages
+  // Mark as read when viewing messages (preserve clearedAt)
   useEffect(() => {
     if (user && isMemberNow && messages.length > 0) {
-      setDoc(doc(db, "groups", groupId, "lastRead", user.uid), {
-        readAt: serverTimestamp(),
-        muted,
-      }).catch(() => {});
-      // Notify all useUnreadGroups instances (e.g., BottomNav badge)
+      const data: Record<string, unknown> = { readAt: serverTimestamp(), muted };
+      if (clearedAt) data.clearedAt = clearedAt;
+      setDoc(doc(db, "groups", groupId, "lastRead", user.uid), data).catch(() => {});
       emitGroupRead(groupId);
     }
   }, [user, groupId, messages.length]);
@@ -680,7 +683,7 @@ export default function GroupChatPage() {
 
       {/* Scrollable area: Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5" style={{ scrollbarWidth: "none" }}>
-        {messages.filter((msg) => !clearedAt || !msg.createdAt || msg.createdAt.toMillis() > clearedAt.toMillis()).map((msg) => {
+        {messages.map((msg) => {
           if (msg.senderId === "system") {
             return (
               <div key={msg.id} className="flex justify-center py-1">
