@@ -143,20 +143,17 @@ export default function GroupsPage() {
       return changed ? next : prev;
     });
   }, [liveDataMap]);
-  const nonModeJoined = groups
-    .filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || ""))
-    .sort((a, b) => {
-      const aCleared = clearedGroupIds.has(a.id);
-      const bCleared = clearedGroupIds.has(b.id);
-      if (aCleared !== bCleared) return aCleared ? 1 : -1;
-      const aTime = liveDataMap.get(a.id)?.lastMessageAt?.toMillis() ?? a.lastMessageAt?.toMillis?.() ?? 0;
-      const bTime = liveDataMap.get(b.id)?.lastMessageAt?.toMillis() ?? b.lastMessageAt?.toMillis?.() ?? 0;
-      return bTime - aTime;
-    });
   const myJoinedGroups = [
     ...(myModeGroup ? [myModeGroup] : []),
-    ...nonModeJoined,
-  ];
+    ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
+  ].sort((a, b) => {
+    const aCleared = clearedGroupIds.has(a.id);
+    const bCleared = clearedGroupIds.has(b.id);
+    if (aCleared !== bCleared) return aCleared ? 1 : -1;
+    const aTime = liveDataMap.get(a.id)?.lastMessageAt?.toMillis() ?? a.lastMessageAt?.toMillis?.() ?? 0;
+    const bTime = liveDataMap.get(b.id)?.lastMessageAt?.toMillis() ?? b.lastMessageAt?.toMillis?.() ?? 0;
+    return bTime - aTime;
+  });
   const myJoinedExtra = myJoinedGroups.filter((g) => !isModeGroup(g));
   const hasCreatedGroup = groups.some((g) => !g.isOfficial && g.creatorId === user?.uid);
   const maxSlots = getMaxCommunitySlots(level);
