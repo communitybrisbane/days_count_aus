@@ -23,7 +23,7 @@ import type { Group, AdminConfig } from "@/types";
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, privateData, loading, refreshProfile } = useAuth();
-  const { unreadMap, liveDataMap } = useUnreadGroups(user?.uid, profile?.groupIds || []);
+  const { unreadMap, liveDataMap, clearedGroupIds } = useUnreadGroups(user?.uid, profile?.groupIds || []);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,23 +126,6 @@ export default function GroupsPage() {
   ) || groups.find((g) =>
     isModeGroup(g) && g.mode === profile?.mainMode
   );
-  const [clearedGroupIds, setClearedGroupIds] = useState<Set<string>>(new Set());
-  // Un-clear when new messages arrive
-  useEffect(() => {
-    if (clearedGroupIds.size === 0) return;
-    setClearedGroupIds((prev) => {
-      const next = new Set(prev);
-      let changed = false;
-      for (const gid of prev) {
-        const live = liveDataMap.get(gid);
-        if (live?.lastMessageText) {
-          next.delete(gid);
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [liveDataMap]);
   const myJoinedGroups = [
     ...(myModeGroup ? [myModeGroup] : []),
     ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
@@ -350,7 +333,6 @@ export default function GroupsPage() {
                     liveMessageText={liveDataMap.get(group.id)?.lastMessageText}
                     onClearHistory={(gid) => {
                       setGroups((prev) => prev.map((g) => g.id === gid ? { ...g, lastMessageText: "" } : g));
-                      setClearedGroupIds((prev) => new Set(prev).add(gid));
                     }}
                   />
                 ))}

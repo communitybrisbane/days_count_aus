@@ -29,6 +29,8 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
   const [unreadMap, setUnreadMap] = useState<Map<string, number>>(new Map());
   const [liveDataMap, setLiveDataMap] = useState<Map<string, GroupLiveData>>(new Map());
   const lastReadAtMapRef = useRef<Map<string, Timestamp | null>>(new Map());
+  const clearedAtMapRef = useRef<Map<string, Timestamp | null>>(new Map());
+  const [clearedGroupIds, setClearedGroupIds] = useState<Set<string>>(new Set());
 
   // Listen for "group-read" events from other components (e.g., group chat page)
   useEffect(() => {
@@ -51,7 +53,9 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
     };
     const clearHandler = (e: Event) => {
       const gid = (e as CustomEvent<string>).detail;
-      lastReadAtMapRef.current.set(gid, Timestamp.now());
+      const now = Timestamp.now();
+      lastReadAtMapRef.current.set(gid, now);
+      clearedAtMapRef.current.set(gid, now);
       setUnreadMap((prev) => {
         const next = new Map(prev);
         next.set(gid, 0);
@@ -62,6 +66,7 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
         next.set(gid, { unreadCount: 0 });
         return next;
       });
+      setClearedGroupIds((prev) => new Set(prev).add(gid));
     };
     window.addEventListener("group-read", handler);
     window.addEventListener("group-cleared", clearHandler);
@@ -86,8 +91,10 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
         try {
           const snap = await getDoc(doc(db, "groups", gid, "lastRead", userId));
           lastReadAtMapRef.current.set(gid, snap.exists() ? (snap.data().readAt as Timestamp) : null);
+          clearedAtMapRef.current.set(gid, snap.exists() ? (snap.data().clearedAt as Timestamp ?? null) : null);
         } catch {
           lastReadAtMapRef.current.set(gid, null);
+          clearedAtMapRef.current.set(gid, null);
         }
       })
     ).then(() => {
@@ -104,6 +111,22 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
             const lastMessageText = data.lastMessageText as string | undefined;
             const lastMessageBy = data.lastMessageBy as string | undefined;
             const readAt = lastReadAtMapRef.current.get(gid);
+            const cleared = clearedAtMapRef.current.get(gid);
+
+            // If history was cleared and no new messages since, hide preview
+            const isCleared = cleared && lastMessageAt && cleared.toMillis() >= lastMessageAt.toMillis();
+            if (isCleared) {
+              setClearedGroupIds((prev) => prev.has(gid) ? prev : new Set(prev).add(gid));
+            } else if (cleared && lastMessageAt && lastMessageAt.toMillis() > cleared.toMillis()) {
+              // New message after clear — un-clear
+              setClearedGroupIds((prev) => {
+                if (!prev.has(gid)) return prev;
+                const next = new Set(prev);
+                next.delete(gid);
+                return next;
+              });
+            }
+            const effectiveText = isCleared ? undefined : lastMessageText;
 
             // Skip if last message was sent by self
             const isSelf = lastMessageBy === userId;
@@ -116,7 +139,7 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
               });
               setLiveDataMap((prev) => {
                 const next = new Map(prev);
-                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
+                next.set(gid, { lastMessageText: effectiveText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
                 return next;
               });
               return;
@@ -132,7 +155,7 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
               });
               setLiveDataMap((prev) => {
                 const next = new Map(prev);
-                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
+                next.set(gid, { lastMessageText: effectiveText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 0 });
                 return next;
               });
               return;
@@ -147,7 +170,7 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
                 orderBy("createdAt", "asc")
               );
               const countSnap = await getCountFromServer(unreadQ);
-              const unreadCount = countSnap.data().count;
+              const unreadCount = isCleared ? 0 : countSnap.data().count;
 
               if (cancelled) return;
               setUnreadMap((prev) => {
@@ -158,20 +181,21 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
               });
               setLiveDataMap((prev) => {
                 const next = new Map(prev);
-                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount });
+                next.set(gid, { lastMessageText: effectiveText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount });
                 return next;
               });
             } catch {
               // Fallback: just mark as 1 unread
+              const fallbackCount = isCleared ? 0 : 1;
               setUnreadMap((prev) => {
-                if ((prev.get(gid) || 0) === 1) return prev;
+                if ((prev.get(gid) || 0) === fallbackCount) return prev;
                 const next = new Map(prev);
-                next.set(gid, 1);
+                next.set(gid, fallbackCount);
                 return next;
               });
               setLiveDataMap((prev) => {
                 const next = new Map(prev);
-                next.set(gid, { lastMessageText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: 1 });
+                next.set(gid, { lastMessageText: effectiveText, lastMessageBy, lastMessageAt: lastMessageAt ?? undefined, unreadCount: fallbackCount });
                 return next;
               });
             }
@@ -191,5 +215,5 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
   let totalUnread = 0;
   unreadMap.forEach((count) => { totalUnread += count; });
 
-  return { unreadMap, liveDataMap, totalUnread };
+  return { unreadMap, liveDataMap, totalUnread, clearedGroupIds };
 }
