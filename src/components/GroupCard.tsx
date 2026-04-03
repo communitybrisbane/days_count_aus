@@ -82,7 +82,8 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
   const handleClearHistory = async () => {
     if (!currentUserId) return;
     try {
-      await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { readAt: Timestamp.now() }, { merge: true });
+      const now = Timestamp.now();
+      await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { readAt: now, clearedAt: now }, { merge: true });
       emitGroupRead(group.id);
       onClearHistory?.(group.id);
     } catch (e) {

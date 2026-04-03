@@ -65,6 +65,7 @@ export default function GroupChatPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [showLinkWarn, setShowLinkWarn] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [clearedAt, setClearedAt] = useState<Timestamp | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const iconInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,7 +124,10 @@ export default function GroupChatPage() {
   useEffect(() => {
     if (!user) return;
     getDoc(doc(db, "groups", groupId, "lastRead", user.uid)).then((snap) => {
-      if (snap.exists()) setMuted(!!snap.data().muted);
+      if (snap.exists()) {
+        setMuted(!!snap.data().muted);
+        if (snap.data().clearedAt) setClearedAt(snap.data().clearedAt as Timestamp);
+      }
     }).catch(() => {});
   }, [user, groupId]);
 
@@ -676,7 +680,7 @@ export default function GroupChatPage() {
 
       {/* Scrollable area: Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5" style={{ scrollbarWidth: "none" }}>
-        {messages.map((msg) => {
+        {messages.filter((msg) => !clearedAt || !msg.createdAt || msg.createdAt.toMillis() > clearedAt.toMillis()).map((msg) => {
           if (msg.senderId === "system") {
             return (
               <div key={msg.id} className="flex justify-center py-1">
