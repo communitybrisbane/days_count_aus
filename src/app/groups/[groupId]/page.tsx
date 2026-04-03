@@ -416,7 +416,7 @@ export default function GroupChatPage() {
       {/* Fixed header — Row 1 only */}
       <div className="shrink-0 bg-forest/95 backdrop-blur-md border-b border-forest-light/20 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/groups")} className="w-10 h-10 flex items-center justify-center text-white/60 text-xl -ml-2">
+          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/60 text-xl -ml-2">
             ←
           </button>
           {/* Group icon */}
