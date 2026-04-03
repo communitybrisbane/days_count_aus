@@ -81,8 +81,10 @@ export default function MyPage() {
             />
           </div>
 
-          {/* 名前 */}
-          <h2 className="text-xl font-bold mt-2 truncate max-w-[80%] text-center text-white/90">{profile.displayName}</h2>
+          {/* レベル + 名前 */}
+          <h2 className="text-xl font-bold mt-2 truncate max-w-[80%] text-center text-white/90">
+            <span className="text-accent-orange">Lv.{level}</span> {profile.displayName}
+          </h2>
 
           {/* ゴール */}
           {profile.goal && (
