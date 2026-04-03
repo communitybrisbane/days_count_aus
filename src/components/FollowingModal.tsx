@@ -59,7 +59,7 @@ export default function FollowingModal({ followingIds, onClose, onSelect }: Prop
       <div ref={swipe.ref} className="w-full max-w-[430px] bg-forest flex flex-col min-h-dvh" {...swipe.handlers}>
         <div className="flex items-center justify-between p-4 border-b border-forest-light/20">
           <button onClick={onClose} className="text-white/40" aria-label="Close">&larr;</button>
-          <h3 className="font-bold text-sm text-white/90">Following ({followingIds.length})</h3>
+          <h3 className="font-bold text-sm text-white/90">Following ({loading ? followingIds.length : profiles.length})</h3>
           <div className="w-8" />
         </div>
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
