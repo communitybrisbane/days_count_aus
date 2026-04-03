@@ -26,14 +26,8 @@ export function resolveMode(mode: string): string {
   return LEGACY_MODE_MAP[mode] || mode;
 }
 
-/** Hashtag suggestions per mode + shared tags */
-export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {
-  work: ["#work", "#farm", "#barista", "#warehouse", "#harvest", "#jobhunt", "#resume", "#interview", "#RSA", "#ABN", "#taxreturn", "#payslip", "#kitchenhand", "#cleaner", "#ubereats", "#88days"],
-  english: ["#english", "#study", "#ielts", "#speaking", "#conversation", "#slang", "#accent", "#grammar", "#TOEIC", "#cambly", "#languageexchange", "#pronunciation", "#podcast"],
-  skill: ["#skill", "#coding", "#cooking", "#design", "#portfolio", "#photography", "#barista", "#youtube", "#editing", "#marketing", "#freelance", "#certification", "#gym"],
-  challenge: ["#challenge", "#travel", "#roadtrip", "#beach", "#camping", "#hiking", "#diving", "#surfing", "#wildlife", "#greatbarrierreef", "#uluru", "#byron", "#bluemountains", "#whitsundays"],
-  chill: ["#chill", "#daily", "#cooking", "#sharehouse", "#routine", "#selfcare", "#cafe", "#weekend", "#grocery", "#homesick", "#Netflix", "#flatwhite", "#sunset", "#bbq", "#laundry"],
-};
+/** Hashtag suggestions per mode (empty — custom tags only) */
+export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {};
 export const HASHTAG_MAX = 5;
 
 export const MILESTONES = [30, 100, 200, 365] as const;
