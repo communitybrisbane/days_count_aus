@@ -164,11 +164,8 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
   }, [post.id, post.likeCount]);
 
   useEffect(() => {
-    if (post.editableUntil) {
-      const deadline = post.editableUntil.toDate();
-      setIsEditable(new Date() < deadline && post.userId === user?.uid);
-    }
-  }, [post.editableUntil, user]);
+    setIsEditable(post.userId === user?.uid);
+  }, [post.userId, user]);
 
   const handleLike = async () => {
     if (!user || !profile || likingRef.current || restricted) return;
