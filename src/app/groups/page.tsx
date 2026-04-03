@@ -126,9 +126,36 @@ export default function GroupsPage() {
   ) || groups.find((g) =>
     isModeGroup(g) && g.mode === profile?.mainMode
   );
+  const [clearedGroupIds, setClearedGroupIds] = useState<Set<string>>(new Set());
+  // Un-clear when new messages arrive
+  useEffect(() => {
+    if (clearedGroupIds.size === 0) return;
+    setClearedGroupIds((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const gid of prev) {
+        const live = liveDataMap.get(gid);
+        if (live?.lastMessageText) {
+          next.delete(gid);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [liveDataMap]);
+  const nonModeJoined = groups
+    .filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || ""))
+    .sort((a, b) => {
+      const aCleared = clearedGroupIds.has(a.id);
+      const bCleared = clearedGroupIds.has(b.id);
+      if (aCleared !== bCleared) return aCleared ? 1 : -1;
+      const aTime = liveDataMap.get(a.id)?.lastMessageAt?.toMillis() ?? a.lastMessageAt?.toMillis?.() ?? 0;
+      const bTime = liveDataMap.get(b.id)?.lastMessageAt?.toMillis() ?? b.lastMessageAt?.toMillis?.() ?? 0;
+      return bTime - aTime;
+    });
   const myJoinedGroups = [
     ...(myModeGroup ? [myModeGroup] : []),
-    ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
+    ...nonModeJoined,
   ];
   const myJoinedExtra = myJoinedGroups.filter((g) => !isModeGroup(g));
   const hasCreatedGroup = groups.some((g) => !g.isOfficial && g.creatorId === user?.uid);
@@ -326,6 +353,7 @@ export default function GroupsPage() {
                     liveMessageText={liveDataMap.get(group.id)?.lastMessageText}
                     onClearHistory={(gid) => {
                       setGroups((prev) => prev.map((g) => g.id === gid ? { ...g, lastMessageText: "" } : g));
+                      setClearedGroupIds((prev) => new Set(prev).add(gid));
                     }}
                   />
                 ))}
