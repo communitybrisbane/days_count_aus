@@ -16,6 +16,11 @@ export function emitGroupRead(groupId: string) {
   window.dispatchEvent(new CustomEvent("group-read", { detail: groupId }));
 }
 
+/** Notify that a group's history was cleared — hide preview text */
+export function emitGroupCleared(groupId: string) {
+  window.dispatchEvent(new CustomEvent("group-cleared", { detail: groupId }));
+}
+
 /**
  * Listens to group docs in real-time and counts unread messages.
  * Uses getCountFromServer to get actual unread count (excluding own messages).
@@ -44,8 +49,26 @@ export function useUnreadGroups(userId: string | undefined, groupIds: string[]) 
         return next;
       });
     };
+    const clearHandler = (e: Event) => {
+      const gid = (e as CustomEvent<string>).detail;
+      lastReadAtMapRef.current.set(gid, Timestamp.now());
+      setUnreadMap((prev) => {
+        const next = new Map(prev);
+        next.set(gid, 0);
+        return next;
+      });
+      setLiveDataMap((prev) => {
+        const next = new Map(prev);
+        next.set(gid, { unreadCount: 0 });
+        return next;
+      });
+    };
     window.addEventListener("group-read", handler);
-    return () => window.removeEventListener("group-read", handler);
+    window.addEventListener("group-cleared", clearHandler);
+    return () => {
+      window.removeEventListener("group-read", handler);
+      window.removeEventListener("group-cleared", clearHandler);
+    };
   }, []);
 
   useEffect(() => {

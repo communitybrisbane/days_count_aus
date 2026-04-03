@@ -6,7 +6,7 @@ import Image from "next/image";
 import { doc, updateDoc, arrayUnion, increment, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
-import { emitGroupRead } from "@/hooks/useUnreadGroups";
+import { emitGroupRead, emitGroupCleared } from "@/hooks/useUnreadGroups";
 import { FocusModeIcon, IconUsers } from "@/components/icons";
 import type { Group } from "@/types";
 
@@ -84,7 +84,7 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
     try {
       const now = Timestamp.now();
       await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { readAt: now, clearedAt: now }, { merge: true });
-      emitGroupRead(group.id);
+      emitGroupCleared(group.id);
       onClearHistory?.(group.id);
     } catch (e) {
       console.error("Clear history failed:", e);
