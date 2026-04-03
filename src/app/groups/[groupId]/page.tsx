@@ -419,22 +419,14 @@ export default function GroupChatPage() {
           <button onClick={() => router.push("/groups")} className="w-10 h-10 flex items-center justify-center text-white/60 text-xl -ml-2">
             ←
           </button>
-          {/* Group icon — leader can tap to change */}
-          <div className="relative shrink-0">
+          {/* Group icon */}
+          <div className="shrink-0">
             {group.iconUrl ? (
               <Image src={group.iconUrl} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-forest-light/30 flex items-center justify-center">
                 <FocusModeIcon modeId={group.mode || "chill"} size={22} className="text-white/60" />
               </div>
-            )}
-            {isLeader && (
-              <button
-                onClick={() => iconInputRef.current?.click()}
-                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent-orange flex items-center justify-center"
-              >
-                <IconCamera size={11} className="text-white" />
-              </button>
             )}
             <input ref={iconInputRef} type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
           </div>
@@ -536,6 +528,22 @@ export default function GroupChatPage() {
           <div className="fixed inset-x-0 bottom-0 z-50 flex justify-center">
             <div className="w-full max-w-[430px] bg-white rounded-t-2xl p-5">
               <h3 className="font-bold text-sm mb-3">Community Settings</h3>
+
+              <label className="block text-xs font-medium text-gray-500 mb-1">Group Icon</label>
+              <button
+                onClick={() => iconInputRef.current?.click()}
+                className="flex items-center gap-2 mb-3 px-3 py-2 bg-gray-100 rounded-xl active:bg-gray-200 transition-colors"
+              >
+                {group.iconUrl ? (
+                  <Image src={group.iconUrl} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center">
+                    <FocusModeIcon modeId={group.mode || "chill"} size={16} className="text-forest-mid" />
+                  </div>
+                )}
+                <span className="text-xs text-gray-500 font-medium">Change icon</span>
+                <IconCamera size={14} className="text-gray-400 ml-auto" />
+              </button>
 
               <label className="block text-xs font-medium text-gray-500 mb-1">Who can join?</label>
               <div className="flex gap-2 mb-3">
