@@ -82,20 +82,6 @@ export default function MyPage() {
           {/* 名前 */}
           <h2 className="text-xl font-bold mt-2 truncate max-w-[80%] text-center text-white/90">{profile.displayName}</h2>
 
-          {/* モード・地域 — 横並び */}
-          <div className="flex items-center justify-center gap-1.5 mt-2">
-            {profile.mainMode && (
-              <span className="inline-flex items-center gap-1 text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
-                <FocusModeIcon modeId={resolveMode(profile.mainMode)} size={12} />
-                {FOCUS_MODES.find((m) => m.id === resolveMode(profile.mainMode))?.label}
-              </span>
-            )}
-            {profile.region && profile.showRegion !== false && (
-              <span className="text-xs text-white/60 bg-forest-light/30 px-2.5 py-0.5 rounded-full">
-                {profile.region}
-              </span>
-            )}
-          </div>
           {/* ゴール */}
           {profile.goal && (
             <p className="text-lg font-bold text-white/80 mt-2 text-center max-w-[85%] leading-snug">{profile.goal}</p>
