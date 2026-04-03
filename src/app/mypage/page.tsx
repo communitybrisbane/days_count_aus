@@ -53,15 +53,17 @@ export default function MyPage() {
   const filteredPosts = modeFilter ? posts.filter((p) => resolveMode(p.mode) === modeFilter) : posts;
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={NO_SCROLLBAR_STYLE}>
-      {/* プロフィール — Instagram風中央レイアウト with geometric bg */}
+    <div className="h-dvh flex flex-col overflow-hidden relative" style={{ paddingBottom: NAV_HEIGHT }}>
+      {/* Geometric background — full page */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-10 -right-10 w-48 h-48 bg-forest-light/15 rotate-45" />
+        <div className="absolute top-[40%] -left-6 w-36 h-36 bg-forest-mid/10 -rotate-12" />
+        <div className="absolute bottom-[20%] -right-8 w-40 h-40 bg-forest-light/10 rotate-[30deg]" />
+        <div className="absolute bottom-[50%] left-[30%] w-24 h-24 bg-forest-mid/8 rotate-[60deg]" />
+      </div>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-[1]" style={NO_SCROLLBAR_STYLE}>
+      {/* プロフィール — Instagram風中央レイアウト */}
       <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
-        {/* Geometric background for profile header */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-48 h-48 bg-forest-light/15 rotate-45" />
-          <div className="absolute bottom-0 -left-6 w-36 h-36 bg-forest-mid/10 -rotate-12" />
-        </div>
 
         {/* 設定アイコン — 右上 */}
         <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
