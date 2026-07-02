@@ -126,8 +126,13 @@ export default function GroupsPage() {
   ) || groups.find((g) =>
     isModeGroup(g) && g.mode === profile?.mainMode
   );
+  // Other mode groups the user opted into (beyond their mainMode one)
+  const extraModeGroups = groups.filter((g) =>
+    isModeGroup(g) && g.id !== myModeGroup?.id && g.memberIds?.includes(user?.uid || "")
+  );
   const myJoinedGroups = [
     ...(myModeGroup ? [myModeGroup] : []),
+    ...extraModeGroups,
     ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
   ].sort((a, b) => {
     const aCleared = clearedGroupIds.has(a.id);
@@ -144,8 +149,8 @@ export default function GroupsPage() {
   const canJoinMore = myJoinedExtra.length < maxSlots;
   const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
 
-  // Search shows user-created communities only (official groups are mode groups, auto-joined)
-  const searchableGroups = groups.filter((g) => !g.isClosed && !g.isOfficial && !myJoinedGroups.some((j) => j.id === g.id));
+  // Search shows user-created communities + mode groups not yet joined
+  const searchableGroups = groups.filter((g) => !g.isClosed && !myJoinedGroups.some((j) => j.id === g.id));
   let filteredUserGroups = searchableGroups;
   if (modeFilter) {
     filteredUserGroups = filteredUserGroups.filter((g) => g.mode === modeFilter);
@@ -223,7 +228,7 @@ export default function GroupsPage() {
                 group={group}
                 currentUserId={user?.uid}
                 leaderName={leaderNames[group.creatorId]}
-                canJoin={canJoinCommunity && canJoinMore}
+                canJoin={isModeGroup(group) ? true : canJoinCommunity && canJoinMore}
                 onJoined={handleJoined}
                 showGoal
               />
@@ -307,7 +312,7 @@ export default function GroupsPage() {
 
               {/* Group Chat section */}
               <div className="px-4 pt-2">
-                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + 1}</span></p>
+                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + Math.max(1, myJoinedGroups.length - myJoinedExtra.length)}</span></p>
               </div>
               <div className="flex flex-col">
                 {myJoinedGroups.map((group) => (

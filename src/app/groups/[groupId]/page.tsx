@@ -26,7 +26,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
-import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, GROUP_JOIN_LEVEL, resolveMode } from "@/lib/constants";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -176,6 +176,8 @@ export default function GroupChatPage() {
 
   const isOfficial = !!group?.isOfficial;
   const isModeGroup = isOfficial && !group?.iconUrl;
+  // The mode group matching the user's mainMode can't be left; other mode groups (opt-in) can
+  const isOwnModeGroup = isModeGroup && resolveMode(group?.mode || "") === resolveMode(profile?.mainMode || "");
   const isMember = isMemberNow;
   const isLeader = group?.creatorId === user?.uid;
   const isFull = !isModeGroup && (group?.memberCount || 0) >= MAX_GROUP_MEMBERS;
@@ -191,12 +193,13 @@ export default function GroupChatPage() {
       alert("You cannot rejoin this group.");
       return;
     }
-    if (userLevel < 5) {
-      alert("You need Lv.5 or higher to join a community.");
-      return;
-    }
-    // Group limit: max 2 groups excluding mode group (mode group + 2 = 3 total in groupIds)
+    // Mode groups are open to everyone — level and slot limits apply to communities only
     if (!isModeGroup) {
+      if (userLevel < GROUP_JOIN_LEVEL) {
+        alert(`You need Lv.${GROUP_JOIN_LEVEL} or higher to join a community.`);
+        return;
+      }
+      // Group limit: max 2 groups excluding mode group (mode group + 2 = 3 total in groupIds)
       const myGroupIds = profile?.groupIds || [];
       if (myGroupIds.length >= 3) {
         alert("Max 2 groups. Please leave one first.");
@@ -455,8 +458,12 @@ export default function GroupChatPage() {
             )}
             {isClosed ? (
               <span className="text-xs text-red-400/70 px-2 py-1">Closed</span>
-            ) : isModeGroup ? (
+            ) : isOwnModeGroup ? (
               <span className="text-xs bg-accent-orange text-white px-2.5 py-1 rounded-full">Official</span>
+            ) : isModeGroup && !isMember ? (
+              <button onClick={handleJoinAttempt} className="bg-accent-orange text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1">
+                Join
+              </button>
             ) : isMember ? (
               <button onClick={() => setShowLeaveModal(true)} className="text-sm text-red-400 px-2 py-1">Leave</button>
             ) : !isFull && userLevel >= 5 ? (
