@@ -14,11 +14,11 @@
 - LP・Instagram広告の制作（`ad-data-sheet.md` を素材に）
 - **firestore.rules のデプロイ**（`firebase deploy --only firestore:rules`）— メッセージの `allow delete` 追加を反映するため。未デプロイだと退会時のメッセージ削除が引き続き失敗する（try/catchで握りつぶされるため退会自体は成功する）
 - 要判断: ストリーク7の倍数 +100XPボーナスを実装するか仕様から削除するか（SPEC §15参照）
-- 要判断: 通知設定トグルUI（いいね/グループ/ストリーク警告）を実装するか（`notificationPrefs` は存在、UIなし）
 - 要判断: モード別ハッシュタグ候補（`HASHTAG_SUGGESTIONS` が空）を復活させるか
 
 ## ✅ 完了（新しい順）
 
+- **2026-07-02** 通知設定トグルUIを実装。設定画面に「Notifications」アコーディオンを追加（いいね/グループメッセージ/ストリーク警告の3トグル、`private/config.notificationPrefs` に保存、未設定はON扱い）。Cloud Functions側も3経路（`onLikeCreated`・`onGroupMessageCreated`・`checkStreaks`）で送信前に設定を確認するよう修正（従来は設定を見ずに全員へ送信していた）。**要Functionsデプロイ**（`firebase deploy --only functions`）
 - **2026-07-02** SPEC_v4 と実装の突き合わせ監査を完了（v4改訂3）。仕様書の古い記述12箇所超を実装準拠に修正（投稿編集5分制限の撤廃反映、PWAバナーのモバイル限定、マイページ横並びレイアウト、Study Roomフィールド名、checkStreaksの実挙動、アカウント削除手順など）。あわせてコードバグ2件を修正: ①退会時のグループメッセージ削除が `userId` フィールドを検索していて一切ヒットしない（正しくは `senderId`）+ ルールに delete 許可が無かった → クエリ修正・退出前に実行するよう順序変更・ルールに `allow delete` 追加（**要ルールデプロイ**）、②post/page.tsx の古いXPコメント修正。未実装だが仕様に記載されていた3項目（ストリーク+100XP・通知トグルUI・ハッシュタグ候補）は §15 に移動
 - **2026-07-02** devプレビューを「ホーム画面に追加」した際にPWAアイコンが表示されない問題を解消。原因はVercelのDeployment Protection（Vercel Authentication）で、iOSのアイコン取得リクエストが401で弾かれていた。Vercelダッシュボードから同機能をオフにして解決（コード側の `manifest.json` / `apple-touch-icon` 設定は元から正常）。副作用としてプレビューURLは認証なしで閲覧可能になる点に注意
 - **2026-07-02** 公式グループ10個のアイコンが非表示になる障害を修復。原因は作成時に発行した期限付き署名URLの失効（403）。Storage上のファイルは無傷だったため、期限なしのダウンロードトークンURLを再発行してFirestoreの `iconUrl` を更新（全17件の正常応答を確認）。公式グループのアイコン元SVGはリポジトリ未収録の点に注意

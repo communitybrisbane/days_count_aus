@@ -231,6 +231,7 @@ export const onLikeCreated = onDocumentCreated(
     // Get author's FCM token and notification prefs
     const privSnap = await db.doc(`users/${authorId}/private/config`).get();
     const privData = privSnap.exists ? privSnap.data() : null;
+    if (privData?.notificationPrefs?.likes === false) return;
     const fcmToken = privData?.fcmToken || "";
 
     if (!fcmToken) return;
@@ -261,6 +262,7 @@ async function sendStreakWarning(
 ): Promise<boolean> {
   const privSnap = await db.doc(`users/${userDoc.id}/private/config`).get();
   const privData = privSnap.exists ? privSnap.data() : null;
+  if (privData?.notificationPrefs?.streakWarning === false) return false;
   const fcmToken = privData?.fcmToken || "";
   if (!fcmToken) return false;
   try {
@@ -463,6 +465,7 @@ export const onGroupMessageCreated = onDocumentCreated(
       if (lastReadData?.muted) continue;
 
       const privData = privSnaps[i].exists ? privSnaps[i].data() : null;
+      if (privData?.notificationPrefs?.groupMessage === false) continue;
       const fcmToken = privData?.fcmToken || "";
       if (!fcmToken) continue;
 

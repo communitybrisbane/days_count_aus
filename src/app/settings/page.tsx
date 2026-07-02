@@ -10,7 +10,8 @@ import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from 
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
-import { uploadAvatar, deleteAccount, unblockUser } from "@/lib/services/users";
+import { uploadAvatar, deleteAccount, unblockUser, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
+import type { NotificationPrefs } from "@/types";
 import dynamic from "next/dynamic";
 import ConfirmModal from "@/components/ConfirmModal";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
@@ -34,9 +35,10 @@ export default function SettingsPage() {
   const [showRegion, setShowRegion] = useState(profile?.showRegion !== false);
   const [saving, setSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
-  const [activeSection, setActiveSection] = useState<"profile" | "blocked" | null>(null);
+  const [activeSection, setActiveSection] = useState<"profile" | "notifications" | "blocked" | null>(null);
   const [blockedProfiles, setBlockedProfiles] = useState<{ uid: string; displayName: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs | null>(null);
 
   // Image crop
   const [cropSrc, setCropSrc] = useState("");
@@ -182,6 +184,21 @@ export default function SettingsPage() {
     setActiveSection(activeSection === section ? null : section);
     if (section === "blocked" && activeSection !== "blocked") {
       loadBlockedProfiles();
+    }
+    if (section === "notifications" && activeSection !== "notifications" && !notifPrefs && user) {
+      fetchNotificationPrefs(user.uid).then(setNotifPrefs).catch(() => {});
+    }
+  };
+
+  const handleToggleNotif = async (key: keyof NotificationPrefs) => {
+    if (!user || !notifPrefs) return;
+    const next = { ...notifPrefs, [key]: !notifPrefs[key] };
+    setNotifPrefs(next);
+    try {
+      await updateNotificationPrefs(user.uid, next);
+    } catch (e) {
+      console.error("Failed to update notification prefs:", e);
+      setNotifPrefs(notifPrefs); // rollback
     }
   };
 
@@ -355,6 +372,46 @@ export default function SettingsPage() {
               className="w-full bg-accent-orange text-white font-bold py-2 rounded-full text-sm disabled:opacity-50">
               {saving ? "Saving..." : "Save"}
             </button>
+          </div>
+        )}
+
+        {/* Notifications — Accordion */}
+        <button
+          onClick={() => toggle("notifications")}
+          className="w-full flex items-center justify-between px-4 py-3.5 border-b border-forest-light/15 active:bg-forest-light/10"
+        >
+          <span className="font-medium text-sm text-white/80">Notifications</span>
+          <span className="text-white/30 text-sm">{activeSection === "notifications" ? "▲" : "▼"}</span>
+        </button>
+        {activeSection === "notifications" && (
+          <div className="px-4 py-3 bg-forest-light/10 border-b border-forest-light/15">
+            {!notifPrefs ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-accent-orange" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {([
+                  { key: "likes", label: "Likes", desc: "When someone likes your post" },
+                  { key: "groupMessage", label: "Group Messages", desc: "New messages in your groups" },
+                  { key: "streakWarning", label: "Streak Reminders", desc: "Before your streak resets" },
+                ] as { key: keyof NotificationPrefs; label: string; desc: string }[]).map((item) => (
+                  <div key={item.key} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white/80">{item.label}</p>
+                      <p className="text-xs text-white/40">{item.desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleNotif(item.key)}
+                      className={`relative w-10 h-5.5 rounded-full transition-colors shrink-0 ml-3 ${notifPrefs[item.key] ? "bg-accent-orange" : "bg-forest-light/30"}`}
+                    >
+                      <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${notifPrefs[item.key] ? "left-5" : "left-0.5"}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

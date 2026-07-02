@@ -1,6 +1,7 @@
 import {
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   collection,
@@ -255,7 +256,7 @@ export async function fetchNotificationPrefs(uid: string): Promise<NotificationP
 
 export async function updateNotificationPrefs(uid: string, prefs: NotificationPrefs): Promise<void> {
   const privRef = doc(db, "users", uid, "private", "config");
-  await updateDoc(privRef, { notificationPrefs: prefs });
+  await setDoc(privRef, { notificationPrefs: prefs }, { merge: true });
 }
 
 export async function fetchAdminConfig() {
