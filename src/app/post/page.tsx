@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_XP, POST_XP_DAILY_MAX, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX, REGIONS } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_XP, POST_XP_DAILY_MAX, POST_CONTENT_MAX, HASHTAG_MAX, REGIONS } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { useDayCount } from "@/hooks/useDayCount";
 import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount } from "@/lib/services/posts";
@@ -486,7 +486,7 @@ export default function PostPage() {
               {openSection === "tags" && (
                 <div className="px-1 pb-1" ref={tagsRef}>
                   <div className="flex flex-wrap gap-1.5">
-                    {[...(HASHTAG_SUGGESTIONS[mode] || []), ...tags.filter((t) => !(HASHTAG_SUGGESTIONS[mode] || []).includes(t))].map((tag) => (
+                    {tags.map((tag) => (
                       <button
                         key={tag}
                         onClick={() => toggleTag(tag)}

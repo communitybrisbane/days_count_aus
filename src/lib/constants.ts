@@ -26,8 +26,7 @@ export function resolveMode(mode: string): string {
   return LEGACY_MODE_MAP[mode] || mode;
 }
 
-/** Hashtag suggestions per mode (empty — custom tags only) */
-export const HASHTAG_SUGGESTIONS: Record<string, string[]> = {};
+/** Hashtags are custom-only (per-mode suggestions were dropped) */
 export const HASHTAG_MAX = 5;
 
 export const MILESTONES = [30, 100, 200, 365] as const;
