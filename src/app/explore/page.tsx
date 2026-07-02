@@ -304,10 +304,10 @@ export default function ExplorePage() {
         </div>
 
         {/* Mode filter tabs */}
-        <div className="flex px-4 gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
+        <div className="flex px-4 gap-1.5 pb-2">
           <button
             onClick={() => setModeFilter("")}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+            className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
               !modeFilter ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
             }`}
           >
@@ -317,7 +317,7 @@ export default function ExplorePage() {
             <button
               key={m.id}
               onClick={() => setModeFilter(modeFilter === m.id ? "" : m.id)}
-              className={`shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-bold transition-all ${
                 modeFilter === m.id ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
               }`}
             >
