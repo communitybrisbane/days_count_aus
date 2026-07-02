@@ -248,8 +248,11 @@ function injectFreshSlots(posts: Post[], seenMap: Map<string, number>): Post[] {
   const result = [...posts];
   for (let slot = FRESH_SLOT_INTERVAL - 1; slot < result.length; slot += FRESH_SLOT_INTERVAL) {
     if (isFresh(result[slot])) continue;
-    // Promote the highest-ranked fresh post sitting below this slot
-    const idx = result.findIndex((p, i) => i > slot && isFresh(p));
+    // Promote the highest-ranked fresh post sitting below this slot, preferring
+    // one that won't land next to a same-author post (which would undo diversify)
+    const neighbours = [result[slot - 1]?.userId, result[slot]?.userId];
+    let idx = result.findIndex((p, i) => i > slot && isFresh(p) && !neighbours.includes(p.userId));
+    if (idx === -1) idx = result.findIndex((p, i) => i > slot && isFresh(p));
     if (idx === -1) break; // no fresh posts left anywhere below
     const [fresh] = result.splice(idx, 1);
     result.splice(slot, 0, fresh);

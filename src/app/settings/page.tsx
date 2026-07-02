@@ -21,6 +21,12 @@ const LegalNoticeModal = dynamic(() => import("@/components/LegalModals").then((
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
+const NOTIF_TOGGLES: { key: keyof NotificationPrefs; label: string; desc: string }[] = [
+  { key: "likes", label: "Likes", desc: "When someone likes your post" },
+  { key: "groupMessage", label: "Group Messages", desc: "New messages in your groups" },
+  { key: "streakWarning", label: "Streak Reminders", desc: "Before your streak resets" },
+];
+
 export default function SettingsPage() {
   const { user, profile, privateData, refreshProfile } = useAuth();
   const router = useRouter();
@@ -391,11 +397,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {([
-                  { key: "likes", label: "Likes", desc: "When someone likes your post" },
-                  { key: "groupMessage", label: "Group Messages", desc: "New messages in your groups" },
-                  { key: "streakWarning", label: "Streak Reminders", desc: "Before your streak resets" },
-                ] as { key: keyof NotificationPrefs; label: string; desc: string }[]).map((item) => (
+                {NOTIF_TOGGLES.map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-white/80">{item.label}</p>

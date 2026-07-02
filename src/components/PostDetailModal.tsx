@@ -13,9 +13,11 @@ interface Props {
   onDelete: (postId: string) => void;
   /** "list" = header + scrollable list (mypage/user), "snap" = full-height snap scroll (explore) */
   variant?: "list" | "snap";
+  /** Called once per post when it snaps into view (snap variant only) — used for seen-tracking */
+  onView?: (post: Post) => void;
 }
 
-export default function PostDetailModal({ posts, selectedIndex, onClose, onDelete, variant = "list" }: Props) {
+export default function PostDetailModal({ posts, selectedIndex, onClose, onDelete, variant = "list", onView }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const swipe = useSwipeDismiss(onClose);
 
@@ -26,6 +28,25 @@ export default function PostDetailModal({ posts, selectedIndex, onClose, onDelet
       if (target) target.scrollIntoView({ block: "start" });
     }
   }, [selectedIndex, variant]);
+
+  // Snap variant: report posts the user actually snap-scrolls into view
+  useEffect(() => {
+    if (variant !== "snap" || !onView || !scrollRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = (entry.target as HTMLElement).dataset.postId;
+          const post = posts.find((p) => p.id === id);
+          if (post) onView(post);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    Array.from(scrollRef.current.children).forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [variant, posts, onView]);
 
   if (variant === "snap") {
     return (
@@ -39,6 +60,7 @@ export default function PostDetailModal({ posts, selectedIndex, onClose, onDelet
             {posts.map((post) => (
               <div
                 key={post.id}
+                data-post-id={post.id}
                 className="snap-start snap-always w-full flex items-center"
                 style={{ height: `calc(100dvh - ${NAV_HEIGHT})` }}
               >

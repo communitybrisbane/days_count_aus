@@ -167,6 +167,12 @@ export default function ExplorePage() {
     if (el) seenObserverRef.current?.observe(el);
   }, []);
 
+  // Posts snap-scrolled in the detail modal are real impressions too — without
+  // this they would escape the seen penalty and resurface next session
+  const handleModalView = useCallback((post: Post) => {
+    markSeen([post.id]);
+  }, []);
+
   // Cached user list for search — fetch once, filter in memory
   const userCacheRef = useRef<{ uid: string; name: string; region: string }[] | null>(null);
 
@@ -371,7 +377,7 @@ export default function ExplorePage() {
                   tapTimerRef.current = setTimeout(() => {
                     if (tapCountRef.current === 1) {
                       setSelectedIndex(idx);
-                      recordInteraction(post, "view");
+                      if (post.userId !== user?.uid) recordInteraction(post, "view");
                     }
                     tapCountRef.current = 0;
                   }, 300);
@@ -401,6 +407,7 @@ export default function ExplorePage() {
           onClose={() => setSelectedIndex(null)}
           onDelete={handleDelete}
           variant="snap"
+          onView={handleModalView}
         />
       )}
 
