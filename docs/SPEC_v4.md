@@ -11,7 +11,7 @@
 
 | カテゴリ | 技術 |
 |---|---|
-| Frontend | Next.js 16.1.6 (App Router) + TypeScript |
+| Frontend | Next.js 16.2.2 (App Router) + TypeScript |
 | スタイリング | Tailwind CSS v4 |
 | アニメーション | Framer Motion |
 | 認証 | Firebase Authentication（**Googleログインのみ**） |
@@ -37,7 +37,7 @@
   "dompurify": "^3.3.3",
   "firebase": "^12.10.0",
   "framer-motion": "^12.35.2",
-  "next": "16.1.6",
+  "next": "16.2.2",
   "react": "19.2.3",
   "react-easy-crop": "^5.5.6",
   "tailwindcss": "^4"
@@ -55,7 +55,7 @@
 - **PWAアイコン**: 192×192px / 512×512px の PNG アイコン。
 - **PWAインストールバナー**: 未インストールユーザーに毎回表示（z-[200]で最前面）。iOS向けはビジュアルステップガイド（Step 1: Share → Step 2: Add to Home Screen → Step 3: Add）をSVGアイコン+アニメーション矢印で案内。Android向けは `beforeinstallprompt` ネイティブプロンプト使用。
 - **オフラインフォールバック**: Service Worker が `offline.html` をキャッシュ。ナビゲーション失敗時にブランドデザインの「You're Offline」ページ（Retryボタン付き）を表示。
-- **OG画像**: `opengraph-image.tsx` で動的生成（1200×630px）。アプリアイコン + "days-count" テキスト + タグライン + Working Holiday / Journal / Community ピル。カンガルー透かし。
+- **OG画像**: `opengraph-image.png`（静的画像、1200×630px）。
 - **セキュリティヘッダー** (`next.config.ts`):
   - `Cross-Origin-Opener-Policy: same-origin-allow-popups`（Google OAuth popup 対応）
   - `X-Content-Type-Options: nosniff`
@@ -258,7 +258,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **地域選択（任意）**: 投稿に地域タグを付与。デフォルトはプロフィールの地域。
 - **日数オーバーライド（任意）**: 日付ピッカーでカスタムD+数値を設定可能。
 - **ハッシュタグ**: モード別候補から選択 + カスタムタグ作成。最大5個。
-- **テキスト入力**: 400文字以内（ASCII文字のみ、リアルタイム文字数カウント）。
+- **テキスト入力**: 400文字以内（ASCII文字 + 絵文字のみ、リアルタイム文字数カウント）。
 - **禁止語句チェック**: 投稿前にクライアント側で照合。該当時は投稿ブロック。
 
 **投稿制限**: 1日複数回投稿可能。ただしXP付与は1日3回まで（`POST_XP_DAILY_MAX = 3`）。週間段階制XPは1日1回分のみ加算（`lastPostAt` で当日判定）。
@@ -310,16 +310,20 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **joinType**: `open`（誰でも参加可）or `friends`（招待制）。リーダーが設定可能。
 - **参加**: 即参加（openの場合）。
 - **退出**: 自由に退出可能。メンバーが0になったグループは自動クローズ。
-- **キック**: リーダーのみ可能。
-- **リーダー退出時**: 確認ダイアログ → `isClosed: true` に更新。
+- **キック**: リーダーのみ可能。キックされたユーザーは再参加不可（`kickedUserIds` で管理）。キック時に `users/{uid}/private/config.kickedFrom` に記録。
+- **リーダー退出時**: 確認ダイアログ → リーダー移譲（他メンバー選択）or `isClosed: true` に更新。
+- **CLOSEDグループ**: チャット履歴は読み取り専用で閲覧可能。入力欄に「This group has been closed.」バナー表示。ヘッダーに赤い「Closed」バッジ。
+- **friends参加確認**: `joinType: "friends"` のグループ参加時に確認モーダル表示（「This group is for people who know each other.」）。
 
 #### グループチャット (`/groups/[groupId]`)
-- リアルタイム (`onSnapshot`) テキストメッセージ。100文字以内。
+- リアルタイム (`onSnapshot`) テキストメッセージ。100文字以内（ASCII + 絵文字）。
 - Enterキーで送信可能。
 - **リアクション**: メッセージごとのハートリアクション（Map形式）。
 - **メッセージ編集/取消**: 送信者は `text`, `edited`, `unsent` フィールドを更新可能。取消時はテキスト長制約を免除。
+- **システムメッセージ**: 参加・退出・キック・リーダー移譲・グループクローズ時に自動生成（`senderId: "system"`）。中央配置のミュートグレー表示。FCM通知はスキップ。
 - **既読管理**: `lastRead/{userId}` サブコレクションで各ユーザーの最終読み取り時刻を記録。
 - **最終メッセージプレビュー**: グループ一覧にて `lastMessageText` / `lastMessageBy` を表示。
+- **スワイプで既読クリア**: グループカードを左スワイプ → 「Clear」ボタン表示 → タップで既読時刻を更新（未読バッジクリア）。
 
 ---
 
@@ -343,7 +347,6 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **プロフィール編集**: ニックネーム（半角英数字+_、15文字、重複不可）、滞在地域、目標（100文字）、メインモード、渡航予定日、プロフィール写真（丸型クロップ、512×512px）。
 - **地域表示設定**: `showRegion` でプロフィールの地域表示ON/OFF。
 - **フェーズ切り替え**: ステータスを手動変更。confirm確認ダイアログ付き。
-- **通報機能**: 対象ユーザーID + 理由 + スクリーンショット画像。
 - **通知設定**: 3つのトグル（いいね通知、グループメッセージ通知、ストリーク警告通知）。
 - **法定項目**: プライバシーポリシー、利用規約、法的通知（Firestoreの `legal_docs` コレクションから取得、フォールバック付き）。
 - **アカウント管理**: ログアウト（confirm付き）、アカウント削除（confirm付き + 再認証）。
@@ -366,15 +369,26 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 #### 投稿レベルの通報
 - 投稿カードの「···」メニューから「Report」。
 - `posts/{postId}/reports/{reporterId}` に記録（1ユーザー1回のみ）。
+- **通報者から非表示**: 通報した投稿IDを `users/{uid}/private/config.reportedPosts` に追加。EXPLORE・ユーザープロフィールでクライアント側フィルタ。通報成功後1.5秒でリストから消える。
 - **自動非表示**: `reportCount` が **3以上** → `visibility: "private"` + `reportRestricted: true` に更新。
 
 #### ユーザーレベルの通報
-- 設定画面から対象ユーザーIDと理由 + スクリーンショット画像を送信。
-- `reports` コレクションに記録。
+- **公開プロフィール画面**（`/user/[uid]`）のアクションシート（Block / Report / Cancel）から通報。
+- 理由テキスト（必須）+ スクリーンショット画像（必須）。
+- `reports` コレクションに記録。管理者メール通知（スクリーンショットURL含む）。
+- **自動アカウント制限**: 未解決の通報が **10件** に達すると `restricted: true` を自動設定。
+
+#### アカウント制限（Restricted Mode）
+- `restricted: true` 時の制限: 投稿・いいね・フォロー・メッセージ・リアクション・グループ参加/作成が不可。
+- 画面上部に赤いバナー表示（`RestrictedBanner`）: 「This account has been restricted」+ サポート連絡案内。
+- **制限解除時**: Cloud Function（`onRestrictionLifted`）が未解決の全通報を自動 `resolved: true` に更新。
 
 #### ブロック
-- 投稿カードの「···」メニューから「Block」。
+- 投稿カードの「···」メニュー or 公開プロフィールのアクションシートから「Block」。
 - `users/{uid}/private/config.blockedUsers` に追加。
+- **自動アンフォロー**: ブロック時に相互のフォロー関係を自動解除（Cloud Function）。
+- **blockedBy同期**: `users/{targetUid}/blockedBy/{blockerId}` にマーカードキュメントを作成（逆引き用）。
+- ブロックされたユーザーがプロフィールを見ると「This user is not available」表示。
 - EXPLORE で非表示（クライアント側フィルタ）。
 - 解除（unblock）機能あり。
 
@@ -403,7 +417,8 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 - **Instagram風中央レイアウト**: アバター（96px）→ 名前 → モード+地域タグ → ゴール → 統計 → 所属グループ。
 - 公開（public）かつアクティブ（active）な投稿を4列グリッドで表示。モードフィルター付き。
 - **フォロー/アンフォロー**: 楽観的UI更新。
-- **ブロック/アンブロック**: トグル操作。
+- **アクションシート**: Block / Report / Cancel。ボトムナビ上に表示。
+- **ブロック/アンブロック**: トグル操作。ブロックされたユーザーには「This user is not available」表示。
 - **投稿詳細モーダル**: 右スワイプで閉じる。
 
 ---
@@ -451,7 +466,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 - ボタン（プライマリ）: `bg-accent-orange text-white font-bold rounded-2xl`
 - 確認ダイアログ: `ConfirmModal` コンポーネント
 - XPトースト: `XPToast`（1.2秒表示後自動消去）
-- レベルアップ演出: `LevelUpAnimation`（フルスクリーン）
+- レベルアップ演出: `LevelUpAnimation`（フルスクリーン）— 投稿時・いいね受信時のいずれでもレベルアップ判定
 - **右スワイプで閉じる**: `useSwipeDismiss` フック。GPU加速。しきい値80px。
 - **いいねアニメーション**: タップ位置にカンガルーが跳ねるアニメーション。
 
@@ -478,6 +493,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | showRegion | boolean | 地域表示ON/OFF |
 | goal | string | 目標（100文字以内） |
 | isPro | boolean | サブスクリプション状態（将来用） |
+| restricted | boolean | アカウント制限フラグ（通報10件で自動設定、クライアント不変） |
 | dailyLikeCount | number | 当日のいいね送信数 |
 | lastLikeDate | string | 最終いいね送信日 `YYYY-MM-DD` |
 | weeklyGoal | number | 週間投稿目標 |
@@ -491,8 +507,17 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | フィールド | 型 | 説明 |
 |---|---|---|
 | blockedUsers | array | ブロックしたユーザーUID配列 |
+| reportedPosts | array | 通報した投稿ID配列（通報者から非表示用） |
+| kickedFrom | array | キックされたグループ情報 `[{ groupId, groupName, at }]` |
 | fcmToken | string | FCMプッシュ通知トークン |
 | notificationPrefs | map | `{ likes, groupMessage, streakWarning }` |
+
+### `users/{uid}/blockedBy` サブコレクション
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| （ドキュメントID = ブロックしたユーザーUID） | — | — |
+| createdAt | timestamp | ブロック日時 |
 
 ### `users/{uid}/following` サブコレクション
 
@@ -550,6 +575,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | iconUrl | string | アイコンURL（任意） |
 | goal | string | グループ目標（任意） |
 | isClosed | boolean | クローズ済みフラグ |
+| kickedUserIds | array | キックされたユーザーUID配列（再参加防止） |
 | joinType | string | `open` / `friends` |
 | lastMessageAt | timestamp | 最終メッセージ日時 |
 | lastMessageText | string | 最終メッセージテキスト |
@@ -605,7 +631,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 ### Users
 - **読み取り**: 認証済みユーザーは全ユーザーを読み取り可。
 - **作成・削除**: 本人のみ。
-- **更新（本人）**: ホワイトリスト制。`isPro`, `createdAt`, `uid` は不変。
+- **更新（本人）**: ホワイトリスト制。`isPro`, `restricted`, `createdAt`, `uid` は不変。
 - **更新（他人）**: `totalXP` のみ（いいねXP用、+5固定のインクリメントのみ許可）。
 
 ### Users > Private
@@ -613,6 +639,9 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 
 ### Users > Following
 - 読み取り: **本人のみ**。作成・削除: 本人のみ。
+
+### Users > BlockedBy
+- 読み取り: 認証済みユーザー。作成・削除: Cloud Functionsのみ（Admin SDK）。
 
 ### Posts
 - **読み取り**: 自分の投稿は常に閲覧可。他人の投稿は `status == "active"` かつ `visibility == "public"` のみ。
@@ -623,9 +652,9 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 - **削除**: 作成者本人のみ。
 
 ### Groups
-- **参加**: 未メンバーが自身を追加。公式グループは上限なし、ユーザー作成は12名まで。
-- **リーダー操作**: 設定変更、キック、クローズ、joinType変更。
-- **メッセージ**: メンバーのみ。送信者は編集・取消可能。
+- **参加**: 未メンバーが自身を追加。公式グループは上限なし、ユーザー作成は12名まで。キック済みユーザーは再参加不可。
+- **リーダー操作**: 設定変更、キック、クローズ、joinType変更、リーダー移譲。
+- **メッセージ**: メンバーのみ + システムメッセージ（`senderId: "system"`）。送信者は編集・取消可能。
 
 ---
 
@@ -647,7 +676,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | フィールド | 上限 |
 |---|---|
 | ニックネーム | 15文字（半角英数字+_のみ） |
-| 投稿テキスト | 400文字（ASCII文字のみ） |
+| 投稿テキスト | 400文字（ASCII文字 + 絵文字） |
 | 目標 (Goal) | 100文字 |
 | グループメッセージ | 100文字 |
 | グループ名 | 30文字 |
@@ -675,17 +704,20 @@ Canvas を通すことで EXIF メタデータを自動除去。
 
 ---
 
-## 13. Cloud Functions（全7つ、デプロイ済み）
+## 13. Cloud Functions（全10個、デプロイ済み）
 
 | 関数名 | トリガー | 機能 |
 |---|---|---|
 | `moderatePost` | `onDocumentCreated("posts/{postId}")` | 投稿自動モデレーション。禁止語句チェック + 毒性スコア。該当時は `status: "hidden"`。 |
-| `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。管理者メール（1件目+3件目のみ）。`ADMIN_EMAIL` シークレット。 |
+| `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。管理者メール（1〜3件目すべて）。`ADMIN_EMAIL` シークレット。 |
 | `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいねFCM通知。自己いいねスキップ。60秒クールダウン。 |
 | `checkStreaks` | `onSchedule("every 1 hours")` | 48時間超過でリセット。42時間で警告通知。 |
 | `cleanupHiddenPosts` | `onSchedule("every day 03:00")` | 非表示投稿の30日後自動削除（100件/回）。 |
-| `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージFCM通知。10秒クールダウン。 |
-| `syncGroupMembership` | `onDocumentUpdated("groups/{groupId}")` | キック/退出時の `groupIds` 同期。 |
+| `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージFCM通知。システムメッセージはスキップ。10秒クールダウン。 |
+| `syncGroupMembership` | `onDocumentUpdated("groups/{groupId}")` | キック/退出時の `groupIds` 同期 + `kickedFrom` 記録。 |
+| `onUserReportCreated` | `onDocumentCreated("reports/{reportId}")` | ユーザー通報処理。管理者メール通知。未解決10件で自動アカウント制限。 |
+| `onRestrictionLifted` | `onDocumentUpdated("users/{uid}")` | `restricted: true→false` 時に未解決通報を全件自動解決。 |
+| `onBlockListChanged` | `onDocumentUpdated("users/{uid}/private/config")` | ブロック同期。相互フォロー解除 + `blockedBy` マーカー作成/削除。 |
 
 ---
 
@@ -698,7 +730,7 @@ src/
 │   ├── page.tsx                # ルートリダイレクト
 │   ├── loading.tsx             # ルートローディング（カンガルースピナー）
 │   ├── error.tsx               # ルートエラー画面
-│   ├── opengraph-image.tsx     # OG画像動的生成
+│   ├── opengraph-image.png      # OG画像（静的）
 │   ├── globals.css             # Tailwind v4 + テーマカラー定義
 │   ├── login/page.tsx          # ログイン画面
 │   ├── onboarding/page.tsx     # オンボーディング画面（6ステップ）
@@ -736,6 +768,7 @@ src/
 │   ├── FollowingModal.tsx
 │   ├── ProfileGroups.tsx
 │   ├── AsciiWarn.tsx
+│   ├── RestrictedBanner.tsx
 │   ├── GroupCard.tsx
 │   ├── icons/index.tsx
 │   └── layout/
@@ -803,3 +836,5 @@ public/
 | v3 | 2025-03-10 | Phase 1〜9 実装完了。 |
 | v3 改訂5 | 2026-03-27 | セキュリティ監査・強化、パフォーマンス改善。 |
 | **v4** | **2026-03-28** | **実装準拠で全面書き直し。主な差分**: フォーカスモード5種リネーム（English/Skill/Challenge/Work/Chill）+ レガシーマッピング。XP計算式変更（除数6、POST_XP=10、LIKE_SEND_XP=3、LIKE_RECEIVE_XP=5、初投稿ボーナス廃止）。グループ参加/作成条件をLv.2に緩和 + スロット段階制（Lv.2→1枠〜Lv.8→4枠）。グループ最大人数10→12名。ハッシュタグシステム新設（最大5個/投稿、モード別候補）。投稿に地域タグ・日数オーバーライド機能追加。オンボーディングを1画面→6ステップ制に刷新。グループjoinType（open/friends）追加。メッセージ編集/取消機能追加。`reportRestricted` フラグ追加。`showRegion` / `displayNameLower` フィールド追加。グラデーション全5色刷新。ルート構成更新（`(auth)` route group廃止）。コンポーネント一覧・hooks一覧を最新化。 |
+| v4 改訂1 | 2026-04-02 | 通報した投稿を通報者から非表示（`reportedPosts`）。レポートメール通知を1〜3件目すべてに変更。 |
+| **v4 改訂2** | **2026-04-03** | **主な差分**: Next.js 16.2.2 に更新。絵文字入力対応（投稿・チャット）。ブロック機能強化（自動アンフォロー + blockedBy同期 + プロフィール閲覧制限）。ユーザー通報をプロフィール画面に移動（スクリーンショット必須化）。アカウント自動制限（通報10件で restricted モード）+ 制限解除時の通報自動解決。グループ: システムメッセージ（参加/退出/キック/リーダー移譲/クローズ）、CLOSEDグループの読み取り専用チャット閲覧、friends参加確認モーダル、スワイプで既読クリア、キック済みユーザー再参加防止。いいね受信時のレベルアップ演出。OG画像を静的PNGに変更。Cloud Functions 7→10個（`onUserReportCreated`, `onRestrictionLifted`, `onBlockListChanged` 追加）。 |
