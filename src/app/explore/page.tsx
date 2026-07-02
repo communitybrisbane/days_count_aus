@@ -33,8 +33,6 @@ const PAGE_SIZE = 20;
 // chronological.
 const FIRST_PAGE_CANDIDATES = 60;
 
-type SortTab = "new" | "popular";
-
 export default function ExplorePage() {
   useAuthGuard({ requireProfile: false });
   const { user, profile, privateData, loading, following } = useAuth();
@@ -42,7 +40,6 @@ export default function ExplorePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
-  const [sortTab, setSortTab] = useState<SortTab>("new");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
@@ -71,15 +68,11 @@ export default function ExplorePage() {
         if (modeFilter) {
           constraints.push(where("mode", "==", modeFilter));
         }
-        if (sortTab === "popular") {
-          constraints.push(orderBy("likeCount", "desc"));
-        } else {
-          constraints.push(orderBy("createdAt", "desc"));
-        }
+        constraints.push(orderBy("createdAt", "desc"));
         if (!reset && lastDocRef.current) {
           constraints.push(startAfter(lastDocRef.current));
         }
-        const isRankedFeed = sortTab === "new" && searchUserIds === null && !searchTag;
+        const isRankedFeed = searchUserIds === null && !searchTag;
         const fetchSize = isRankedFeed && reset ? FIRST_PAGE_CANDIDATES : PAGE_SIZE;
         constraints.push(limit(fetchSize));
 
@@ -139,7 +132,7 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [sortTab, modeFilter, searchUserIds, searchTag]
+    [modeFilter, searchUserIds, searchTag]
   );
 
   // Impression tracking: mark a post "seen" only once it's actually on screen
@@ -308,23 +301,6 @@ export default function ExplorePage() {
               </button>
             )}
           </div>
-        </div>
-
-        {/* Sort tabs: New / Popular */}
-        <div className="flex px-4 gap-2 pb-2">
-          {(["new", "popular"] as SortTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSortTab(tab)}
-              className={`flex-1 py-1.5 rounded-full text-xs font-bold text-center transition-all ${
-                sortTab === tab
-                  ? "bg-accent-orange text-white"
-                  : "bg-forest-light/20 text-white/50"
-              }`}
-            >
-              {tab === "new" ? "New" : "Popular"}
-            </button>
-          ))}
         </div>
 
         {/* Mode filter tabs */}
