@@ -136,6 +136,18 @@ export async function deleteAccount(user: User): Promise<void> {
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();
     const isModeGroup = data.isOfficial && !data.iconUrl;
+
+    // Delete messages by this user (must run before leaving — message reads require membership)
+    try {
+      const msgsQ = query(collection(db, "groups", groupDoc.id, "messages"), where("senderId", "==", uid), limit(500));
+      const msgsSnap = await getDocs(msgsQ);
+      if (msgsSnap.docs.length > 0) {
+        const msgBatch = writeBatch(db);
+        msgsSnap.docs.forEach((d) => msgBatch.delete(d.ref));
+        await msgBatch.commit();
+      }
+    } catch {}
+
     if (data.creatorId === uid && !isModeGroup) {
       // Close user-created groups when leader deletes account
       await updateDoc(groupDoc.ref, {
@@ -154,17 +166,6 @@ export async function deleteAccount(user: User): Promise<void> {
     // Delete lastRead tracking
     try {
       await deleteDoc(doc(db, "groups", groupDoc.id, "lastRead", uid));
-    } catch {}
-
-    // Delete messages by this user
-    try {
-      const msgsQ = query(collection(db, "groups", groupDoc.id, "messages"), where("userId", "==", uid), limit(500));
-      const msgsSnap = await getDocs(msgsQ);
-      if (msgsSnap.docs.length > 0) {
-        const msgBatch = writeBatch(db);
-        msgsSnap.docs.forEach((d) => msgBatch.delete(d.ref));
-        await msgBatch.commit();
-      }
     } catch {}
   }
 

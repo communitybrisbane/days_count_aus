@@ -129,7 +129,7 @@ export default function PostPage() {
       let totalXpGain = 0;
       let newStreak = 1;
 
-      // Post XP: 5 XP per post, up to 3 posts per day
+      // Post XP: 10 XP per post, up to 3 posts per day
       const [dailyCount, weeklyCount] = await Promise.all([
         getDailyPostCount(user.uid),
         !alreadyPostedToday ? getWeeklyPostCount(user.uid) : Promise.resolve(0),
