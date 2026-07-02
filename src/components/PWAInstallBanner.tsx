@@ -48,6 +48,9 @@ export default function PWAInstallBanner() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window.navigator as any).standalone === true) return;
 
+    // Mobile devices only — desktop browsers also fire beforeinstallprompt
+    if (!/iPad|iPhone|iPod|Android/.test(navigator.userAgent)) return;
+
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     isIOSRef.current = ios;
 
