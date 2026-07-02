@@ -53,7 +53,7 @@
 - **最小高さ**: `min-h-dvh`（Dynamic Viewport Height）。
 - **PWA要件**: manifest.json設定済み。`standalone` モード。テーマカラー `#1A3C2E`。`short_name: "days-count"`。
 - **PWAアイコン**: 192×192px / 512×512px の PNG アイコン。
-- **PWAインストールバナー**: 未インストールユーザーに毎回表示（z-[200]で最前面）。iOS向けはビジュアルステップガイド（Step 1: Share → Step 2: Add to Home Screen → Step 3: Add）をSVGアイコン+アニメーション矢印で案内。Android向けは `beforeinstallprompt` ネイティブプロンプト使用。
+- **PWAインストールバナー**: モバイル端末（iOS/Android UA判定）の未インストールユーザーにのみ毎回表示（z-[200]で最前面）。PCでは非表示。iOS向けはビジュアルステップガイド（Step 1: Share → Step 2: Add to Home Screen → Step 3: Add）をSVGアイコン+アニメーション矢印で案内。Android向けは `beforeinstallprompt` ネイティブプロンプト使用。
 - **オフラインフォールバック**: Service Worker が `offline.html` をキャッシュ。ナビゲーション失敗時にブランドデザインの「You're Offline」ページ（Retryボタン付き）を表示。
 - **OG画像**: `opengraph-image.png`（静的画像、1200×630px）。
 - **セキュリティヘッダー** (`next.config.ts`):
@@ -120,7 +120,7 @@
 - Fun/Growth分類はなし。ModeFilterBarで5モード + All のフィルタリングのみ。
 
 ### ハッシュタグシステム
-- 投稿時にモード別ハッシュタグ候補を表示。
+- モード別ハッシュタグ候補は現在無効化中（`HASHTAG_SUGGESTIONS` は空オブジェクト。カスタムタグのみ → §15参照）。
 - **最大5個**（`HASHTAG_MAX = 5`）。
 - カスタムタグも作成可能。
 - 投稿データの `tags` フィールド（`string[]`）に保存。
@@ -207,7 +207,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 **ルート**: `/home`
 
 - **ヒーローヘッダー**: 画面上部にグラデーション背景、白文字で `D + 124` 等を大型表示。フェーズラベル + 挨拶テキスト。
-- **週間ゴールカード**: ヘッダーに重なるカード。WeeklyChallenge コンポーネント（週間投稿進捗バー7本、冠位十二階ランクカラー、weekStreak表示、5日ストリーク破線、週の期間 "Mar. 18 – Mar. 24" 表示）。7投稿達成時は「Complete!」バッジ + ゴールド演出。ストリーク継続条件は **週5日以上**（ユニーク日数）。
+- **週間ゴールカード**: ヘッダーに重なるカード。WeeklyChallenge コンポーネント（週間投稿進捗バー7本、冠位十二階ランクカラー、日次ストリーク表示、weekStreakボーナス表示（+N/post）、週の期間 "Mar. 18 – Mar. 24" 表示）。7投稿達成時は「WEEKLY COMPLETE」バッジ + ゴールド演出。週間チャレンジ継続条件は **週5日以上**（ユニーク日数）。
 - **WeeklyHistoryModal**: 鉛筆ボタンから開く。ゴール編集 + 過去12週のモード別スタック棒グラフ + 現在/最高ストリーク表示。
 - **XP/Lvバー**: コンパクトな1行表示（Lv + プログレスバー + 次Lvまでの残XP）。
 - **バナーカルーセル**: BannerCarousel + adminConfig のバナー画像。
@@ -234,7 +234,8 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **既読追跡**: `localStorage` に投稿IDを保存（最大500件、3日間TTL）。
 - **無限スクロール**: `limit(20)` + `startAfter` で20件ずつ追加読み込み。
 - **フィルタ**: 上部に固定ヘッダーで5モードフィルタ + All。
-- **検索**: ユーザー名・地域でのデバウンス検索（400ms）。500ユーザーまでスキャン。初回検索時にキャッシュ。
+- **ソートタブ**: New（スコアベースランキング）/ Popular（`likeCount` 降順）。スコアリングはNewタブかつ非検索時のみ適用。
+- **検索**: ユーザー名・地域・#タグでのデバウンス検索（400ms）。500ユーザーまでスキャン。初回検索時にキャッシュ。
 - **いいね**: ハートボタン or ダブルタップ。タップ位置にハートバースト。楽観的UI更新。
 - **自分の投稿にもいいね可能**（XP付与なし）。
 - **いいね取り消し可能**（XPは戻さない）。
@@ -257,7 +258,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **画像（任意）**: タップで画像選択 → react-easy-crop で1:1クロップ → Canvas APIで1024×1024pxにリサイズ（JPEG品質85%、最大300KB） → EXIF自動除去。
 - **地域選択（任意）**: 投稿に地域タグを付与。デフォルトはプロフィールの地域。
 - **日数オーバーライド（任意）**: 日付ピッカーでカスタムD+数値を設定可能。
-- **ハッシュタグ**: モード別候補から選択 + カスタムタグ作成。最大5個。
+- **ハッシュタグ**: カスタムタグ作成のみ（モード別候補は無効化中）。最大5個。
 - **テキスト入力**: 400文字以内（ASCII文字 + 絵文字のみ、リアルタイム文字数カウント）。
 - **禁止語句チェック**: 投稿前にクライアント側で照合。該当時は投稿ブロック。
 
@@ -269,9 +270,9 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 **XP付与**: 投稿完了時に +10XP（週間段階制で追加XP）。レベルアップ時は LevelUpAnimation を表示。
 
-**ストリーク更新**: 最終投稿日が昨日なら `currentStreak + 1`、今日なら維持、それ以前なら `1` にリセット。7の倍数到達時は追加 +100XP。
+**ストリーク更新**: 最終投稿日が昨日なら `currentStreak + 1`、今日なら維持、それ以前なら `1` にリセット。（旧記載の「7の倍数到達時 +100XP」は未実装 → §15参照）
 
-**投稿の編集** (`/post/edit/[postId]`): 投稿後 **5分以内** のみ可能。テキストとモードのみ編集可（画像変更不可）。
+**投稿の編集** (`/post/edit/[postId]`): 本人はいつでも編集可能（**時間制限なし**、2026-04-02に5分制限を撤廃）。テキスト・モード・タグ・地域・公開範囲・日数を編集可（画像変更のみ不可）。`editableUntil` フィールドは作成時に書き込まれるが編集制限には未使用（レガシー）。
 
 **投稿の削除**: いつでも可能（本人のみ、confirm確認付き）。
 
@@ -283,9 +284,9 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 #### 24時間 Study Room（常設Zoom自習室）
 - GROUPSタブ最上部に常設の24時間Zoomリンクを表示。ユーザー同士がいつでも自習・交流できる場。
-- `admin_config/main.liveSession` から取得。`label`, `url`, `description` フィールド。
-- `url` が設定されている場合: 緑のパルスドット + 「LIVE」バッジ + 「Join」ボタン（外部Zoomリンク）。
-- `url` が未設定の場合: グレーのドット + 「Next session TBD」。
+- `admin_config/main` のフラットなフィールド `meetingLabel`, `meetingUrl`, `meetingDescription` から取得。
+- `meetingUrl` が設定されている場合: 緑のパルスドット + 「LIVE」バッジ + 「Join」ボタン（外部Zoomリンク）。
+- `meetingUrl` が未設定の場合: グレーのドット + 「Offline」表示。
 
 #### 公式グループ（Official Groups）
 - 各フォーカスモードごとに1つの公式グループが存在（`isOfficial: true`）。
@@ -324,6 +325,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **既読管理**: `lastRead/{userId}` サブコレクションで各ユーザーの最終読み取り時刻を記録。
 - **最終メッセージプレビュー**: グループ一覧にて `lastMessageText` / `lastMessageBy` を表示。
 - **スワイプで既読クリア**: グループカードを左スワイプ → 「Clear」ボタン表示 → タップで既読時刻を更新（未読バッジクリア）。
+- **スワイプでミュート切替**: グループカードを右スワイプ → ミュートトグル表示。ミュート中はグループアイコンにミュートバッジ。`lastRead/{userId}` の `muted` フィールドに保存。
 
 ---
 
@@ -331,7 +333,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 **ルート**: `/mypage`
 
-- **Instagram風中央レイアウト**: アバター（80px）→ 名前 → モード+地域タグ → ゴール → 統計（Likes/Streak/Following）→ 所属グループ（ProfileGroupsコンポーネント、プリセット+ユーザー作成）を縦に中央配置。
+- **横並びヘッダーレイアウト**（2026-04-03刷新）: アバター（96px）を左、名前+Lvバッジ+統計（Likes/Streak/Following）を右に横並び配置。その下にモード+地域タグ → ゴール → 所属グループ（ProfileGroupsコンポーネント、プリセット+ユーザー作成）。※公開プロフィール（`/user/[uid]`）は従来どおり中央寄せレイアウト（§6.11）。
 - **設定ボタン**: 右上に歯車アイコン → `/settings` へ遷移。
 - **フォロー中リスト**: FollowingModal でフルスクリーン表示（最大50件）。右スワイプで閉じる。
 - **モードフィルター**: ModeFilterBar コンポーネント。5モード + All。
@@ -347,7 +349,8 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **プロフィール編集**: ニックネーム（半角英数字+_、15文字、重複不可）、滞在地域、目標（100文字）、メインモード、渡航予定日、プロフィール写真（丸型クロップ、512×512px）。
 - **地域表示設定**: `showRegion` でプロフィールの地域表示ON/OFF。
 - **フェーズ切り替え**: ステータスを手動変更。confirm確認ダイアログ付き。
-- **通知設定**: 3つのトグル（いいね通知、グループメッセージ通知、ストリーク警告通知）。
+- **通知設定UI**: 未実装（`notificationPrefs` フィールドのみ存在 → §15参照）。
+- **ブロックユーザー管理**: ブロック済みユーザーの一覧表示 + アンブロック（アコーディオン）。
 - **法定項目**: プライバシーポリシー、利用規約、法的通知（Firestoreの `legal_docs` コレクションから取得、フォールバック付き）。
 - **アカウント管理**: ログアウト（confirm付き）、アカウント削除（confirm付き + 再認証）。
 
@@ -453,11 +456,11 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 |---|---|---|---|---|
 | HOME | `/home` | IconHome（SVG） | `text-accent-orange` | `text-white/40` |
 | EXPLORE | `/explore` | IconDiary（SVG） | `text-accent-orange` | `text-white/40` |
-| POST | `/post` | IconCamera（SVG） | **中央配置・フローティング（-mt-4）** `w-10 h-10` 丸、`bg-gradient-to-br from-accent-orange-light to-accent-orange` | 同左 |
+| POST | `/post` | IconCamera（SVG） | **中央配置・フローティング（-mt-4）** `w-11 h-11` 丸、`bg-gradient-to-br from-accent-orange-light to-accent-orange` | 同左 |
 | GROUPS | `/groups` | IconGroup（SVG） | `text-accent-orange` + 未読バッジ（赤） | `text-white/40` |
-| MY PAGE | `/mypage` | ユーザーのプロフィール写真（26px） | `ring-2 ring-accent-orange` | 枠線なし |
+| MY PAGE | `/mypage` | ユーザーのプロフィール写真（30px） | `ring-2 ring-accent-orange` | 枠線なし |
 
-- POSTボタンはタップでファイルピッカーを開き、画像選択後に投稿画面へ遷移。キャンセル時も投稿画面へ遷移（画像なし投稿）。
+- POSTボタンはタップで投稿画面へ遷移（ファイルピッカーは投稿画面内の画像エリアから開く）。
 - GROUPSには未読メッセージ数バッジ（赤、99+上限）。
 
 ### 共通UIパターン
@@ -485,6 +488,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | status | string | `pre-departure` / `in-australia` / `post-return` |
 | totalXP | number | 累計XP |
 | currentStreak | number | 連続投稿日数 |
+| streakWarningSent | number | ストリーク警告通知の送信済みフラグ（Cloud Function `checkStreaks` が書き込み） |
 | lastPostAt | string | 最終投稿日時（ISO 8601） |
 | departureDate | string | 渡航予定日 `YYYY-MM-DD` |
 | returnStartDate | string | 帰国開始日 `YYYY-MM-DD` |
@@ -545,7 +549,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | tags | string[] | ハッシュタグ（最大5個） |
 | region | string | 投稿時の地域（任意） |
 | createdAt | timestamp | 投稿日時 |
-| editableUntil | timestamp | 編集可能期限（5分後） |
+| editableUntil | timestamp | レガシー: 作成時に5分後で書き込まれるが編集制限には未使用 |
 
 ### `posts/{postId}/likes` サブコレクション
 
@@ -616,7 +620,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | フィールド | 型 | 説明 |
 |---|---|---|
 | bannerImageUrl | string | バナー画像URL |
-| liveSession | map | `{ label, url, description }` |
+| meetingLabel / meetingUrl / meetingDescription | string | 24時間 Study Room 表示用（フラットフィールド） |
 | announcements | array | `{ title, body?, type, linkUrl?, linkLabel?, active }` |
 
 ### その他コレクション
@@ -646,7 +650,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 ### Posts
 - **読み取り**: 自分の投稿は常に閲覧可。他人の投稿は `status == "active"` かつ `visibility == "public"` のみ。
 - **作成**: 認証済み + 各種バリデーション。
-- **更新（作成者）**: 画像URL設定、または5分以内のテキスト・モード編集。
+- **更新（作成者）**: 画像URL設定、またはテキスト・モード・タグ・地域・公開範囲・日数の編集（時間制限なし）。
 - **更新（いいね）**: `likeCount` の +1/-1 のみ。
 - **更新（通報）**: `reportCount` +1、3件以上で自動非表示。
 - **削除**: 作成者本人のみ。
@@ -654,20 +658,22 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 ### Groups
 - **参加**: 未メンバーが自身を追加。公式グループは上限なし、ユーザー作成は12名まで。キック済みユーザーは再参加不可。
 - **リーダー操作**: 設定変更、キック、クローズ、joinType変更、リーダー移譲。
-- **メッセージ**: メンバーのみ + システムメッセージ（`senderId: "system"`）。送信者は編集・取消可能。
+- **メッセージ**: メンバーのみ + システムメッセージ（`senderId: "system"`）。送信者は編集・取消・削除可能（削除はアカウント削除時のクリーンアップ用）。
 
 ---
 
 ## 10. アカウント削除時の処理
 
-1. 全 `posts` をバッチ削除（最大500件）
-2. Storage: `posts/{userId}/` 全画像削除
-3. Storage: `avatars/{userId}.jpg` 削除
-4. 全 `groups` からメンバー除去（リーダーの場合はクローズ）
-5. `following` サブコレクション全削除
-6. `private/config` 削除
-7. `users` ドキュメント削除
-8. Google再認証 → Firebase Auth 削除
+1. Google再認証（削除操作の最初に実施）
+2. 全 `posts` をバッチ削除（500件ずつループ）
+3. Storage: `posts/{userId}/` 全画像削除
+4. Storage: `avatars/{userId}.jpg` 削除
+5. 自分が他人の投稿に付けた `likes` を削除 + 各投稿の `likeCount` をデクリメント
+6. 全 `groups` から: 自分のメッセージ削除（退出前に実行）→ メンバー除去（ユーザー作成グループのリーダーの場合はクローズ、公式グループは退出のみ）→ `lastRead` 削除
+7. `following` サブコレクション全削除
+8. `private/config` 削除
+9. `users` ドキュメント削除
+10. Firebase Auth ユーザー削除
 
 ---
 
@@ -711,7 +717,7 @@ Canvas を通すことで EXIF メタデータを自動除去。
 | `moderatePost` | `onDocumentCreated("posts/{postId}")` | 投稿自動モデレーション。禁止語句チェック + 毒性スコア。該当時は `status: "hidden"`。 |
 | `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。管理者メール（1〜3件目すべて）。`ADMIN_EMAIL` シークレット。 |
 | `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいねFCM通知。自己いいねスキップ。60秒クールダウン。 |
-| `checkStreaks` | `onSchedule("every 1 hours")` | 48時間超過でリセット。42時間で警告通知。 |
+| `checkStreaks` | `onSchedule("every 1 hours")` | カレンダー日ベース: 最終投稿が一昨日以前ならリセット。警告通知はユーザーのローカル時刻20:00と23:00に送信（`streakWarningSent` で重複防止）。 |
 | `cleanupHiddenPosts` | `onSchedule("every day 03:00")` | 非表示投稿の30日後自動削除（100件/回）。 |
 | `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージFCM通知。システムメッセージはスキップ。10秒クールダウン。 |
 | `syncGroupMembership` | `onDocumentUpdated("groups/{groupId}")` | キック/退出時の `groupIds` 同期 + `kickedFrom` 記録。 |
@@ -730,7 +736,11 @@ src/
 │   ├── page.tsx                # ルートリダイレクト
 │   ├── loading.tsx             # ルートローディング（カンガルースピナー）
 │   ├── error.tsx               # ルートエラー画面
+│   ├── global-error.tsx        # グローバルエラー画面
+│   ├── not-found.tsx           # 404画面
 │   ├── opengraph-image.png      # OG画像（静的）
+│   ├── twitter-image.png        # Twitterカード画像（静的）
+│   ├── favicon.ico
 │   ├── globals.css             # Tailwind v4 + テーマカラー定義
 │   ├── login/page.tsx          # ログイン画面
 │   ├── onboarding/page.tsx     # オンボーディング画面（6ステップ）
@@ -770,6 +780,7 @@ src/
 │   ├── AsciiWarn.tsx
 │   ├── RestrictedBanner.tsx
 │   ├── GroupCard.tsx
+│   ├── Skeleton.tsx
 │   ├── icons/index.tsx
 │   └── layout/
 │       └── BottomNav.tsx
@@ -805,7 +816,7 @@ next.config.ts
 sentry.client.config.ts
 sentry.server.config.ts
 sentry.edge.config.ts
-functions/src/index.ts          # Cloud Functions（全7つ）
+functions/src/index.ts          # Cloud Functions（全10個、§13参照）
 public/
 ├── manifest.json
 ├── robots.txt
@@ -822,6 +833,9 @@ public/
 | 項目 | ステータス | 備考 |
 |---|---|---|
 | フォロー通知 | 未実装 | — |
+| 通知設定トグルUI（いいね/グループ/ストリーク警告） | 未実装 | `notificationPrefs` フィールドと通知送信側は存在。設定画面にUIなし |
+| モード別ハッシュタグ候補 | 無効化中 | `HASHTAG_SUGGESTIONS` が空オブジェクト（カスタムタグのみ） |
+| ストリーク7の倍数 +100XPボーナス | 未実装 | v4改訂2まで仕様に記載されていたが実装なし。実装するか仕様から削除するか要判断 |
 | Stripeサブスクリプション | 未実装 | `isPro` フィールドのみ用意済み |
 | App Check の Firestore 強制適用 | 未有効化 | reCAPTCHA Enterprise トークン取得問題 |
 | CSP（Content-Security-Policy） | 未適用 | report-onlyモードでの検証が必要 |
@@ -837,4 +851,5 @@ public/
 | v3 改訂5 | 2026-03-27 | セキュリティ監査・強化、パフォーマンス改善。 |
 | **v4** | **2026-03-28** | **実装準拠で全面書き直し。主な差分**: フォーカスモード5種リネーム（English/Skill/Challenge/Work/Chill）+ レガシーマッピング。XP計算式変更（除数6、POST_XP=10、LIKE_SEND_XP=3、LIKE_RECEIVE_XP=5、初投稿ボーナス廃止）。グループ参加/作成条件をLv.2に緩和 + スロット段階制（Lv.2→1枠〜Lv.8→4枠）。グループ最大人数10→12名。ハッシュタグシステム新設（最大5個/投稿、モード別候補）。投稿に地域タグ・日数オーバーライド機能追加。オンボーディングを1画面→6ステップ制に刷新。グループjoinType（open/friends）追加。メッセージ編集/取消機能追加。`reportRestricted` フラグ追加。`showRegion` / `displayNameLower` フィールド追加。グラデーション全5色刷新。ルート構成更新（`(auth)` route group廃止）。コンポーネント一覧・hooks一覧を最新化。 |
 | v4 改訂1 | 2026-04-02 | 通報した投稿を通報者から非表示（`reportedPosts`）。レポートメール通知を1〜3件目すべてに変更。 |
+| **v4 改訂3** | **2026-07-02** | **実装との突き合わせ監査を反映**: 投稿編集の5分制限撤廃（タグ・地域・公開範囲・日数も編集可、`editableUntil` はレガシー化）。PWAインストールバナーのモバイル限定化。マイページを横並びヘッダーレイアウトに（アバター左96px）。グループカード右スワイプミュートを追記。Study Room設定を `meeting*` フラットフィールドに訂正。`checkStreaks` をカレンダー日ベース+20時/23時警告に訂正。`streakWarningSent` フィールド追加。アカウント削除手順を実装準拠の10ステップに更新（メッセージ削除のフィールド名バグ修正+ルールに `allow delete` 追加）。Exploreのソートタブ・#タグ検索を追記。未実装項目（通知トグルUI・ハッシュタグ候補・ストリーク+100XP）を§15へ移動。 |
 | **v4 改訂2** | **2026-04-03** | **主な差分**: Next.js 16.2.2 に更新。絵文字入力対応（投稿・チャット）。ブロック機能強化（自動アンフォロー + blockedBy同期 + プロフィール閲覧制限）。ユーザー通報をプロフィール画面に移動（スクリーンショット必須化）。アカウント自動制限（通報10件で restricted モード）+ 制限解除時の通報自動解決。グループ: システムメッセージ（参加/退出/キック/リーダー移譲/クローズ）、CLOSEDグループの読み取り専用チャット閲覧、friends参加確認モーダル、スワイプで既読クリア、キック済みユーザー再参加防止。いいね受信時のレベルアップ演出。OG画像を静的PNGに変更。Cloud Functions 7→10個（`onUserReportCreated`, `onRestrictionLifted`, `onBlockListChanged` 追加）。 |
