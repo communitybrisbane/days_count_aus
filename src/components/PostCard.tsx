@@ -28,6 +28,7 @@ import LevelUpAnimation from "./LevelUpAnimation";
 import { FocusModeIcon, IconKangaroo, IconLock, IconEdit, IconTrash, IconFlag, IconBan } from "./icons";
 import { reportPost } from "@/lib/services/posts";
 import { blockUser } from "@/lib/services/users";
+import { recordInteraction } from "@/lib/feedScore";
 import type { Post } from "@/types";
 
 // Global profile cache — shared across all PostCard instances, avoids duplicate fetches
@@ -192,6 +193,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         setLikeCount((c) => c + 1);
       }
     } else {
+      if (!isOwnPost) recordInteraction(post, "like");
       // Optimistic update
       setLiked(true);
       setLikeCount((c) => c + 1);
