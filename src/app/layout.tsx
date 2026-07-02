@@ -5,14 +5,17 @@ import ForegroundNotification from "@/components/ForegroundNotification";
 import RestrictedBanner from "@/components/RestrictedBanner";
 import "./globals.css";
 
+// Body text uses Arial (globals.css); these are only exposed as CSS variables, so skip preloading
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

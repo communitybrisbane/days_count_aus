@@ -64,3 +64,6 @@ sa-key.json
 # OneDrive duplicate copies and camera metadata
 *.modd
 image/* 1.jpg
+
+# Playwright MCP artifacts
+.playwright-mcp/
