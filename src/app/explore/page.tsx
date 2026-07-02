@@ -25,9 +25,13 @@ import BottomNav from "@/components/layout/BottomNav";
 import { IconEucalyptus, IconSearch, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
-import { rankPosts, markSeen } from "@/lib/feedScore";
+import { rankPosts, markSeen, recordInteraction } from "@/lib/feedScore";
 
 const PAGE_SIZE = 20;
+// First page of the ranked feed pulls a larger candidate pool so scoring has
+// room to reorder — ranking 20 time-ordered docs is barely better than
+// chronological.
+const FIRST_PAGE_CANDIDATES = 60;
 
 type SortTab = "new" | "popular";
 
@@ -75,7 +79,9 @@ export default function ExplorePage() {
         if (!reset && lastDocRef.current) {
           constraints.push(startAfter(lastDocRef.current));
         }
-        constraints.push(limit(PAGE_SIZE));
+        const isRankedFeed = sortTab === "new" && searchUserIds === null && !searchTag;
+        const fetchSize = isRankedFeed && reset ? FIRST_PAGE_CANDIDATES : PAGE_SIZE;
+        constraints.push(limit(fetchSize));
 
         const q = query(collection(db, "posts"), ...constraints);
         const snap = await getDocs(q);
@@ -105,16 +111,14 @@ export default function ExplorePage() {
         }
 
         // Score-based ranking for "new" tab without search
-        if (sortTab === "new" && searchUserIds === null && !searchTag) {
-          newPosts = rankPosts(
-            newPosts,
-            followingRef.current,
-            profileRef.current?.mainMode || "",
-            profileRef.current?.region || "",
-          );
+        if (isRankedFeed) {
+          newPosts = rankPosts(newPosts, {
+            following: followingRef.current,
+            myUid: profileRef.current?.uid,
+            myMode: profileRef.current?.mainMode,
+            myRegion: profileRef.current?.region,
+          });
         }
-
-        markSeen(newPosts.map((p) => p.id));
 
         if (reset) {
           setPosts(newPosts);
@@ -127,7 +131,7 @@ export default function ExplorePage() {
         }
 
         lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
-        setHasMore(snap.docs.length === PAGE_SIZE);
+        setHasMore(snap.docs.length === fetchSize);
       } catch (e) {
         console.error("Failed to fetch posts:", e);
       } finally {
@@ -137,6 +141,37 @@ export default function ExplorePage() {
     },
     [sortTab, modeFilter, searchUserIds, searchTag]
   );
+
+  // Impression tracking: mark a post "seen" only once it's actually on screen
+  // (fetch-time marking penalized posts the user never scrolled to)
+  const seenObserverRef = useRef<IntersectionObserver | null>(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleIds: string[] = [];
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = (entry.target as HTMLElement).dataset.postId;
+          if (id) visibleIds.push(id);
+          observer.unobserve(entry.target);
+        }
+        markSeen(visibleIds);
+      },
+      { threshold: 0.5 }
+    );
+    seenObserverRef.current = observer;
+    return () => observer.disconnect();
+  }, []);
+
+  const observeCell = useCallback((el: HTMLDivElement | null) => {
+    if (el) seenObserverRef.current?.observe(el);
+  }, []);
+
+  // Posts snap-scrolled in the detail modal are real impressions too — without
+  // this they would escape the seen penalty and resurface next session
+  const handleModalView = useCallback((post: Post) => {
+    markSeen([post.id]);
+  }, []);
 
   // Cached user list for search — fetch once, filter in memory
   const userCacheRef = useRef<{ uid: string; name: string; region: string }[] | null>(null);
@@ -333,12 +368,17 @@ export default function ExplorePage() {
           {posts.map((post, idx) => (
             <div
               key={post.id}
+              ref={observeCell}
+              data-post-id={post.id}
               className="cursor-pointer"
               onClick={() => {
                 tapCountRef.current += 1;
                 if (tapCountRef.current === 1) {
                   tapTimerRef.current = setTimeout(() => {
-                    if (tapCountRef.current === 1) setSelectedIndex(idx);
+                    if (tapCountRef.current === 1) {
+                      setSelectedIndex(idx);
+                      if (post.userId !== user?.uid) recordInteraction(post, "view");
+                    }
                     tapCountRef.current = 0;
                   }, 300);
                 }
@@ -367,6 +407,7 @@ export default function ExplorePage() {
           onClose={() => setSelectedIndex(null)}
           onDelete={handleDelete}
           variant="snap"
+          onView={handleModalView}
         />
       )}
 

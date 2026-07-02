@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, POST_CONTENT_MAX, HASHTAG_SUGGESTIONS, HASHTAG_MAX, REGIONS, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, POST_CONTENT_MAX, HASHTAG_MAX, REGIONS, resolveMode } from "@/lib/constants";
 import { FocusModeIcon, IconGlobe, IconLock } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
@@ -276,7 +276,7 @@ export default function EditPostPage() {
           {openSection === "tags" && (
             <div className="px-1 pb-1" ref={tagsRef}>
               <div className="flex flex-wrap gap-1.5">
-                {[...(HASHTAG_SUGGESTIONS[mode] || []), ...tags.filter((t) => !(HASHTAG_SUGGESTIONS[mode] || []).includes(t))].map((tag) => (
+                {tags.map((tag) => (
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}

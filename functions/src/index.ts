@@ -231,6 +231,7 @@ export const onLikeCreated = onDocumentCreated(
     // Get author's FCM token and notification prefs
     const privSnap = await db.doc(`users/${authorId}/private/config`).get();
     const privData = privSnap.exists ? privSnap.data() : null;
+    if (privData?.notificationPrefs?.likes === false) return;
     const fcmToken = privData?.fcmToken || "";
 
     if (!fcmToken) return;
@@ -253,26 +254,31 @@ export const onLikeCreated = onDocumentCreated(
   }
 );
 
-// Helper: send streak warning FCM to a user (returns true if sent)
+// Helper: send streak warning FCM to a user.
+// "skipped" (opted out / no token) still advances the warning level so the hourly
+// job doesn't re-read and re-attempt the same user all evening; only transient
+// send failures ("failed") leave the level untouched for a retry next run.
+type StreakWarningResult = "sent" | "skipped" | "failed";
 async function sendStreakWarning(
   userDoc: admin.firestore.QueryDocumentSnapshot,
   title: string,
   body: string,
-): Promise<boolean> {
+): Promise<StreakWarningResult> {
   const privSnap = await db.doc(`users/${userDoc.id}/private/config`).get();
   const privData = privSnap.exists ? privSnap.data() : null;
+  if (privData?.notificationPrefs?.streakWarning === false) return "skipped";
   const fcmToken = privData?.fcmToken || "";
-  if (!fcmToken) return false;
+  if (!fcmToken) return "skipped";
   try {
     await admin.messaging().send({
       token: fcmToken,
       data: { type: "streak", title, body, link: "/post" },
     });
-    return true;
+    return "sent";
   } catch (e) {
     console.error(`FCM send failed for ${userDoc.id}:`, e);
     await db.doc(`users/${userDoc.id}/private/config`).update({ fcmToken: "" });
-    return false;
+    return "failed";
   }
 }
 
@@ -348,17 +354,17 @@ export const checkStreaks = onSchedule(
 
         // Final warning: local 23:00+ (1h left)
         if (localHour >= 23 && warnLevel < 2) {
-          const sent = await sendStreakWarning(userDoc, "🦘 Hey, only 1 hour left!? 🦘", "Please… I'm about to cry 🥺");
-          if (sent) {
+          const result = await sendStreakWarning(userDoc, "🦘 Hey, only 1 hour left!? 🦘", "Please… I'm about to cry 🥺");
+          if (result !== "failed") {
             await userDoc.ref.update({ streakWarningSent: 2 });
-            warned++;
+            if (result === "sent") warned++;
           }
         // First warning: local 20:00+ (4h left)
         } else if (localHour >= 20 && warnLevel < 1) {
-          const sent = await sendStreakWarning(userDoc, "🦘 No post today…? 🦘", "I'm lonely… post something! 🥹");
-          if (sent) {
+          const result = await sendStreakWarning(userDoc, "🦘 No post today…? 🦘", "I'm lonely… post something! 🥹");
+          if (result !== "failed") {
             await userDoc.ref.update({ streakWarningSent: 1 });
-            warned++;
+            if (result === "sent") warned++;
           }
         }
       }
@@ -463,6 +469,7 @@ export const onGroupMessageCreated = onDocumentCreated(
       if (lastReadData?.muted) continue;
 
       const privData = privSnaps[i].exists ? privSnaps[i].data() : null;
+      if (privData?.notificationPrefs?.groupMessage === false) continue;
       const fcmToken = privData?.fcmToken || "";
       if (!fcmToken) continue;
 

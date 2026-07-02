@@ -1,6 +1,7 @@
 import {
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   collection,
@@ -116,10 +117,13 @@ export async function deleteAccount(user: User): Promise<void> {
   } catch {}
 
   // 5. Delete likes this user left on OTHER people's posts + fix likeCount
+  // Each like costs 2 batch ops (delete + likeCount update), so page by 250 to stay under the 500-op batch limit
   try {
-    const likesQ = query(collectionGroup(db, "likes"), where("userId", "==", uid), limit(500));
-    const likesSnap = await getDocs(likesQ);
-    if (likesSnap.docs.length > 0) {
+    let hasMoreLikes = true;
+    while (hasMoreLikes) {
+      const likesQ = query(collectionGroup(db, "likes"), where("userId", "==", uid), limit(250));
+      const likesSnap = await getDocs(likesQ);
+      if (likesSnap.docs.length === 0) break;
       const likesBatch = writeBatch(db);
       likesSnap.docs.forEach((d) => {
         likesBatch.delete(d.ref);
@@ -127,8 +131,11 @@ export async function deleteAccount(user: User): Promise<void> {
         if (postRef) likesBatch.update(postRef, { likeCount: increment(-1) });
       });
       await likesBatch.commit();
+      hasMoreLikes = likesSnap.docs.length === 250;
     }
-  } catch {}
+  } catch (e) {
+    console.error("Account deletion: likes cleanup failed:", e);
+  }
 
   // 6. Leave all groups + clean up messages & lastRead
   const memberGroupsQ = query(collection(db, "groups"), where("memberIds", "array-contains", uid), limit(50));
@@ -136,6 +143,23 @@ export async function deleteAccount(user: User): Promise<void> {
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();
     const isModeGroup = data.isOfficial && !data.iconUrl;
+
+    // Delete messages by this user (must run before leaving — message reads require membership)
+    try {
+      let hasMoreMsgs = true;
+      while (hasMoreMsgs) {
+        const msgsQ = query(collection(db, "groups", groupDoc.id, "messages"), where("senderId", "==", uid), limit(500));
+        const msgsSnap = await getDocs(msgsQ);
+        if (msgsSnap.docs.length === 0) break;
+        const msgBatch = writeBatch(db);
+        msgsSnap.docs.forEach((d) => msgBatch.delete(d.ref));
+        await msgBatch.commit();
+        hasMoreMsgs = msgsSnap.docs.length === 500;
+      }
+    } catch (e) {
+      console.error(`Account deletion: message cleanup failed for group ${groupDoc.id}:`, e);
+    }
+
     if (data.creatorId === uid && !isModeGroup) {
       // Close user-created groups when leader deletes account
       await updateDoc(groupDoc.ref, {
@@ -154,17 +178,6 @@ export async function deleteAccount(user: User): Promise<void> {
     // Delete lastRead tracking
     try {
       await deleteDoc(doc(db, "groups", groupDoc.id, "lastRead", uid));
-    } catch {}
-
-    // Delete messages by this user
-    try {
-      const msgsQ = query(collection(db, "groups", groupDoc.id, "messages"), where("userId", "==", uid), limit(500));
-      const msgsSnap = await getDocs(msgsQ);
-      if (msgsSnap.docs.length > 0) {
-        const msgBatch = writeBatch(db);
-        msgsSnap.docs.forEach((d) => msgBatch.delete(d.ref));
-        await msgBatch.commit();
-      }
     } catch {}
   }
 
@@ -254,7 +267,7 @@ export async function fetchNotificationPrefs(uid: string): Promise<NotificationP
 
 export async function updateNotificationPrefs(uid: string, prefs: NotificationPrefs): Promise<void> {
   const privRef = doc(db, "users", uid, "private", "config");
-  await updateDoc(privRef, { notificationPrefs: prefs });
+  await setDoc(privRef, { notificationPrefs: prefs }, { merge: true });
 }
 
 export async function fetchAdminConfig() {

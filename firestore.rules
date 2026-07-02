@@ -262,6 +262,9 @@ service cloud.firestore {
         allow update: if isAuth()
                       && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds
                       && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+        // Sender can delete their own messages (account-deletion cleanup)
+        allow delete: if isAuth()
+                      && request.auth.uid == resource.data.senderId;
         // Sender can edit text or unsend their own message (re-validate length)
         allow update: if isAuth()
                       && request.auth.uid == resource.data.senderId

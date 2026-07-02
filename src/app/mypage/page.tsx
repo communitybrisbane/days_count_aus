@@ -62,7 +62,7 @@ export default function MyPage() {
         <div className="absolute bottom-[50%] left-[30%] w-24 h-24 bg-forest-mid/8 rotate-[60deg]" />
       </div>
       <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-[1]" style={NO_SCROLLBAR_STYLE}>
-      {/* プロフィール — Instagram風中央レイアウト */}
+      {/* プロフィール — アバター左・名前＋統計右の横並びレイアウト */}
       <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
 
         {/* 設定アイコン — 右上 */}
