@@ -10,7 +10,6 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { fetchAdminConfig } from "@/lib/services/users";
-import { joinOfficialGroup } from "@/lib/groups";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -60,20 +59,8 @@ export default function GroupsPage() {
 
   useEffect(() => {
     if (user) {
-      fetchGroups().then(() => {
-        // Self-heal: if not a member of mode group, join it (both memberIds + groupIds)
-        if (profile?.mainMode) {
-          setGroups((currentGroups) => {
-            const modeGroup = currentGroups.find((g) => g.isOfficial && !g.iconUrl && g.mode === profile.mainMode);
-            if (modeGroup && !modeGroup.memberIds?.includes(user.uid)) {
-              joinOfficialGroup(user.uid, profile.mainMode)
-                .then(() => { refreshProfile(); fetchGroups(); })
-                .catch(() => {});
-            }
-            return currentGroups;
-          });
-        }
-      });
+      // Mode groups are fully optional (join/leave freely) — no auto-rejoin here
+      fetchGroups();
       fetchAdminConfig().then((data) => {
         if (data) {
           const cfg = data as AdminConfig;
@@ -120,19 +107,12 @@ export default function GroupsPage() {
   const canJoinCommunity = level >= GROUP_JOIN_LEVEL;
   const userGroups = groups.filter((g) => !g.isOfficial);
   const isModeGroup = (g: Group) => g.isOfficial && !g.iconUrl;
-  // Show mode group only if user is a member OR it matches mainMode (pick first match only)
-  const myModeGroup = groups.find((g) =>
-    isModeGroup(g) && g.mode === profile?.mainMode && g.memberIds?.includes(user?.uid || "")
-  ) || groups.find((g) =>
-    isModeGroup(g) && g.mode === profile?.mainMode
-  );
-  // Other mode groups the user opted into (beyond their mainMode one)
-  const extraModeGroups = groups.filter((g) =>
-    isModeGroup(g) && g.id !== myModeGroup?.id && g.memberIds?.includes(user?.uid || "")
+  // Mode groups are fully optional — show only the ones the user is actually in
+  const joinedModeGroups = groups.filter((g) =>
+    isModeGroup(g) && g.memberIds?.includes(user?.uid || "")
   );
   const myJoinedGroups = [
-    ...(myModeGroup ? [myModeGroup] : []),
-    ...extraModeGroups,
+    ...joinedModeGroups,
     ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
   ].sort((a, b) => {
     const aCleared = clearedGroupIds.has(a.id);
@@ -312,7 +292,7 @@ export default function GroupsPage() {
 
               {/* Group Chat section */}
               <div className="px-4 pt-2">
-                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + Math.max(1, myJoinedGroups.length - myJoinedExtra.length)}</span></p>
+                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + joinedModeGroups.length}</span></p>
               </div>
               <div className="flex flex-col">
                 {myJoinedGroups.map((group) => (
@@ -331,15 +311,13 @@ export default function GroupsPage() {
                   />
                 ))}
 
-                {/* Add Community */}
-                {!hasMaxGroups && canJoinCommunity && (
-                  <button
-                    onClick={() => setShowActionChoice(true)}
-                    className="w-full py-3 text-center text-sm font-bold text-accent-orange active:opacity-70 transition-opacity"
-                  >
-                    + Find or Create
-                  </button>
-                )}
+                {/* Add Community — always visible so mode groups stay joinable */}
+                <button
+                  onClick={() => setShowActionChoice(true)}
+                  className="w-full py-3 text-center text-sm font-bold text-accent-orange active:opacity-70 transition-opacity"
+                >
+                  + Find or Create
+                </button>
                 {!canJoinCommunity && (
                   <p className="text-center text-[10px] text-white/30 py-3">
                     <IconLock size={10} className="inline mr-1" />
@@ -372,16 +350,15 @@ export default function GroupsPage() {
               {/* Join */}
               <button
                 onClick={() => { setShowActionChoice(false); setShowSearch(true); }}
-                disabled={!canJoinMore}
-                className={`w-full flex items-center gap-3 p-4 rounded-xl text-left ${canJoinMore ? "bg-gray-50 active:bg-gray-100" : "bg-gray-50 opacity-40"}`}
+                className="w-full flex items-center gap-3 p-4 rounded-xl text-left bg-gray-50 active:bg-gray-100"
               >
                 <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
                   <IconSearch size={18} className="text-forest-mid" />
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${canJoinMore ? "text-gray-800" : "text-gray-400"}`}>Join a Community</p>
+                  <p className="text-sm font-bold text-gray-800">Join a Community</p>
                   <p className="text-[10px] text-gray-400">
-                    {canJoinMore ? "Search and join an existing community" : "You've reached the join limit"}
+                    {canJoinMore ? "Search and join an existing community" : "Community slots are full — official groups are always open"}
                   </p>
                 </div>
               </button>

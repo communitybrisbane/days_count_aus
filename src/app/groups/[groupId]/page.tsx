@@ -77,22 +77,6 @@ export default function GroupChatPage() {
       if (!snap.exists()) return;
       const data = { id: snap.id, ...snap.data() } as Group;
 
-      if (data.isOfficial && !data.iconUrl && user && !data.memberIds.includes(user.uid)) {
-        try {
-          await updateDoc(doc(db, "groups", groupId), {
-            memberIds: arrayUnion(user.uid),
-            memberCount: increment(1),
-          });
-          await updateDoc(doc(db, "users", user.uid), {
-            groupIds: arrayUnion(groupId),
-          });
-          data.memberIds = [...data.memberIds, user.uid];
-          data.memberCount = data.memberCount + 1;
-        } catch (err) {
-          console.warn("Auto-join official group failed:", err);
-        }
-      }
-
       setGroup(data);
       setEditGoal(data.goal || "");
       setEditJoinType(data.joinType || "open");
@@ -176,8 +160,6 @@ export default function GroupChatPage() {
 
   const isOfficial = !!group?.isOfficial;
   const isModeGroup = isOfficial && !group?.iconUrl;
-  // The mode group matching the user's mainMode can't be left; other mode groups (opt-in) can
-  const isOwnModeGroup = isModeGroup && resolveMode(group?.mode || "") === resolveMode(profile?.mainMode || "");
   const isMember = isMemberNow;
   const isLeader = group?.creatorId === user?.uid;
   const isFull = !isModeGroup && (group?.memberCount || 0) >= MAX_GROUP_MEMBERS;
@@ -240,7 +222,7 @@ export default function GroupChatPage() {
   const handleLeaveConfirm = async () => {
     if (!user || !group) return;
     setShowLeaveModal(false);
-    if (isLeader) {
+    if (isLeader && !isModeGroup) {
       // Leader: show transfer/disband choice
       const otherMembers = group.memberIds.filter((id) => id !== user.uid);
       if (otherMembers.length === 0) {
@@ -458,8 +440,6 @@ export default function GroupChatPage() {
             )}
             {isClosed ? (
               <span className="text-xs text-red-400/70 px-2 py-1">Closed</span>
-            ) : isOwnModeGroup ? (
-              <span className="text-xs bg-accent-orange text-white px-2.5 py-1 rounded-full">Official</span>
             ) : isModeGroup && !isMember ? (
               <button onClick={handleJoinAttempt} className="bg-accent-orange text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1">
                 Join

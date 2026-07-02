@@ -9,7 +9,6 @@ import { signOut } from "@/lib/auth";
 import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
-import { joinOfficialGroup, leaveOfficialGroup } from "@/lib/groups";
 import { uploadAvatar, deleteAccount, unblockUser, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
 import type { NotificationPrefs } from "@/types";
 import dynamic from "next/dynamic";
@@ -98,12 +97,7 @@ export default function SettingsPage() {
           return;
         }
       }
-      // If mainMode changed, switch official group
-      if (profile?.mainMode && profile.mainMode !== mainMode) {
-        await leaveOfficialGroup(user.uid, profile.mainMode);
-        await joinOfficialGroup(user.uid, mainMode);
-      }
-
+      // Mode groups are fully optional — changing mainMode no longer touches group membership
       await updateDoc(doc(db, "users", user.uid), {
         displayName: nickname.trim(),
         displayNameLower: nickname.trim().toLowerCase(),
