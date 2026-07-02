@@ -18,5 +18,9 @@
     "@types/nodemailer": "^7.0.11",
     "typescript": "^5.4.0"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@tootallnate/once": "3.0.1",
+    "http-proxy-agent": "7.0.2"
+  }
 }
