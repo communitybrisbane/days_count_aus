@@ -60,3 +60,7 @@ functions/lib/
 sa-key.json
 
 .vercel
+
+# OneDrive duplicate copies and camera metadata
+*.modd
+image/* 1.jpg
