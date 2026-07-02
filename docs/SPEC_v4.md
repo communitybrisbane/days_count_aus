@@ -96,28 +96,24 @@
 
 ---
 
-## 4. 5つのフォーカスモード
+## 4. 3つのフォーカスモード
+
+> 2026-07-02: Work / Chill モードを廃止して3モードに統合。既存の work / chill データはレガシーマッピングで challenge に読み替え。
 
 | モード | ID | ラベル | 説明 | ハッシュタグ例 |
 |---|---|---|---|---|
 | English | `english` | English | IELTS, speaking, language exchange | #english, #ielts, #speaking, #slang |
 | Skill | `skill` | Skill | Coding, AI, SNS, portfolio | #skill, #coding, #design, #freelance |
-| Challenge | `challenge` | Challenge | Road trips, English interviews, new cities | #challenge, #travel, #roadtrip, #surfing |
-| Work | `work` | Work | Farm, cafe job, 88 days | #work, #farm, #barista, #88days |
-| Chill | `chill` | Chill | Beach, surfing, cafes, daily vibes | #chill, #daily, #cafe, #sunset |
+| Challenge | `challenge` | Challenge | Road trips, farm, beach, new cities | #challenge, #travel, #roadtrip, #farm |
 
 ### レガシーモードマッピング
-旧モードIDからの自動変換（`LEGACY_MODE_MAP`）:
-- `enjoying` → `challenge`（内部ID: `adventure`）
-- `challenging` → `challenge`（内部ID: `adventure`）
+旧モードIDからの自動変換（`LEGACY_MODE_MAP`）。正式IDは `english` / `skill` / `challenge`:
+- `enjoying` / `challenging` / `adventure` → `challenge`
 - `skills` → `skill`
-- `social-media` → `chill`
-- `daily` → `chill`
-
-> **注**: ChallengeモードのFirestore上の内部IDは `adventure`。UIラベルは `Challenge`。`resolveMode()` で変換。
+- `social-media` / `daily` / `work` / `chill` → `challenge`
 
 ### マイページでのフィルタリング
-- Fun/Growth分類はなし。ModeFilterBarで5モード + All のフィルタリングのみ。
+- Fun/Growth分類はなし。ModeFilterBarで3モード + All のフィルタリングのみ。
 
 ### ハッシュタグシステム
 - ハッシュタグはカスタムタグのみ（モード別候補機能は廃止）。
@@ -188,7 +184,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 | 1 | プロフィール写真（丸型）+ ニックネーム | ニックネーム必須 |
 | 2 | ステータス選択（Before / In AUS / Returned） | 必須 |
 | 3 | 日付入力（渡航予定日 or 到着日） | 必須（post-returnはスキップ） |
-| 4 | フォーカスモード選択（5つから1つ） | 必須 |
+| 4 | フォーカスモード選択（3つから1つ） | 必須 |
 | 5 | 地域選択（12地域） | 任意（Skip可） |
 | 6 | ゴール設定（100文字） | 任意（Skip可） |
 
@@ -236,7 +232,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **インタラクション履歴**: いいね（重み3）・詳細閲覧（重み1）を `localStorage` に記録（最大300件、30日TTL、半減期14日の指数減衰）。著者・タグ別のアフィニティ構築に使用。
 - **既読追跡（インプレッションベース）**: IntersectionObserver でグリッドセルが50%表示された時点で記録（取得時ではない）。`localStorage` に投稿IDを保存（最大500件、3日間TTL、初回表示時刻を保持）。
 - **無限スクロール**: `limit(20)` + `startAfter` で20件ずつ追加読み込み。ランキングフィードの初回ページのみ候補プール60件を取得して並べ替え。
-- **フィルタ**: 上部に固定ヘッダーで5モードフィルタ + All。（旧Popularソートタブは2026-07-02に廃止。エンゲージメント速度シグナルがスコアに含まれるためNewに一本化）
+- **フィルタ**: 上部に固定ヘッダーで3モードフィルタ + All。（旧Popularソートタブは2026-07-02に廃止。エンゲージメント速度シグナルがスコアに含まれるためNewに一本化）
 - **検索**: ユーザー名・地域・#タグでのデバウンス検索（400ms）。500ユーザーまでスキャン。初回検索時にキャッシュ。スコアリングは非検索時のみ適用。
 - **いいね**: ハートボタン or ダブルタップ。タップ位置にハートバースト。楽観的UI更新。
 - **自分の投稿にもいいね可能**（XP付与なし）。
@@ -255,7 +251,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 **投稿画面の構成**:
 
-- **モード選択**: 5つのフォーカスモードからpill型ボタンで1つ選択（必須）。デフォルトはプロフィールのメインモード。
+- **モード選択**: 3つのフォーカスモードからpill型ボタンで1つ選択（必須）。デフォルトはプロフィールのメインモード。
 - **公開設定**: Public / Private のトグル。
 - **画像（任意）**: タップで画像選択 → react-easy-crop で1:1クロップ → Canvas APIで1024×1024pxにリサイズ（JPEG品質85%、最大300KB） → EXIF自動除去。
 - **地域選択（任意）**: 投稿に地域タグを付与。デフォルトはプロフィールの地域。
@@ -292,7 +288,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 #### 公式グループ（Official Groups）— 2種類
 - **モードグループ**（`isOfficial: true` かつ `iconUrl` なし）: 各フォーカスモードごとに1つ。ユーザーのメインモード変更時に自動参加/退出。カードに「by mode」表示。
-- **趣味グループ（Hobby Groups）**（`isOfficial: true` かつ `iconUrl` あり）: 運営が用意するトピック別グループ（App Development / TOEIC / Road Trip / Farm / Beach 等）。検索画面で「Hobby Groups」セクションとしてユーザー作成コミュニティ（「Communities」セクション）と分けて表示。カードにオレンジの「Hobby」バッジ。参加は任意で、コミュニティスロットを消費する。
+- **趣味グループ（Hobby Groups）**（`isOfficial: true` かつ `iconUrl` あり）: 運営が用意するトピック別グループ（App Development / AI / TOEIC / English Conversation / Road Trip / Street Interview）。検索画面で「Hobby Groups」セクションとしてユーザー作成コミュニティ（「Communities」セクション）と分けて表示。カードにオレンジの「Hobby」バッジ。参加は任意で、コミュニティスロットを消費する。
 - 公式グループはメンバー上限なし。
 
 #### ユーザー作成グループ
@@ -338,7 +334,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **横並びヘッダーレイアウト**（2026-04-03刷新）: アバター（96px）を左、名前+Lvバッジ+統計（Likes/Streak/Following）を右に横並び配置。その下にモード+地域タグ → ゴール → 所属グループ（ProfileGroupsコンポーネント、プリセット+ユーザー作成）。※公開プロフィール（`/user/[uid]`）は従来どおり中央寄せレイアウト（§6.11）。
 - **設定ボタン**: 右上に歯車アイコン → `/settings` へ遷移。
 - **フォロー中リスト**: FollowingModal でフルスクリーン表示（最大50件）。右スワイプで閉じる。
-- **モードフィルター**: ModeFilterBar コンポーネント。5モード + All。
+- **モードフィルター**: ModeFilterBar コンポーネント。3モード + All。
 - **投稿グリッド**: PostGrid コンポーネント。4列グリッドでサムネイル表示。Private投稿には鍵アイコン。
 - **投稿詳細モーダル**: PostDetailModal コンポーネント。右スワイプで閉じる。
 
@@ -440,15 +436,13 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | Sand Beige | `#F5F5DC` | 背景（シェル外側） |
 | Accent Orange | — | 主要アクセントカラー（ボタン、オンボーディング） |
 
-### テキストなし投稿のグラデーション（5種）
+### テキストなし投稿のグラデーション（3種）
 
 | モード | グラデーション |
 |---|---|
 | english | `from-blue-500 to-cyan-400` |
 | skill | `from-violet-500 to-purple-400` |
 | challenge (Challenge) | `from-emerald-500 to-teal-400` |
-| work | `from-orange-500 to-amber-400` |
-| chill | `from-stone-400 to-warm-gray-400` |
 
 ### フッターナビゲーション（5タブ）
 
@@ -850,5 +844,6 @@ public/
 | v3 改訂5 | 2026-03-27 | セキュリティ監査・強化、パフォーマンス改善。 |
 | **v4** | **2026-03-28** | **実装準拠で全面書き直し。主な差分**: フォーカスモード5種リネーム（English/Skill/Challenge/Work/Chill）+ レガシーマッピング。XP計算式変更（除数6、POST_XP=10、LIKE_SEND_XP=3、LIKE_RECEIVE_XP=5、初投稿ボーナス廃止）。グループ参加/作成条件をLv.2に緩和 + スロット段階制（Lv.2→1枠〜Lv.8→4枠）。グループ最大人数10→12名。ハッシュタグシステム新設（最大5個/投稿、モード別候補）。投稿に地域タグ・日数オーバーライド機能追加。オンボーディングを1画面→6ステップ制に刷新。グループjoinType（open/friends）追加。メッセージ編集/取消機能追加。`reportRestricted` フラグ追加。`showRegion` / `displayNameLower` フィールド追加。グラデーション全5色刷新。ルート構成更新（`(auth)` route group廃止）。コンポーネント一覧・hooks一覧を最新化。 |
 | v4 改訂1 | 2026-04-02 | 通報した投稿を通報者から非表示（`reportedPosts`）。レポートメール通知を1〜3件目すべてに変更。 |
+| **v4 改訂4** | **2026-07-02** | **主な差分**: フォーカスモードを5種→3種に削減（Work / Chill を廃止、レガシーマッピングで challenge に統合。ユーザー mainMode 正規化・Chill Vibes / Earn & Learn モードグループのクローズ・work/chill 趣味グループ4個の削除を本番移行済み）。公式グループを「モードグループ + 趣味グループ（Hobby Groups）」の2階層として定義、検索画面をセクション分け。EXPLOREのPopularソートタブを廃止しランキングフィード一本化。 |
 | **v4 改訂3** | **2026-07-02** | **実装との突き合わせ監査を反映**: 投稿編集の5分制限撤廃（タグ・地域・公開範囲・日数も編集可、`editableUntil` はレガシー化）。PWAインストールバナーのモバイル限定化。マイページを横並びヘッダーレイアウトに（アバター左96px）。グループカード右スワイプミュートを追記。Study Room設定を `meeting*` フラットフィールドに訂正。`checkStreaks` をカレンダー日ベース+20時/23時警告に訂正。`streakWarningSent` フィールド追加。アカウント削除手順を実装準拠の10ステップに更新（メッセージ削除のフィールド名バグ修正+ルールに `allow delete` 追加）。Exploreのソートタブ・#タグ検索を追記。未実装項目（通知トグルUI・ハッシュタグ候補・ストリーク+100XP）を§15へ移動。 |
 | **v4 改訂2** | **2026-04-03** | **主な差分**: Next.js 16.2.2 に更新。絵文字入力対応（投稿・チャット）。ブロック機能強化（自動アンフォロー + blockedBy同期 + プロフィール閲覧制限）。ユーザー通報をプロフィール画面に移動（スクリーンショット必須化）。アカウント自動制限（通報10件で restricted モード）+ 制限解除時の通報自動解決。グループ: システムメッセージ（参加/退出/キック/リーダー移譲/クローズ）、CLOSEDグループの読み取り専用チャット閲覧、friends参加確認モーダル、スワイプで既読クリア、キック済みユーザー再参加防止。いいね受信時のレベルアップ演出。OG画像を静的PNGに変更。Cloud Functions 7→10個（`onUserReportCreated`, `onRestrictionLifted`, `onBlockListChanged` 追加）。 |

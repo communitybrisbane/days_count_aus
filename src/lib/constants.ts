@@ -1,24 +1,24 @@
 export const FOCUS_MODES = [
   { id: "english", label: "English", icon: "english", description: "IELTS, speaking, language exchange" },
   { id: "skill", label: "Skill", icon: "skill", description: "Coding, AI, SNS, portfolio" },
-  { id: "challenge", label: "Challenge", icon: "challenge", description: "Road trips, English interviews, new cities" },
-  { id: "work", label: "Work", icon: "work", description: "Farm, cafe job, 88 days" },
-  { id: "chill", label: "Chill", icon: "chill", description: "Beach, surfing, cafes, daily vibes" },
+  { id: "challenge", label: "Challenge", icon: "challenge", description: "Road trips, farm, beach, new cities" },
 ] as const;
 
 export type FocusModeId = (typeof FOCUS_MODES)[number]["id"];
 
-/** All modes are selectable as main mode (Chill is the catch-all) */
+/** All modes are selectable as main mode */
 export const MAIN_MODE_OPTIONS = FOCUS_MODES;
 
-/** Map legacy mode IDs to new IDs */
+/** Map legacy mode IDs to new IDs (work/chill retired 2026-07: both fold into challenge) */
 export const LEGACY_MODE_MAP: Record<string, string> = {
   enjoying: "challenge",
   challenging: "challenge",
   adventure: "challenge",
   skills: "skill",
-  "social-media": "chill",
-  daily: "chill",
+  "social-media": "challenge",
+  daily: "challenge",
+  work: "challenge",
+  chill: "challenge",
 };
 
 /** Resolve a mode ID, mapping legacy IDs to new ones */
@@ -35,8 +35,6 @@ export const GRADIENTS = [
   "from-blue-500 to-cyan-400",         // english
   "from-violet-500 to-purple-400",     // skill
   "from-emerald-500 to-teal-400",      // challenge
-  "from-orange-500 to-amber-400",      // work
-  "from-stone-400 to-warm-gray-400",   // chill
 ] as const;
 
 /** Weekly XP rewards — escalating per day (index 0 = 1st post, index 6 = 7th) */

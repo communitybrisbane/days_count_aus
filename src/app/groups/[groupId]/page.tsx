@@ -425,7 +425,7 @@ export default function GroupChatPage() {
               <Image src={group.iconUrl} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-forest-light/30 flex items-center justify-center">
-                <FocusModeIcon modeId={group.mode || "chill"} size={22} className="text-white/60" />
+                <FocusModeIcon modeId={group.mode || "challenge"} size={22} className="text-white/60" />
               </div>
             )}
             <input ref={iconInputRef} type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
@@ -538,7 +538,7 @@ export default function GroupChatPage() {
                   <Image src={group.iconUrl} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center">
-                    <FocusModeIcon modeId={group.mode || "chill"} size={16} className="text-forest-mid" />
+                    <FocusModeIcon modeId={group.mode || "challenge"} size={16} className="text-forest-mid" />
                   </div>
                 )}
                 <span className="text-xs text-gray-500 font-medium">Change icon</span>

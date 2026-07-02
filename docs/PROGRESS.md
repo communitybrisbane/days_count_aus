@@ -15,6 +15,7 @@
 
 ## ✅ 完了（新しい順）
 
+- **2026-07-02** フォーカスモードを5種→3種に削減（Work / Chill 廃止）。コード側は `LEGACY_MODE_MAP` に work/chill→challenge を追加して読み替え（投稿データは無変更）、UI（投稿/編集のモードピル・グループ検索フィルタ・週間履歴）から除去。本番データ移行: 全ユーザーの mainMode を正規化（16人 → english 6 / skill 5 / challenge 5）、Chill/Work だったユーザー2人を Challengers へ移動、モードグループ Chill Vibes / Earn & Learn をクローズ、work/chill の趣味グループ4個（Farm・Overtime Grinder・Running・Beach、全員0人）を削除。※移行スクリプトの初回実行で移動先グループの解決にバグがあり2人が一時無所属になったが、修復スクリプトで解消済み
 - **2026-07-02** EXPLOREのソートタブ（New/Popular）を廃止してNew一本化。Popularは累計いいね順で少ユーザー期は上位固定・新規投稿が埋もれる問題があり、Newのスコアに「いいね速度」シグナルが含まれていて役割を吸収できるため
 - **2026-07-02** トピック別公式グループ10個を「趣味グループ（Hobby Groups）」の括りに。判定は `isOfficial && iconUrl あり`（モードグループは `iconUrl` なし）。検索画面を「Hobby Groups」と「Communities」の2セクションに分離、カードの「by official」をオレンジの「Hobby」バッジに変更。SPEC §6.5 に定義を追記
 - **2026-07-02** 本番リリース一式完了: dev→master のPR #2 をマージし Vercel 本番デプロイ（days-count.com 正常応答確認）、`firestore.rules` デプロイ（メッセージ `allow delete` 反映）、Cloud Functions 全10個デプロイ（通知設定の尊重・ストリーク警告のskipped化を反映）。これで通知OFF設定と退会時メッセージ削除が本番で有効に

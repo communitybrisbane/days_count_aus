@@ -243,8 +243,8 @@ export default function EditPostPage() {
           </button>
           {openSection === "mode" && (
             <div className="px-1 pb-1">
-              {[["english", "skill", "challenge"], ["work", "chill"]].map((row, ri) => (
-                <div key={ri} className={`flex gap-1.5 ${ri === 0 ? "mb-1.5" : ""}`}>
+              {[["english", "skill", "challenge"]].map((row, ri) => (
+                <div key={ri} className="flex gap-1.5">
                   {FOCUS_MODES.filter((m) => row.includes(m.id)).map((m) => (
                     <button
                       key={m.id}

@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { POST_EDIT_WINDOW_MS } from "@/lib/constants";
+import { POST_EDIT_WINDOW_MS, resolveMode } from "@/lib/constants";
 import { getCurrentTuesday } from "@/lib/utils";
 import type { Post } from "@/types";
 
@@ -84,7 +84,7 @@ export async function fetchWeeklyHistory(uid: string, weeks: number = 12): Promi
     const daySet = new Set(weekPosts.map((d) => d.data().createdAt.toDate().toISOString().slice(0, 10)));
     const modes: Record<string, number> = {};
     weekPosts.forEach((d) => {
-      const mode = d.data().mode || "chill";
+      const mode = resolveMode(d.data().mode || "challenge");
       modes[mode] = (modes[mode] || 0) + 1;
     });
     result.unshift({ weekStart: ws, count: weekPosts.length, uniqueDays: daySet.size, modes });

@@ -213,19 +213,6 @@ export default function GroupsPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-1.5">
-                {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setModeFilter(m.id)}
-                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      modeFilter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                    }`}
-                  >
-                    <FocusModeIcon modeId={m.id} size={14} /> {m.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
