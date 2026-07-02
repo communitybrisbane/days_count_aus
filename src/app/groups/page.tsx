@@ -156,6 +156,10 @@ export default function GroupsPage() {
       g.groupName.toLowerCase().includes(q)
     );
   }
+  // Hobby groups = official topic groups (with icon); mode groups are excluded above
+  const isHobbyGroup = (g: Group) => g.isOfficial && !!g.iconUrl;
+  const hobbyResults = filteredUserGroups.filter(isHobbyGroup);
+  const communityResults = filteredUserGroups.filter((g) => !g.isOfficial);
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
@@ -230,7 +234,24 @@ export default function GroupsPage() {
             {!loadingGroups && filteredUserGroups.length === 0 && (
               <p className="text-center text-white/40 py-4 text-sm">No matching communities found</p>
             )}
-            {filteredUserGroups.map((group) => (
+            {hobbyResults.length > 0 && (
+              <p className="text-xs font-bold text-white/50 px-1">Hobby Groups <span className="font-normal text-white/30">by official</span></p>
+            )}
+            {hobbyResults.map((group) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+                currentUserId={user?.uid}
+                leaderName={leaderNames[group.creatorId]}
+                canJoin={canJoinCommunity && canJoinMore}
+                onJoined={handleJoined}
+                showGoal
+              />
+            ))}
+            {communityResults.length > 0 && (
+              <p className={`text-xs font-bold text-white/50 px-1 ${hobbyResults.length > 0 ? "pt-2" : ""}`}>Communities</p>
+            )}
+            {communityResults.map((group) => (
               <GroupCard
                 key={group.id}
                 group={group}

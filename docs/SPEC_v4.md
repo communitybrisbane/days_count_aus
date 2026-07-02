@@ -291,9 +291,9 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - `meetingUrl` が設定されている場合: 緑のパルスドット + 「LIVE」バッジ + 「Join」ボタン（外部Zoomリンク）。
 - `meetingUrl` が未設定の場合: グレーのドット + 「Offline」表示。
 
-#### 公式グループ（Official Groups）
-- 各フォーカスモードごとに1つの公式グループが存在（`isOfficial: true`）。
-- ユーザーのメインモード変更時に自動参加/退出。
+#### 公式グループ（Official Groups）— 2種類
+- **モードグループ**（`isOfficial: true` かつ `iconUrl` なし）: 各フォーカスモードごとに1つ。ユーザーのメインモード変更時に自動参加/退出。カードに「by mode」表示。
+- **趣味グループ（Hobby Groups）**（`isOfficial: true` かつ `iconUrl` あり）: 運営が用意するトピック別グループ（App Development / TOEIC / Road Trip / Farm / Beach 等）。検索画面で「Hobby Groups」セクションとしてユーザー作成コミュニティ（「Communities」セクション）と分けて表示。カードにオレンジの「Hobby」バッジ。参加は任意で、コミュニティスロットを消費する。
 - 公式グループはメンバー上限なし。
 
 #### ユーザー作成グループ
