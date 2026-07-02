@@ -11,8 +11,7 @@
 
 ## 📋 次やる
 
-- LP・Instagram広告の制作（`ad-data-sheet.md` を素材に）
-- **firestore.rules のデプロイ**（`firebase deploy --only firestore:rules`）— メッセージの `allow delete` 追加を反映するため。未デプロイだと退会時のメッセージ削除が引き続き失敗する（try/catchで握りつぶされるため退会自体は成功する）
+- **Firebaseデプロイ2種**: ①`firebase deploy --only firestore:rules` — メッセージの `allow delete` 追加を反映（未デプロイだと退会時のメッセージ削除が引き続き失敗。try/catchで握りつぶされるため退会自体は成功する）、②`firebase deploy --only functions` — 通知設定トグルを送信側で尊重させる
 
 ## ✅ 完了（新しい順）
 
