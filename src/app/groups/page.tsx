@@ -144,8 +144,8 @@ export default function GroupsPage() {
   const canJoinMore = myJoinedExtra.length < maxSlots;
   const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
 
-  // Search shows all groups (official + user-created), excluding already joined
-  const searchableGroups = groups.filter((g) => !g.isClosed && !isModeGroup(g) && !myJoinedGroups.some((j) => j.id === g.id));
+  // Search shows user-created communities only (official groups are mode groups, auto-joined)
+  const searchableGroups = groups.filter((g) => !g.isClosed && !g.isOfficial && !myJoinedGroups.some((j) => j.id === g.id));
   let filteredUserGroups = searchableGroups;
   if (modeFilter) {
     filteredUserGroups = filteredUserGroups.filter((g) => g.mode === modeFilter);
@@ -156,10 +156,6 @@ export default function GroupsPage() {
       g.groupName.toLowerCase().includes(q)
     );
   }
-  // Hobby groups = official topic groups (with icon); mode groups are excluded above
-  const isHobbyGroup = (g: Group) => g.isOfficial && !!g.iconUrl;
-  const hobbyResults = filteredUserGroups.filter(isHobbyGroup);
-  const communityResults = filteredUserGroups.filter((g) => !g.isOfficial);
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
@@ -221,24 +217,7 @@ export default function GroupsPage() {
             {!loadingGroups && filteredUserGroups.length === 0 && (
               <p className="text-center text-white/40 py-4 text-sm">No matching communities found</p>
             )}
-            {hobbyResults.length > 0 && (
-              <p className="text-xs font-bold text-white/50 px-1">Hobby Groups <span className="font-normal text-white/30">by official</span></p>
-            )}
-            {hobbyResults.map((group) => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                currentUserId={user?.uid}
-                leaderName={leaderNames[group.creatorId]}
-                canJoin={canJoinCommunity && canJoinMore}
-                onJoined={handleJoined}
-                showGoal
-              />
-            ))}
-            {communityResults.length > 0 && (
-              <p className={`text-xs font-bold text-white/50 px-1 ${hobbyResults.length > 0 ? "pt-2" : ""}`}>Communities</p>
-            )}
-            {communityResults.map((group) => (
+            {filteredUserGroups.map((group) => (
               <GroupCard
                 key={group.id}
                 group={group}
