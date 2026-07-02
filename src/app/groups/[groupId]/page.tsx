@@ -26,7 +26,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
-import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, GROUP_JOIN_LEVEL, resolveMode } from "@/lib/constants";
+import { fetchUserGroups } from "@/lib/groups";
+import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, GROUP_JOIN_LEVEL, getMaxCommunitySlots, resolveMode } from "@/lib/constants";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -181,10 +182,12 @@ export default function GroupChatPage() {
         alert(`You need Lv.${GROUP_JOIN_LEVEL} or higher to join a community.`);
         return;
       }
-      // Group limit: max 2 groups excluding mode group (mode group + 2 = 3 total in groupIds)
-      const myGroupIds = profile?.groupIds || [];
-      if (myGroupIds.length >= 3) {
-        alert("Max 2 groups. Please leave one first.");
+      // Membership slots: level-tiered cap on communities you belong to (created or joined; mode groups are free)
+      const maxSlots = getMaxCommunitySlots(userLevel);
+      const myGroups = await fetchUserGroups(profile?.groupIds || []);
+      const communityCount = myGroups.filter((g) => !g.isOfficial).length;
+      if (communityCount >= maxSlots) {
+        alert(`Your community slots are full (${communityCount}/${maxSlots}). Please leave one first.`);
         return;
       }
     }
