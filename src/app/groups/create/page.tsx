@@ -85,7 +85,7 @@ export default function CreateGroupPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
         <p className="text-white/60">You can only lead 1 group</p>
-        <p className="text-xs text-white/40 mt-1">Transfer or disband your current group first</p>
+        <p className="text-xs text-white/40 mt-1">Close your current group first</p>
         <button onClick={() => router.back()} className="mt-4 text-accent-orange">
           Back
         </button>
