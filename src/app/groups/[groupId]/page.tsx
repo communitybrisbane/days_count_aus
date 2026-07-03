@@ -257,10 +257,15 @@ export default function GroupChatPage() {
 
   const handleLeaderDisband = async () => {
     if (!user || !group || disbanding) return;
+    // Same input rules as regular chat messages
+    const farewell = finalMessage.trim().slice(0, MESSAGE_CHAR_LIMIT);
+    if (farewell && URL_PATTERN.test(farewell)) {
+      alert("Links are not allowed in group chat.");
+      return;
+    }
     setDisbanding(true);
     try {
       // Final message must go out before the group is closed (closed groups are read-only)
-      const farewell = finalMessage.trim();
       if (farewell) {
         await addDoc(collection(db, "groups", groupId, "messages"), {
           senderId: user.uid,
@@ -626,12 +631,14 @@ export default function GroupChatPage() {
                 <p className="text-xs text-gray-500 mb-2">Leave one last message for your members before the group closes.</p>
                 <textarea
                   value={finalMessage}
-                  onChange={(e) => setFinalMessage(e.target.value)}
-                  maxLength={500}
+                  onChange={(e) => setFinalMessage(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
+                  maxLength={MESSAGE_CHAR_LIMIT}
                   rows={3}
                   placeholder="Thanks for everything, everyone!"
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-forest-mid"
                 />
+                {showWarn && <p className="text-[10px] text-red-400 mt-1">English characters only</p>}
+                <p className="text-[10px] text-gray-400 mt-1 text-right">{finalMessage.length}/{MESSAGE_CHAR_LIMIT}</p>
               </div>
               <button
                 onClick={handleLeaderDisband}
