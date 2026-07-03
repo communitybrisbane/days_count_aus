@@ -64,7 +64,6 @@ export const GROUP_SLOT_TIERS = [
   { level: 2, slots: 1 },
   { level: 3, slots: 2 },
   { level: 5, slots: 3 },
-  { level: 8, slots: 4 },
 ] as const;
 
 /** Get max community slots for a given level */
