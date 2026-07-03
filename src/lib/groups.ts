@@ -64,11 +64,13 @@ export async function joinOfficialGroup(uid: string, mode: string) {
   const memberIds = group.memberIds || [];
   if (memberIds.includes(uid)) return;
 
-  const { doc: firestoreDoc } = await import("firebase/firestore");
+  const { doc: firestoreDoc, setDoc, Timestamp } = await import("firebase/firestore");
   await updateDoc(firestoreDoc(db, "groups", group.id), {
     memberIds: arrayUnion(uid),
     memberCount: increment(1),
   });
+  // New members only see messages sent after they joined
+  await setDoc(firestoreDoc(db, "groups", group.id, "lastRead", uid), { clearedAt: Timestamp.now() }, { merge: true });
   await updateDoc(firestoreDoc(db, "users", uid), {
     groupIds: arrayUnion(group.id),
   });

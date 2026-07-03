@@ -213,6 +213,10 @@ export default function GroupChatPage() {
       memberIds: arrayUnion(user.uid),
       memberCount: increment(1),
     });
+    // New members only see messages sent after they joined
+    const joinedAt = Timestamp.now();
+    await setDoc(doc(db, "groups", groupId, "lastRead", user.uid), { clearedAt: joinedAt }, { merge: true });
+    setClearedAt(joinedAt);
     await updateDoc(doc(db, "users", user.uid), { groupIds: arrayUnion(groupId) });
     await addSystemMessage(`${profile?.displayName || "Someone"} joined the group`);
     setGroup((g) => g ? { ...g, memberIds: [...g.memberIds, user.uid], memberCount: g.memberCount + 1 } : g);

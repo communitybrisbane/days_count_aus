@@ -116,6 +116,8 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
         memberIds: arrayUnion(currentUserId),
         memberCount: increment(1),
       });
+      // New members only see messages sent after they joined
+      await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { clearedAt: Timestamp.now() }, { merge: true });
       await updateDoc(doc(db, "users", currentUserId), {
         groupIds: arrayUnion(group.id),
       });
