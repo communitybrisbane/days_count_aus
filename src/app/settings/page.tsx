@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
-import { MAIN_MODE_OPTIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, AVATAR_SIZE, NICKNAME_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { uploadAvatar, deleteAccount, unblockUser, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
@@ -35,7 +35,6 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState(profile?.displayName || "");
   const [region, setRegion] = useState(profile?.region || "");
   const [showRegionWheel, setShowRegionWheel] = useState(false);
-  const [goal, setGoal] = useState(profile?.goal || "");
   const [mainMode, setMainMode] = useState(profile?.mainMode || "");
   const [departureDate, setDepartureDate] = useState(profile?.departureDate || "");
   const [status, setStatus] = useState<"pre-departure" | "in-australia" | "post-return">(profile?.status || "pre-departure");
@@ -65,7 +64,6 @@ export default function SettingsPage() {
     if (!profile) return;
     setNickname(profile.displayName || "");
     setRegion(profile.region || "");
-    setGoal(profile.goal || "");
     setMainMode(profile.mainMode || "");
     setDepartureDate(profile.departureDate || "");
     setStatus(profile.status || "pre-departure");
@@ -105,7 +103,6 @@ export default function SettingsPage() {
         displayNameLower: nickname.trim().toLowerCase(),
         region: region.trim(),
         showRegion,
-        goal: goal.trim(),
         mainMode,
         departureDate,
       });
@@ -312,12 +309,6 @@ export default function SettingsPage() {
                   <span className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform ${showRegion ? "left-5" : "left-0.5"}`} />
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-white/60">Goal</label>
-              <input type="text" maxLength={GOAL_MAX} value={goal} onChange={(e) => setGoal(sanitize(e.target.value))}
-                className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent-orange" />
             </div>
 
             <div>
