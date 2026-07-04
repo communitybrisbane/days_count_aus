@@ -354,7 +354,7 @@ export default function SettingsPage() {
                   { value: "post-return", label: "Returned" },
                 ].map((opt) => (
                   <button key={opt.value} type="button" onClick={() => handlePhaseChange(opt.value)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-medium ${status === opt.value ? "bg-accent-orange text-white font-bold" : "bg-white text-forest-mid"}`}
+                    className={`flex-1 py-1.5 rounded-full text-xs font-medium text-center ${status === opt.value ? "bg-accent-orange text-white font-bold" : "bg-white text-forest-mid"}`}
                   >{opt.label}{status === opt.value && " ✓"}</button>
                 ))}
               </div>
