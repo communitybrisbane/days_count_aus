@@ -531,7 +531,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Actions */}
       {showActions && (
-        <div className="flex items-center justify-between px-3 py-1">
+        <div className="flex items-center justify-between px-3 py-0.5">
           <div className="flex items-center gap-2">
             <button
               onClick={handleLike}
@@ -562,7 +562,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           <div className="relative">
             <button
               onClick={() => setShowMenu((v) => !v)}
-              className="text-gray-400 text-lg px-2 py-1 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              className="text-gray-400 text-base px-2 py-0 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors leading-none"
               aria-label="More options"
             >
               ···
