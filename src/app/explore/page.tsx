@@ -319,7 +319,7 @@ export default function ExplorePage() {
         <div className="flex items-center px-4 gap-2 pb-2">
           <button
             onClick={() => setModeFilter("")}
-            className={`shrink-0 w-9 h-9 rounded-full text-xs font-bold transition-all ${
+            className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all ${
               !modeFilter ? "bg-accent-orange text-white" : "bg-forest-light/20 text-white/50"
             }`}
           >
