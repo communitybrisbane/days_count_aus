@@ -51,6 +51,9 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
     });
   })();
 
+  // Only offer end times strictly after the chosen start ("Now" allows every upcoming hour)
+  const validEndOptions = endOptions.filter((o) => o.millis > startAtMillis);
+
   // Re-evaluate expiry every minute so cards disappear on time
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -422,7 +425,11 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                 <p className="text-xs font-bold text-gray-500 mb-1">From <span className="font-normal text-gray-400">({region && REGION_TZ[region] ? region : "Sydney"} time / {tzShort})</span></p>
                 <select
                   value={startAtMillis || ""}
-                  onChange={(e) => setStartAtMillis(Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setStartAtMillis(v);
+                    if (endAtMillis && endAtMillis <= v) setEndAtMillis(0);
+                  }}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent-orange mb-2"
                 >
                   <option value="">Now</option>
@@ -437,7 +444,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent-orange"
                 >
                   <option value="" disabled>Select end time</option>
-                  {endOptions.map((o) => (
+                  {validEndOptions.map((o) => (
                     <option key={o.millis} value={o.millis}>{o.label}</option>
                   ))}
                 </select>
