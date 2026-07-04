@@ -9,7 +9,6 @@ import type { UserPrivate } from "@/types";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
-import { fetchAdminConfig } from "@/lib/services/users";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -17,7 +16,8 @@ import { GroupListSkeleton } from "@/components/Skeleton";
 import GroupCard from "@/components/GroupCard";
 import { IconSearch, IconUsers, IconLock, FocusModeIcon } from "@/components/icons";
 import BannerCarousel from "@/components/BannerCarousel";
-import type { Group, AdminConfig } from "@/types";
+import MeetingBoard from "@/components/MeetingBoard";
+import type { Group } from "@/types";
 
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
@@ -31,7 +31,6 @@ export default function GroupsPage() {
   const [showActionChoice, setShowActionChoice] = useState(false);
 
   const [leaderNames, setLeaderNames] = useState<Record<string, string>>({});
-  const [meeting, setMeeting] = useState<{ label: string; url: string; description: string } | null>(null);
   const [kickedNotices, setKickedNotices] = useState<{ groupId: string; groupName: string; at: string }[]>([]);
 
   useEffect(() => {
@@ -61,18 +60,6 @@ export default function GroupsPage() {
     if (user) {
       // Mode groups are fully optional (join/leave freely) — no auto-rejoin here
       fetchGroups();
-      fetchAdminConfig().then((data) => {
-        if (data) {
-          const cfg = data as AdminConfig;
-          if (cfg.meetingLabel || cfg.meetingUrl) {
-            setMeeting({
-              label: cfg.meetingLabel || "Study Session",
-              url: cfg.meetingUrl || "",
-              description: cfg.meetingDescription || "No session scheduled",
-            });
-          }
-        }
-      }).catch(console.error);
     }
   }, [user]);
 
@@ -224,63 +211,8 @@ export default function GroupsPage() {
             <GroupListSkeleton />
           ) : (
             <>
-              {/* Study Meeting */}
-              {meeting && (
-                <div className="px-4 pt-2">
-                  {meeting.url ? (
-                    <a
-                      href={meeting.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block bg-gradient-to-br from-forest-mid to-forest rounded-2xl p-4 shadow-lg border border-forest-light/20 active:scale-[0.98] transition-transform"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden">
-                          <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm text-white truncate">
-                              {meeting.label}
-                            </p>
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                              LIVE
-                            </span>
-                          </div>
-                          <p className="text-xs text-white/60 mt-0.5">{meeting.description}</p>
-                        </div>
-                        <div className="shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  ) : (
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden opacity-40">
-                          <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-white/40">
-                            {meeting.label}
-                          </p>
-                          <p className="text-xs text-white/25 mt-0.5">
-                            {meeting.description}
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold text-white/20 px-3 py-1.5 rounded-full border border-white/10 shrink-0">
-                          Offline
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Live Meetings */}
+              <MeetingBoard currentUid={user?.uid} />
 
               {/* Kicked notices */}
               {kickedNotices.map((k) => (

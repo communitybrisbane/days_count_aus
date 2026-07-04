@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import * as nodemailer from "nodemailer";
@@ -685,5 +686,68 @@ export const onBlockListChanged = onDocumentWritten(
         console.log(`[BLOCK] Removed blockedBy ${userId} from ${targetUid}`);
       } catch {}
     }
+  }
+);
+
+// ─── Live Meetings ───
+// Anyone who knows the staff password can host/end a live meeting.
+// Password lives in the MEETING_PASSWORD secret — never in client code or Firestore.
+const meetingPassword = defineSecret("MEETING_PASSWORD");
+
+export const manageMeeting = onCall(
+  { region: "us-central1", secrets: [meetingPassword] },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Sign in required.");
+
+    const { action, password } = request.data as { action: string; password: string };
+    if (password !== meetingPassword.value()) {
+      throw new HttpsError("permission-denied", "Wrong password.");
+    }
+
+    if (action === "create") {
+      const { title, mode, url, joinType } = request.data as {
+        title: string; mode: string; url: string; joinType: string;
+      };
+      if (!title || typeof title !== "string" || title.trim().length === 0 || title.length > 30) {
+        throw new HttpsError("invalid-argument", "Title must be 1-30 characters.");
+      }
+      if (!["english", "skill", "challenge"].includes(mode)) {
+        throw new HttpsError("invalid-argument", "Invalid mode.");
+      }
+      if (typeof url !== "string" || !url.startsWith("https://") || url.length > 500) {
+        throw new HttpsError("invalid-argument", "URL must start with https://");
+      }
+      if (!["open", "friends"].includes(joinType)) {
+        throw new HttpsError("invalid-argument", "Invalid join type.");
+      }
+      // Host name is always the account display name (not editable)
+      const userSnap = await db.doc(`users/${uid}`).get();
+      const hostName = userSnap.data()?.displayName || "Host";
+
+      const ref = await db.collection("meetings").add({
+        title: title.trim(),
+        hostName,
+        hostUid: uid,
+        mode,
+        url,
+        joinType,
+        active: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { ok: true, meetingId: ref.id };
+    }
+
+    if (action === "end") {
+      const { meetingId } = request.data as { meetingId: string };
+      if (!meetingId || typeof meetingId !== "string") {
+        throw new HttpsError("invalid-argument", "meetingId required.");
+      }
+      // Any password holder may end any meeting (staff moderation)
+      await db.doc(`meetings/${meetingId}`).update({ active: false });
+      return { ok: true };
+    }
+
+    throw new HttpsError("invalid-argument", "Unknown action.");
   }
 );

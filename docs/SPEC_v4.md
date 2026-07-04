@@ -280,11 +280,13 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 **ルート**: `/groups`, `/groups/create`, `/groups/[groupId]`
 
-#### 24時間 Study Room（常設Zoom自習室）
-- GROUPSタブ最上部に常設の24時間Zoomリンクを表示。ユーザー同士がいつでも自習・交流できる場。
-- `admin_config/main` のフラットなフィールド `meetingLabel`, `meetingUrl`, `meetingDescription` から取得。
-- `meetingUrl` が設定されている場合: 緑のパルスドット + 「LIVE」バッジ + 「Join」ボタン（外部Zoomリンク）。
-- `meetingUrl` が未設定の場合: グレーのドット + 「Offline」表示。
+#### ライブミーティング（Live Meetings）
+- GROUPSタブ最上部の「Live Meetings」セクション。**運営パスワードを知っている人なら誰でもアプリ内から開催できる**（2026-07-04 に旧 24時間 Study Room / `admin_config.meeting*` フラットフィールドから置き換え）。
+- **データ**: `meetings` コレクション（`title`・`hostName`・`hostUid`・`mode`・`url`・`joinType`・`active`・`createdAt`）。書き込みはルールで全面禁止、`manageMeeting` Cloud Function（callable）経由のみ。
+- **開催**: 「+ Host」→ フォーム（パスワード / タイトル30字 / モード / httpsリンク / 公開範囲）→ `manageMeeting(action: "create")`。パスワードは Functions シークレット `MEETING_PASSWORD` でサーバー照合。開催者名はアカウントの displayName 固定（編集不可）。
+- **公開範囲（joinType）**: `open`（誰でも参加可）or `friends`（鍵アイコン表示。タップ時に「知り合い向け」確認モーダルを挟んでからリンクを開く）。ホストが開催時に選択。
+- **終了**: ホスト本人のカードに「End」ボタン（パスワード再入力）。パスワード保持者は誰のミーティングでも終了可能（モデレーション用途）。自動失効なし（ライブのみ・時刻概念なし）。
+- **表示**: モード色グラデーションのカードに タイトル / Hosted by {開催者名} / LIVEバッジ / 鍵アイコン（friendsのみ）。複数同時開催時は**4秒ごとに自動スクロールするカルーセル**+ドットインジケータ。0件時は「No live meeting / Offline」プレースホルダー。
 
 #### 公式グループ（Official Groups）
 - 各フォーカスモードごとに1つのモードグループが存在（`isOfficial: true`）。カードに「by mode」表示。
@@ -618,7 +620,7 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | フィールド | 型 | 説明 |
 |---|---|---|
 | bannerImageUrl | string | バナー画像URL |
-| meetingLabel / meetingUrl / meetingDescription | string | 24時間 Study Room 表示用（フラットフィールド） |
+| ~~meetingLabel / meetingUrl / meetingDescription~~ | string | 廃止（2026-07-04、`meetings` コレクションに移行） |
 | announcements | array | `{ title, body?, type, linkUrl?, linkLabel?, active }` |
 
 ### その他コレクション
