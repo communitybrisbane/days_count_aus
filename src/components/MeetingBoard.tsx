@@ -144,8 +144,12 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                 tabIndex={0}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl shrink-0 bg-white/20 flex items-center justify-center">
-                    <FocusModeIcon modeId={resolveMode(m.mode)} size={26} className="text-white" />
+                  <div className="w-12 h-12 rounded-xl shrink-0 bg-white/20 flex items-center justify-center overflow-hidden">
+                    {m.hostPhotoURL ? (
+                      <img src={m.hostPhotoURL} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <FocusModeIcon modeId={resolveMode(m.mode)} size={26} className="text-white" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -156,7 +160,12 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                         LIVE
                       </span>
                     </div>
-                    <p className="text-xs text-white/70 mt-0.5 truncate">Hosted by {m.hostName}</p>
+                    <p className="text-xs text-white/70 mt-0.5 truncate">
+                      Hosted by {m.hostName}
+                      {m.expiresAt && (
+                        <span className="text-white/50"> · until {new Date(m.expiresAt.toMillis()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      )}
+                    </p>
                   </div>
                   <div className="shrink-0 flex flex-col items-end gap-1.5">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">

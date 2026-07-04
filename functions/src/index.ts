@@ -727,10 +727,12 @@ export const manageMeeting = onCall(
       // Host name is always the account display name (not editable)
       const userSnap = await db.doc(`users/${uid}`).get();
       const hostName = userSnap.data()?.displayName || "Host";
+      const hostPhotoURL = userSnap.data()?.photoURL || "";
 
       const ref = await db.collection("meetings").add({
         title: title.trim(),
         hostName,
+        hostPhotoURL,
         hostUid: uid,
         mode,
         url,

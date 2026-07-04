@@ -94,6 +94,7 @@ export interface Meeting {
   id: string;
   title: string;
   hostName: string;
+  hostPhotoURL?: string;
   hostUid: string;
   mode: string;
   url: string;
