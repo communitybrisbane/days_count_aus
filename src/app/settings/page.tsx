@@ -322,10 +322,10 @@ export default function SettingsPage() {
 
             <div>
               <label className="text-xs text-white/60">Main Mode</label>
-              <div className="flex gap-1.5 mt-1 flex-wrap">
+              <div className="flex gap-1.5 mt-1">
                 {MAIN_MODE_OPTIONS.map((m) => (
                   <button key={m.id} onClick={() => setMainMode(m.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                    className={`flex-1 py-1.5 rounded-full text-xs font-medium text-center ${
                       mainMode === m.id
                         ? "bg-accent-orange text-white font-bold"
                         : "bg-white text-forest-mid"
