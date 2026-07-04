@@ -218,6 +218,29 @@ export const onLikeCreated = onDocumentCreated(
     // Don't notify if user liked their own post
     if (authorId === likerId) return;
 
+    // Receiver XP: +5 per like, capped per day. Granted server-side so the
+    // cap can't be bypassed and clients no longer write other users' XP.
+    const LIKE_RECEIVE_XP = 5;
+    const LIKE_RECEIVE_DAILY_MAX = 10;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await db.runTransaction(async (tx) => {
+        const userRef = db.doc(`users/${authorId}`);
+        const userSnap = await tx.get(userRef);
+        if (!userSnap.exists) return;
+        const u = userSnap.data()!;
+        const count = u.lastLikeReceivedDate === today ? (u.dailyLikeReceivedCount || 0) : 0;
+        if (count >= LIKE_RECEIVE_DAILY_MAX) return;
+        tx.update(userRef, {
+          totalXP: admin.firestore.FieldValue.increment(LIKE_RECEIVE_XP),
+          dailyLikeReceivedCount: count + 1,
+          lastLikeReceivedDate: today,
+        });
+      });
+    } catch (e) {
+      console.error(`Failed to grant receive-like XP to ${authorId}:`, e);
+    }
+
     // Rate-limit notifications per author (prevent rapid like spam from multiple users)
     const now = Date.now();
     const lastNotif = likeNotifCooldown.get(authorId) || 0;

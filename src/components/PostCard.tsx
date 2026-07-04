@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
@@ -202,10 +202,8 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       try {
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
+        // Receiver XP is granted server-side (onLikeCreated) with its own daily cap
         if (!isOwnPost && hasXPQuota) {
-          try {
-            await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
-          } catch {}
           try {
             const newDailyCount = profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1;
             await updateDoc(doc(db, "users", user.uid), {
