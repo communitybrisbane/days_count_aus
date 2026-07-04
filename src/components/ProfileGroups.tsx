@@ -17,7 +17,7 @@ export default function ProfileGroups({ groups, className = "mt-3" }: Props) {
   if (groups.length === 0) return null;
 
   return (
-    <div className={`flex gap-3 w-full overflow-x-auto scrollbar-hide px-2 ${className}`}>
+    <div className={`flex gap-3 w-full justify-center overflow-x-auto scrollbar-hide px-2 ${className}`}>
       {groups.map((g) => {
         const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(g.mode || ""));
         return (
