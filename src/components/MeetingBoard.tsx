@@ -94,6 +94,15 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
     window.open(m.url, "_blank", "noopener,noreferrer");
   };
 
+  // One live meeting per account — block the form early with a clear message
+  const handleHostClick = () => {
+    if (liveMeetings.some((m) => m.hostUid === currentUid)) {
+      alert("You already have a live meeting. End it first to host a new one.");
+      return;
+    }
+    setShowHostModal(true);
+  };
+
   const handleHost = async () => {
     if (submitting) return;
     if (!url.startsWith("https://")) {
@@ -242,7 +251,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
           {/* Become-a-host card — always the last slide */}
           <div className="w-full shrink-0 snap-center">
             <div
-              onClick={() => setShowHostModal(true)}
+              onClick={handleHostClick}
               className="bg-white/5 rounded-2xl p-4 border border-dashed border-white/20 cursor-pointer active:scale-[0.98] transition-transform h-full"
               role="button"
               tabIndex={0}
