@@ -706,8 +706,8 @@ export const manageMeeting = onCall(
     }
 
     if (action === "create") {
-      const { title, mode, url, joinType, durationHours } = request.data as {
-        title: string; mode: string; url: string; joinType: string; durationHours: number;
+      const { title, mode, url, joinType, expiresAtMillis } = request.data as {
+        title: string; mode: string; url: string; joinType: string; expiresAtMillis: number;
       };
       if (!title || typeof title !== "string" || title.trim().length === 0 || title.length > 30) {
         throw new HttpsError("invalid-argument", "Title must be 1-30 characters.");
@@ -721,8 +721,9 @@ export const manageMeeting = onCall(
       if (!["open", "friends"].includes(joinType)) {
         throw new HttpsError("invalid-argument", "Invalid join type.");
       }
-      if (![1, 2, 3, 6, 12].includes(durationHours)) {
-        throw new HttpsError("invalid-argument", "Invalid duration.");
+      // End time is a client-local round hour; server only sanity-checks the range
+      if (typeof expiresAtMillis !== "number" || expiresAtMillis <= Date.now() || expiresAtMillis > Date.now() + 24 * 3600_000) {
+        throw new HttpsError("invalid-argument", "End time must be within the next 24 hours.");
       }
       // Host name is always the account display name (not editable)
       const userSnap = await db.doc(`users/${uid}`).get();
@@ -740,7 +741,7 @@ export const manageMeeting = onCall(
         active: true,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         // Card auto-hides after this; the actual call ends whenever the host ends it externally
-        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + durationHours * 3600_000),
+        expiresAt: admin.firestore.Timestamp.fromMillis(expiresAtMillis),
       });
       return { ok: true, meetingId: ref.id };
     }

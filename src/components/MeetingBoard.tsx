@@ -28,8 +28,19 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
   const [mode, setMode] = useState("english");
   const [url, setUrl] = useState("");
   const [joinType, setJoinType] = useState<"open" | "friends">("open");
-  const [durationHours, setDurationHours] = useState(2);
+  const [endAtMillis, setEndAtMillis] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+
+  // Upcoming round hours (next 24h) the host can pick as the end time
+  const endOptions = (() => {
+    const first = new Date();
+    first.setMinutes(0, 0, 0);
+    first.setHours(first.getHours() + 1);
+    return Array.from({ length: 24 }, (_, i) => {
+      const t = first.getTime() + i * 3600_000;
+      return { millis: t, label: new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+    });
+  })();
 
   // Re-evaluate expiry every minute so cards disappear on time
   const [now, setNow] = useState(() => Date.now());
@@ -77,11 +88,15 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
       alert("Meeting link must start with https://");
       return;
     }
+    if (!endAtMillis) {
+      alert("Please pick an end time.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await manageMeeting({ action: "create", password, title, mode, url, joinType, durationHours });
+      await manageMeeting({ action: "create", password, title, mode, url, joinType, expiresAtMillis: endAtMillis });
       setShowHostModal(false);
-      setTitle(""); setUrl(""); setPassword(""); setJoinType("open");
+      setTitle(""); setUrl(""); setPassword(""); setJoinType("open"); setEndAtMillis(0);
     } catch (e) {
       alert((e as Error).message || "Failed to start meeting");
     } finally {
@@ -334,26 +349,23 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-500 mb-1">Show for</p>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 6, 12].map((h) => (
-                    <button
-                      key={h}
-                      onClick={() => setDurationHours(h)}
-                      className={`flex-1 py-2 rounded-full text-xs font-medium transition-all ${
-                        durationHours === h ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {h}h
-                    </button>
+                <p className="text-xs font-bold text-gray-500 mb-1">Until</p>
+                <select
+                  value={endAtMillis || ""}
+                  onChange={(e) => setEndAtMillis(Number(e.target.value))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent-orange"
+                >
+                  <option value="" disabled>Select end time</option>
+                  {endOptions.map((o) => (
+                    <option key={o.millis} value={o.millis}>{o.label}</option>
                   ))}
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1">The card disappears after this. Ending the actual call is up to you.</p>
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">The card disappears at this time. Ending the actual call is up to you.</p>
               </div>
               <p className="text-[10px] text-gray-400">Hosted as your account name.</p>
               <button
                 onClick={handleHost}
-                disabled={!password || !title.trim() || !url || submitting}
+                disabled={!password || !title.trim() || !url || !endAtMillis || submitting}
                 className="w-full py-3 text-sm font-bold text-white bg-accent-orange rounded-full disabled:opacity-40"
               >
                 {submitting ? "Starting..." : "Go Live"}
