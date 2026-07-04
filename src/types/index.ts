@@ -100,6 +100,7 @@ export interface Meeting {
   joinType: "open" | "friends";
   active: boolean;
   createdAt?: { toMillis(): number };
+  expiresAt?: { toMillis(): number };
 }
 
 /** Admin config (admin_config/main) — all flat fields editable in Firebase Console */

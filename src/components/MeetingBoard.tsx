@@ -28,7 +28,15 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
   const [mode, setMode] = useState("english");
   const [url, setUrl] = useState("");
   const [joinType, setJoinType] = useState<"open" | "friends">("open");
+  const [durationHours, setDurationHours] = useState(2);
   const [submitting, setSubmitting] = useState(false);
+
+  // Re-evaluate expiry every minute so cards disappear on time
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   // Live meetings feed
   useEffect(() => {
@@ -41,19 +49,23 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
     }, (err) => console.warn("Meetings listener error:", err));
   }, []);
 
+  // Hide expired meetings — the display window is set by the host; the actual
+  // call ends whenever the host ends it on the external service
+  const liveMeetings = meetings.filter((m) => !m.expiresAt || m.expiresAt.toMillis() > now);
+
   // Auto-scroll carousel when multiple meetings are live
   const scrollRef = useRef<HTMLDivElement>(null);
   const idxRef = useRef(0);
   useEffect(() => {
-    if (meetings.length < 2) return;
+    if (liveMeetings.length < 2) return;
     const timer = setInterval(() => {
       const el = scrollRef.current;
       if (!el) return;
-      idxRef.current = (idxRef.current + 1) % meetings.length;
+      idxRef.current = (idxRef.current + 1) % liveMeetings.length;
       el.scrollTo({ left: idxRef.current * el.clientWidth, behavior: "smooth" });
     }, 4000);
     return () => clearInterval(timer);
-  }, [meetings.length]);
+  }, [liveMeetings.length]);
 
   const openMeeting = (m: Meeting) => {
     window.open(m.url, "_blank", "noopener,noreferrer");
@@ -67,7 +79,7 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
     }
     setSubmitting(true);
     try {
-      await manageMeeting({ action: "create", password, title, mode, url, joinType });
+      await manageMeeting({ action: "create", password, title, mode, url, joinType, durationHours });
       setShowHostModal(false);
       setTitle(""); setUrl(""); setPassword(""); setJoinType("open");
     } catch (e) {
@@ -104,7 +116,7 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
         </button>
       </div>
 
-      {meetings.length === 0 ? (
+      {liveMeetings.length === 0 ? (
         /* Offline placeholder */
         <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
           <div className="flex items-center gap-3">
@@ -123,7 +135,7 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
       ) : (
         /* Auto-scrolling carousel of live meetings */
         <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl">
-          {meetings.map((m) => (
+          {liveMeetings.map((m) => (
             <div key={m.id} className="w-full shrink-0 snap-center">
               <div
                 onClick={() => (m.joinType === "friends" ? setFriendsConfirm(m) : openMeeting(m))}
@@ -169,9 +181,9 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
       )}
 
       {/* Dots for carousel */}
-      {meetings.length > 1 && (
+      {liveMeetings.length > 1 && (
         <div className="flex justify-center gap-1 mt-1.5">
-          {meetings.map((m, i) => (
+          {liveMeetings.map((m, i) => (
             <span key={m.id} className="w-1 h-1 rounded-full bg-white/25" aria-hidden="true" data-idx={i} />
           ))}
         </div>
@@ -297,7 +309,24 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-gray-400">Hosted as your account name. Remember to end the meeting when it&apos;s over.</p>
+              <div>
+                <p className="text-xs font-bold text-gray-500 mb-1">Show for</p>
+                <div className="flex gap-1.5">
+                  {[1, 2, 3, 6, 12].map((h) => (
+                    <button
+                      key={h}
+                      onClick={() => setDurationHours(h)}
+                      className={`flex-1 py-2 rounded-full text-xs font-medium transition-all ${
+                        durationHours === h ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {h}h
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">The card disappears after this. Ending the actual call is up to you.</p>
+              </div>
+              <p className="text-[10px] text-gray-400">Hosted as your account name.</p>
               <button
                 onClick={handleHost}
                 disabled={!password || !title.trim() || !url || submitting}

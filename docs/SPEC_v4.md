@@ -285,7 +285,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **データ**: `meetings` コレクション（`title`・`hostName`・`hostUid`・`mode`・`url`・`joinType`・`active`・`createdAt`）。書き込みはルールで全面禁止、`manageMeeting` Cloud Function（callable）経由のみ。
 - **開催**: 「+ Host」→ フォーム（パスワード / タイトル30字 / モード / httpsリンク / 公開範囲）→ `manageMeeting(action: "create")`。パスワードは Functions シークレット `MEETING_PASSWORD` でサーバー照合。開催者名はアカウントの displayName 固定（編集不可）。
 - **公開範囲（joinType）**: `open`（誰でも参加可）or `friends`（鍵アイコン表示。タップ時に「知り合い向け」確認モーダルを挟んでからリンクを開く）。ホストが開催時に選択。
-- **終了**: ホスト本人のカードに「End」ボタン（パスワード再入力）。パスワード保持者は誰のミーティングでも終了可能（モデレーション用途）。自動失効なし（ライブのみ・時刻概念なし）。
+- **終了**: ホスト本人のカードに「End」ボタン（パスワード再入力）。パスワード保持者は誰のミーティングでも終了可能（モデレーション用途）。加えて開催時に**表示時間（1h/2h/3h/6h/12h）**を選択し、`expiresAt` を過ぎたカードは自動で非表示（クライアント側で毎分再判定）。実際の会議の終了は遷移先のオンライン会議サービス上でホストが行う。
 - **表示**: モード色グラデーションのカードに タイトル / Hosted by {開催者名} / LIVEバッジ / 鍵アイコン（friendsのみ）。複数同時開催時は**4秒ごとに自動スクロールするカルーセル**+ドットインジケータ。0件時は「No live meeting / Offline」プレースホルダー。
 
 #### 公式グループ（Official Groups）
