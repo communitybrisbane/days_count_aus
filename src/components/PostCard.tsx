@@ -377,7 +377,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               {/* Diary text centered over the photo */}
               {post.content && (
                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-3">
-                  <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4 drop-shadow">
+                  <p className="max-w-[70%] text-white text-center font-medium text-xs leading-snug line-clamp-4 drop-shadow">
                     {post.content}
                   </p>
                 </div>
@@ -385,7 +385,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
             </>
           ) : (
             <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-3`}>
-              <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4">
+              <p className="max-w-[70%] text-white text-center font-medium text-xs leading-snug line-clamp-4">
                 {post.content}
               </p>
             </div>
@@ -492,7 +492,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
             {/* Diary text centered over the photo */}
             {post.content && (
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-6">
-                <p className="text-white text-center font-medium text-sm leading-relaxed drop-shadow">
+                <p className="max-w-[70%] text-white text-center font-medium text-sm leading-relaxed drop-shadow">
                   {post.content}
                 </p>
               </div>
@@ -500,7 +500,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           </>
         ) : (
           <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
-            <p className="text-white text-center font-medium text-sm leading-relaxed">
+            <p className="max-w-[70%] text-white text-center font-medium text-sm leading-relaxed">
               {post.content}
             </p>
           </div>

@@ -385,7 +385,7 @@ export default function PostPage() {
                 maxLength={POST_CONTENT_MAX}
                 rows={3}
                 placeholder={"What happened today?\n(English only)"}
-                className="w-full bg-transparent text-white text-center text-sm font-medium leading-relaxed placeholder-white/50 focus:outline-none resize-none drop-shadow"
+                className="w-[70%] bg-transparent text-white text-center text-sm font-medium leading-relaxed placeholder-white/50 focus:outline-none resize-none drop-shadow"
               />
             </div>
             {/* Visibility toggle — tap to switch, without opening the photo picker */}
