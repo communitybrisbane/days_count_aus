@@ -203,8 +203,8 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
       {/* End meeting modal */}
       {endTarget && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => { setEndTarget(null); setPassword(""); }} aria-hidden="true" />
-          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-5 max-w-sm mx-auto">
+          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => { setEndTarget(null); setPassword(""); }} aria-hidden="true" />
+          <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[60] bg-white rounded-2xl p-5 max-w-sm mx-auto">
             <h3 className="font-bold text-sm text-forest mb-1">End this meeting?</h3>
             <p className="text-xs text-gray-500 mb-3">&ldquo;{endTarget.title}&rdquo; will go offline for everyone.</p>
             <input
@@ -229,13 +229,13 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
       {/* Host meeting modal */}
       {showHostModal && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowHostModal(false)} aria-hidden="true" />
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up">
+          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowHostModal(false)} aria-hidden="true" />
+          <div className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-bold text-sm">Host a Meeting</h3>
               <button onClick={() => setShowHostModal(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
-            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}>
               <div>
                 <p className="text-xs font-bold text-gray-500 mb-1">Staff password</p>
                 <input
