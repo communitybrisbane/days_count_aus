@@ -410,15 +410,15 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           XP limit reached — like still counted!
         </div>
       )}
-      {/* Author header */}
-      <div className="flex items-center gap-3 p-3">
+      {/* Author header — kept as thin as the tags/likes rows */}
+      <div className="flex items-center gap-2 px-3 py-1">
         {authorProfile && (
           <Link href={`/user/${post.userId}`}>
             <Avatar
               photoURL={authorProfile.photoURL}
               displayName={authorProfile.displayName}
               uid={authorProfile.uid}
-              size={36}
+              size={28}
             />
           </Link>
         )}
