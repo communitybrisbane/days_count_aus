@@ -4,24 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/lib/firebase";
-import { FOCUS_MODES, GRADIENTS, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, resolveMode, REGION_TZ, DEFAULT_TZ } from "@/lib/constants";
 import { FocusModeIcon, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Meeting } from "@/types";
 
 const manageMeeting = httpsCallable(functions, "manageMeeting");
 
-// Meeting times are always shown in Australian Eastern Time (Sydney)
-const AU_TZ = "Australia/Sydney";
-const formatAU = (millis: number) =>
-  new Date(millis).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: AU_TZ });
+// Meeting times are shown in the viewer's registered region timezone (Sydney fallback)
 
 function modeGradient(mode: string): string {
   const idx = FOCUS_MODES.findIndex((m) => m.id === resolveMode(mode));
   return GRADIENTS[idx >= 0 ? idx : 0];
 }
 
-export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
+export default function MeetingBoard({ currentUid, region }: { currentUid?: string; region?: string }) {
+  const tz = (region && REGION_TZ[region]) || DEFAULT_TZ;
+  const tzShort = new Intl.DateTimeFormat("en-AU", { timeZone: tz, timeZoneName: "short" })
+    .formatToParts(new Date()).find((part) => part.type === "timeZoneName")?.value || "AEST";
+  const formatTime = (millis: number) =>
+    new Date(millis).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: tz });
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [showHostModal, setShowHostModal] = useState(false);
   const [friendsConfirm, setFriendsConfirm] = useState<Meeting | null>(null);
@@ -36,15 +38,15 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
   const [endAtMillis, setEndAtMillis] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  // Upcoming round hours in Australian time (next 24h) the host can pick as the end time
+  // Upcoming round hours in the viewer's region time (next 24h) the host can pick as the end time
   const endOptions = (() => {
     const nowD = new Date();
-    // Round up to the next full hour in Sydney (handles half-hour offset devices too)
-    const sydMinute = parseInt(new Intl.DateTimeFormat("en-GB", { timeZone: AU_TZ, minute: "numeric" }).format(nowD), 10);
-    const first = nowD.getTime() + (((60 - sydMinute) * 60 - nowD.getSeconds()) * 1000);
+    // Round up to the next full hour in the region tz (handles half-hour offset regions too)
+    const tzMinute = parseInt(new Intl.DateTimeFormat("en-GB", { timeZone: tz, minute: "numeric" }).format(nowD), 10);
+    const first = nowD.getTime() + (((60 - tzMinute) * 60 - nowD.getSeconds()) * 1000);
     return Array.from({ length: 24 }, (_, i) => {
       const t = first + i * 3600_000;
-      return { millis: t, label: formatAU(t) };
+      return { millis: t, label: formatTime(t) };
     });
   })();
 
@@ -183,7 +185,7 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                     <p className="text-xs text-white/70 mt-0.5 truncate">
                       Hosted by {m.hostName}
                       {m.expiresAt && (
-                        <span className="text-white/50"> · until {formatAU(m.expiresAt.toMillis())} AEST</span>
+                        <span className="text-white/50"> · until {formatTime(m.expiresAt.toMillis())} {tzShort}</span>
                       )}
                     </p>
                     <div className="flex items-center gap-1.5 mt-1.5">
@@ -355,7 +357,7 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-500 mb-1">Until <span className="font-normal text-gray-400">(Australia time / AEST)</span></p>
+                <p className="text-xs font-bold text-gray-500 mb-1">Until <span className="font-normal text-gray-400">({region && REGION_TZ[region] ? region : "Sydney"} time / {tzShort})</span></p>
                 <select
                   value={endAtMillis || ""}
                   onChange={(e) => setEndAtMillis(Number(e.target.value))}

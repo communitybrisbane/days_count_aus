@@ -83,6 +83,22 @@ export const LIKE_RECEIVE_XP = 5;
 /** Bottom navigation bar height (CSS value) — keep in sync with BottomNav h-10 */
 export const NAV_HEIGHT = "2.5rem";
 
+/** Region → IANA timezone (mirrors REGION_TZ in functions/src/index.ts) */
+export const REGION_TZ: Record<string, string> = {
+  "Sydney": "Australia/Sydney",
+  "Melbourne": "Australia/Melbourne",
+  "Hobart": "Australia/Hobart",
+  "Canberra": "Australia/Sydney",
+  "Brisbane": "Australia/Brisbane",
+  "Gold Coast": "Australia/Brisbane",
+  "Cairns": "Australia/Brisbane",
+  "Adelaide": "Australia/Adelaide",
+  "Darwin": "Australia/Darwin",
+  "Perth": "Australia/Perth",
+  "Japan": "Asia/Tokyo",
+};
+export const DEFAULT_TZ = "Australia/Sydney";
+
 export const REGIONS = [
   "Sydney",
   "Melbourne",

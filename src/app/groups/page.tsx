@@ -212,7 +212,7 @@ export default function GroupsPage() {
           ) : (
             <>
               {/* Live Meetings */}
-              <MeetingBoard currentUid={user?.uid} />
+              <MeetingBoard currentUid={user?.uid} region={profile?.region} />
 
               {/* Kicked notices */}
               {kickedNotices.map((k) => (
