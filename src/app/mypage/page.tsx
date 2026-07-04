@@ -123,7 +123,7 @@ export default function MyPage() {
         ) : filteredPosts.length === 0 ? (
           <p className="text-center text-white/40 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
         ) : (
-          <PostGrid posts={filteredPosts} onSelect={setSelectedIndex} />
+          <PostGrid posts={filteredPosts} onSelect={setSelectedIndex} showText={!modeFilter} />
         )}
       </div>
       </div>
