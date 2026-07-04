@@ -725,6 +725,20 @@ export const manageMeeting = onCall(
       if (typeof expiresAtMillis !== "number" || expiresAtMillis <= Date.now() || expiresAtMillis > Date.now() + 24 * 3600_000) {
         throw new HttpsError("invalid-argument", "End time must be within the next 24 hours.");
       }
+      // One live meeting per account: block if this host already has an active, unexpired one
+      const existing = await db.collection("meetings")
+        .where("hostUid", "==", uid)
+        .where("active", "==", true)
+        .get();
+      const nowMs = Date.now();
+      const hasLive = existing.docs.some((d) => {
+        const exp = d.data().expiresAt;
+        return !exp || exp.toMillis() > nowMs;
+      });
+      if (hasLive) {
+        throw new HttpsError("failed-precondition", "You already have a live meeting. End it first.");
+      }
+
       // Host name is always the account display name (not editable)
       const userSnap = await db.doc(`users/${uid}`).get();
       const hostName = userSnap.data()?.displayName || "Host";

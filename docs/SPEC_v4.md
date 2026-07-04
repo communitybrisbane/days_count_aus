@@ -283,7 +283,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 #### ライブミーティング（Live Meetings）
 - GROUPSタブ最上部の「Live Meetings」セクション。**運営パスワードを知っている人なら誰でもアプリ内から開催できる**（2026-07-04 に旧 24時間 Study Room / `admin_config.meeting*` フラットフィールドから置き換え）。
 - **データ**: `meetings` コレクション（`title`・`hostName`・`hostUid`・`mode`・`url`・`joinType`・`active`・`createdAt`）。書き込みはルールで全面禁止、`manageMeeting` Cloud Function（callable）経由のみ。
-- **開催**: 「+ Host」→ フォーム（パスワード / タイトル30字 / モード / httpsリンク / 公開範囲）→ `manageMeeting(action: "create")`。パスワードは Functions シークレット `MEETING_PASSWORD` でサーバー照合。開催者名はアカウントの displayName 固定（編集不可）。
+- **開催**: 「+ Host」→ フォーム（パスワード / タイトル30字 / モード / httpsリンク / 公開範囲）→ `manageMeeting(action: "create")`。パスワードは Functions シークレット `MEETING_PASSWORD` でサーバー照合。開催者名はアカウントの displayName 固定（編集不可）。**同一アカウントの同時開催は1件まで**（未終了・未失効のミーティングがあると新規開催はエラー）。
 - **公開範囲（joinType）**: `open`（誰でも参加可）or `friends`（鍵アイコン表示。タップ時に「知り合い向け」確認モーダルを挟んでからリンクを開く）。ホストが開催時に選択。
 - **終了**: ホスト本人のカードに「End」ボタン（パスワード再入力）。パスワード保持者は誰のミーティングでも終了可能（モデレーション用途）。加えて開催時に**終了時刻（次の24時間以内の毎正時から選択）**を設定し、`expiresAt` を過ぎたカードは自動で非表示（クライアント側で毎分再判定、カードに「until HH:MM」表示）。実際の会議の終了は遷移先のオンライン会議サービス上でホストが行う。
 - **表示**: モード色グラデーションのカードに タイトル / Hosted by {開催者名} / LIVEバッジ / 鍵アイコン（friendsのみ）。複数同時開催時は**4秒ごとに自動スクロールするカルーセル**+ドットインジケータ。0件時は「No live meeting / Offline」プレースホルダー。
