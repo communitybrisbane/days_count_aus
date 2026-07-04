@@ -76,28 +76,25 @@ export default function HomePage() {
     localStorage.setItem(key, "true");
   }, [dayCount, profile]);
 
-  // FCM: register token if already granted, or show banner for first-time choice
+  // FCM: register token if already granted. Otherwise keep showing the banner
+  // until permission is granted (per-type opt-outs live in Settings).
   useEffect(() => {
     if (!user) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
     if (Notification.permission === "granted") {
       requestFCMToken().then((token) => { if (token) saveFCMToken(user.uid, token); });
-    } else if (Notification.permission === "default" && !localStorage.getItem("notif_choice_made")) {
+    } else if (Notification.permission === "default") {
       setShowNotifBanner(true);
     }
   }, [user]);
 
-  const handleNotifYes = async () => {
+  const handleNotifEnable = async () => {
     if (!user) return;
     const token = await requestFCMToken();
     if (token) await saveFCMToken(user.uid, token);
-    setShowNotifBanner(false);
-    localStorage.setItem("notif_choice_made", "true");
-  };
-
-  const handleNotifNo = () => {
-    setShowNotifBanner(false);
-    localStorage.setItem("notif_choice_made", "true");
+    // Hide only if the browser dialog was resolved (granted or denied);
+    // dismissing the dialog keeps the banner for next visit
+    if (Notification.permission !== "default") setShowNotifBanner(false);
   };
 
 
@@ -203,16 +200,16 @@ export default function HomePage() {
       {/* ===== Scrollable content ===== */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
 
-      {/* Notification choice banner */}
+      {/* Notification banner — single CTA, shown until permission is resolved */}
       {showNotifBanner && (
         <div className="mx-5 mt-3 bg-forest-mid/40 border border-forest-light/20 rounded-xl px-4 py-3 flex items-center gap-3">
           <span className="text-xl">🔔</span>
-          <p className="flex-1 text-sm text-white/80">Turn on notifications?</p>
-          <button onClick={handleNotifYes} className="px-3 py-1.5 bg-accent-orange text-white text-xs font-bold rounded-lg">
-            Yes
-          </button>
-          <button onClick={handleNotifNo} className="px-3 py-1.5 bg-white/10 text-white/50 text-xs font-bold rounded-lg">
-            No
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-white/80 font-medium">Turn on notifications</p>
+            <p className="text-[10px] text-white/40 mt-0.5">You can choose which kinds in Settings</p>
+          </div>
+          <button onClick={handleNotifEnable} className="px-4 py-2 bg-accent-orange text-white text-xs font-bold rounded-lg shrink-0">
+            Enable
           </button>
         </div>
       )}

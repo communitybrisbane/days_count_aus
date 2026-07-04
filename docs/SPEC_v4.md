@@ -208,7 +208,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **XP/Lvバー**: コンパクトな1行表示（Lv + プログレスバー + 次Lvまでの残XP）。
 - **バナーカルーセル**: BannerCarousel + adminConfig のバナー画像。
 - **お知らせ**: ヒーローヘッダー直下（週間ゴールカードの上）に表示（2026-07-04に移動）。`admin_config/main.announcements` 配列から `active: true` のものを表示（info/warning/event 3タイプ、リンク付き対応）。お知らせカラー: info=green系、warning=red系、event=orange系。**右上の×で消せる**（タイトル+本文をキーに端末のlocalStorageへ記録。内容を1文字でも更新すると全員に再表示）。
-- **通知バナー**: 初回訪問時にプッシュ通知許可バナー表示（dismissで `localStorage` に記録）。
+- **通知バナー**: 「Enable」一択のCTAバナー（Noボタンなし）。ブラウザ許可が未解決（default）の間は毎回表示され、許可 or 拒否で消える。種類別のOFFは設定画面の3トグルで行う（2026-07-05変更）。
 - **フェーズ自動遷移**: 渡航予定日超過 or D+365超過時に ConfirmModal で切り替え提案。
 - **マイルストーン演出**: D+30, 100, 200, 365 到達時にフルスクリーンアニメーション。`localStorage` で表示済みフラグ管理（1回のみ表示）。
 
