@@ -302,12 +302,12 @@ export default function PostPage() {
         {/* ── PostCard-style preview ── */}
         <div className="mx-3 mt-3 bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
           {/* Author header — matches PostCard */}
-          <div className="flex items-center gap-3 p-3">
+          <div className="flex items-center gap-2 px-3 py-1">
             <Avatar
               photoURL={profile.photoURL}
               displayName={profile.displayName || "?"}
               uid={user?.uid || ""}
-              size={36}
+              size={28}
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">{profile.displayName || "You"}</p>
