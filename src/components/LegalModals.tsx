@@ -260,7 +260,7 @@ const TERMS_EN = `
 `;
 
 const PRIVACY_JA = `
-<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年3月24日</p>
+<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年7月4日</p>
 <p class="font-bold text-sm text-gray-800">第1条（運営者）</p>
 <p>Days Count in AUS（以下「本アプリ」）は、Count.（運営者: 岳尾拓馬、以下「運営者」）が運営しています。</p>
 <p class="font-bold text-sm text-gray-800">第2条（収集する情報）</p>
@@ -274,17 +274,20 @@ const PRIVACY_JA = `
 <p><b>c) ユーザー生成コンテンツ:</b></p>
 <p>・投稿（テキスト最大400文字、画像は圧縮後最大300KB）</p>
 <p>・グループメッセージ（最大100文字）、メッセージリアクション</p>
-<p>・いいね、フォロー、ブロック、通報</p>
+<p>・いいね、フォロー、ブロック、通報（ユーザー通報には理由とスクリーンショット画像が含まれ、モデレーション目的で運営者が確認します）</p>
+<p>・ライブミーティングの開催情報（タイトル・開催者名・プロフィール画像・外部リンク・開催時間。開催中は全利用者に表示されます）</p>
 <p><b>d) 自動収集データ:</b></p>
 <p>・XP、レベル、ストリーク数、活動タイムスタンプ</p>
 <p>・プッシュ通知トークン（通知を有効にしている場合）</p>
 <p>・Firebase Analyticsによる基本的な利用統計（ページビュー、セッション時間、デバイス情報）</p>
+<p>・フィードのパーソナライズ用データ（いいね・閲覧した投稿の傾向）と既読情報。<b>これらは利用者の端末内（localStorage）にのみ保存され、サーバーには送信されません</b></p>
 <p class="font-bold text-sm text-gray-800">第3条（情報の利用目的）</p>
 <p>・本アプリの機能提供・運営（投稿、グループ、探索、ストリーク、レベリング）</p>
 <p>・他の利用者への公開プロフィール表示（ニックネーム、写真、レベル、地域、フォーカスモード）</p>
 <p>・XP、レベル、ストリークの計算</p>
 <p>・プッシュ通知の送信（ストリーク警告、いいね通知。有効時のみ）</p>
 <p>・コンテンツのモデレーションおよびコミュニティガイドラインの遵守</p>
+<p>・フィード表示のパーソナライズ（処理は端末内で完結します）</p>
 <p>・集計された利用統計に基づくアプリの改善</p>
 <p>・公開投稿の本アプリの宣伝・広告・プロモーションへの利用</p>
 <p class="font-bold text-sm text-gray-800">第4条（画像処理）</p>
@@ -309,8 +312,10 @@ const PRIVACY_JA = `
 <p>本アプリは以下の第三者サービスを利用しています。</p>
 <p>・<b>Google Firebase:</b> 認証、データベース、ファイルストレージ、プッシュ通知、アナリティクス、Cloud Functions</p>
 <p>・<b>Vercel:</b> アプリのホスティングおよびデプロイ</p>
+<p>・<b>Sentry:</b> エラー監視。アプリでエラーが発生した際に、技術的情報（エラー内容、ブラウザ・デバイス情報）が送信されます。</p>
+<p>・<b>Google reCAPTCHA Enterprise（Firebase App Check）:</b> 不正アクセス防止のためのボット判定。</p>
 <p>・<b>スポンサー広告:</b> アプリ内にスポンサーによる広告が表示される場合があります。広告主に利用者の個人情報を提供することはありません。</p>
-<p>広告ネットワーク、トラッキングピクセル、その他の第三者アナリティクスは使用していません。</p>
+<p>広告ネットワーク、トラッキングピクセルは使用していません。</p>
 <p class="font-bold text-sm text-gray-800">第8条（利用者の権利）</p>
 <p>・<b>アクセス:</b> アプリ内でご自身のすべてのデータ（プロフィール、投稿、グループ）を確認できます。</p>
 <p>・<b>訂正:</b> プロフィールや投稿はいつでも編集できます。</p>
@@ -331,7 +336,7 @@ const PRIVACY_JA = `
 `;
 
 const PRIVACY_EN = `
-<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: March 24, 2026</p>
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: July 4, 2026</p>
 <p class="font-bold text-sm text-gray-800">Article 1 (Operator)</p>
 <p>Days Count in AUS (hereinafter "the App") is operated by Count. (Operator: Takuma Takeo, hereinafter "the Operator").</p>
 <p class="font-bold text-sm text-gray-800">Article 2 (Information We Collect)</p>
@@ -345,17 +350,20 @@ const PRIVACY_EN = `
 <p><b>c) User-generated content:</b></p>
 <p>・Posts (text up to 400 characters, images compressed to max 300KB)</p>
 <p>・Group messages (max 100 characters), message reactions</p>
-<p>・Likes, follows, blocks, reports</p>
+<p>・Likes, follows, blocks, reports (user reports include a reason and a screenshot image, which the Operator reviews for moderation purposes)</p>
+<p>・Live meeting details (title, host name, profile picture, external link, and time — visible to all users while live)</p>
 <p><b>d) Automatically collected data:</b></p>
 <p>・XP, level, streak count, activity timestamps</p>
 <p>・Push notification token (if notifications are enabled)</p>
 <p>・Basic usage statistics via Firebase Analytics (page views, session duration, device information)</p>
+<p>・Feed personalization data (which posts you like and view) and seen-post history. <b>These are stored only on your device (localStorage) and are never sent to our servers</b></p>
 <p class="font-bold text-sm text-gray-800">Article 3 (Purpose of Use)</p>
 <p>・Providing and operating the App's features (posts, groups, explore, streaks, leveling)</p>
 <p>・Displaying public profile information to other users (nickname, photo, level, region, focus mode)</p>
 <p>・Calculating XP, levels, and streaks</p>
 <p>・Sending push notifications (streak warnings, like notifications; only when enabled)</p>
 <p>・Content moderation and ensuring compliance with community guidelines</p>
+<p>・Personalizing your feed (processing happens entirely on your device)</p>
 <p>・Improving the App based on aggregated usage statistics</p>
 <p>・Using public posts for App promotion, advertising, and marketing</p>
 <p class="font-bold text-sm text-gray-800">Article 4 (Image Processing)</p>
@@ -380,8 +388,10 @@ const PRIVACY_EN = `
 <p>The App uses the following third-party services:</p>
 <p>・<b>Google Firebase:</b> Authentication, database, file storage, push notifications, analytics, Cloud Functions</p>
 <p>・<b>Vercel:</b> App hosting and deployment</p>
+<p>・<b>Sentry:</b> Error monitoring. When an error occurs in the App, technical information (error details, browser and device information) is transmitted.</p>
+<p>・<b>Google reCAPTCHA Enterprise (Firebase App Check):</b> Bot detection to prevent abuse.</p>
 <p>・<b>Sponsor ads:</b> Sponsor advertisements may be displayed within the App. No personal user information is shared with advertisers.</p>
-<p>We do not use ad networks, tracking pixels, or other third-party analytics.</p>
+<p>We do not use ad networks or tracking pixels.</p>
 <p class="font-bold text-sm text-gray-800">Article 8 (Your Rights)</p>
 <p>・<b>Access:</b> You can view all your data (profile, posts, groups) within the App.</p>
 <p>・<b>Correction:</b> You can edit your profile and posts at any time.</p>
