@@ -54,6 +54,28 @@ export async function getOfficialGroup(mode: string): Promise<Group | null> {
   return { id: modeDoc.id, ...modeDoc.data() } as Group;
 }
 
+/** Official "Ask Anything" Q&A group — mode-group treatment (slot-free, always joinable) */
+export const QA_GROUP_ID = "official-ask-anything";
+
+/**
+ * Join user to an official group by document ID.
+ * Skips if already a member. Sets lastRead.clearedAt so only post-join messages are visible.
+ */
+export async function joinOfficialGroupById(uid: string, groupId: string) {
+  const snap = await getDoc(doc(db, "groups", groupId));
+  if (!snap.exists() || snap.data().isClosed) return;
+  const memberIds: string[] = snap.data().memberIds || [];
+  if (memberIds.includes(uid)) return;
+
+  const { setDoc, Timestamp } = await import("firebase/firestore");
+  await updateDoc(doc(db, "groups", groupId), {
+    memberIds: arrayUnion(uid),
+    memberCount: increment(1),
+  });
+  await setDoc(doc(db, "groups", groupId, "lastRead", uid), { clearedAt: Timestamp.now() }, { merge: true });
+  await updateDoc(doc(db, "users", uid), { groupIds: arrayUnion(groupId) });
+}
+
 /**
  * Join user to the official group of the given mode.
  * Skips if already a member.

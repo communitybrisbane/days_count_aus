@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
-import { joinOfficialGroup } from "@/lib/groups";
+import { joinOfficialGroup, joinOfficialGroupById, QA_GROUP_ID } from "@/lib/groups";
 import dynamic from "next/dynamic";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -158,6 +158,8 @@ export default function OnboardingPage() {
         fcmToken: "",
       });
       await joinOfficialGroup(user.uid, mainMode);
+      // Everyone also starts in the official Q&A group (mode-group treatment)
+      await joinOfficialGroupById(user.uid, QA_GROUP_ID);
 
       await refreshProfile();
       router.replace("/home");
