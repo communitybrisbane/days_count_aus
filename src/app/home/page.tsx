@@ -225,7 +225,7 @@ export default function HomePage() {
                   <span className={`w-2 h-2 rounded-full ${c.dot} mt-1 shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-bold ${c.title}`}>{ann.title}</p>
-                    {ann.body && <p className="text-xs text-white/60 mt-0.5 leading-snug">{ann.body}</p>}
+                    {ann.body && <p className="text-xs text-white/60 mt-0.5 leading-snug whitespace-pre-line">{ann.body}</p>}
                     {ann.linkUrl && isSafeUrl(ann.linkUrl) && (
                       <a
                         href={ann.linkUrl}
