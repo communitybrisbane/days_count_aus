@@ -130,6 +130,20 @@ export async function getDailyPostCount(uid: string): Promise<number> {
   return snap.size;
 }
 
+/** Posts created in the last hour (for the client-side rate-limit check) */
+export async function getHourlyPostCount(uid: string): Promise<number> {
+  const hourAgo = new Date(Date.now() - 3600_000);
+  const q = query(
+    collection(db, "posts"),
+    where("userId", "==", uid),
+    where("createdAt", ">=", Timestamp.fromDate(hourAgo)),
+    orderBy("createdAt", "desc"),
+    limit(10)
+  );
+  const snap = await getDocs(q);
+  return snap.size;
+}
+
 interface CreatePostInput {
   userId: string;
   mode: string;

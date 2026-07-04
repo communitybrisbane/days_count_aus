@@ -260,7 +260,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **ハッシュタグ**: 画像下のタグ行で直接編集。入力と同時に `#` 付きでライブ表示、Enter/フォーカスアウトで確定、タグタップで削除。カスタムタグのみ・最大5個。
 - **禁止語句チェック**: 投稿前にクライアント側で照合。**単語境界マッチ**（"class" が "ass" に誤ヒットしない）。ワードリストは `moderation_config/main.bannedWords`（約80語: 罵倒・差別語・性的表現・ハラスメント）で運営が随時更新可。該当時は投稿ブロック。投稿後もCloud Function `moderatePost` が同リストで自動非表示判定。
 
-**投稿制限**: 1日複数回投稿可能。ただしXP付与は1日3回まで（`POST_XP_DAILY_MAX = 3`）。週間段階制XPは1日1回分のみ加算（`lastPostAt` で当日判定）。
+**投稿制限**: 1日複数回投稿可能。ただしXP付与は1日3回まで（`POST_XP_DAILY_MAX = 3`）。週間段階制XPは1日1回分のみ加算（`lastPostAt` で当日判定）。**レートリミット: 1時間5投稿まで**（クライアントで事前ブロック + サーバー側 `onPostCreatedXP` が超過分を自動非表示・`moderation_logs` に記録、2026-07-05〜）。XP・ストリークの付与は `onPostCreatedXP` Cloud Function によるサーバー権威計算（クライアントは表示用の楽観計算のみ、ルールでXP系フィールドの書き込みを全面禁止）。
 
 **画像保存先**: `posts/{userId}/{postId}.jpg`
 

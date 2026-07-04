@@ -3,7 +3,7 @@
 **Make Days Count** — ワーホリ365日で人生変える。
 
 ワーホリの毎日を英語で記録して、仲間と成長を共有できるジャーナルアプリ（PWA）。
-日数カウント・投稿・いいね/フォロー・XPとレベル・グループチャット・プッシュ通知を備える。
+日数カウント・投稿・いいね/フォロー・XPとレベル・グループチャット・ライブミーティング・プッシュ通知を備える。
 
 - 本番: https://days-count.com （Vercel: `days-count-aus`）
 - 仕様書: [`docs/SPEC_v4.md`](docs/SPEC_v4.md)
@@ -34,7 +34,8 @@ npm run lint
 | `src/app/` | 各ページ（home / explore / groups / post / mypage / settings ほか） |
 | `src/components/` | UIコンポーネント |
 | `src/lib/` | ロジック・Firebase・バリデーション |
-| `functions/` | Cloud Functions |
+| `src/hooks/` / `src/contexts/` / `src/types/` | カスタムフック・認証コンテキスト・型定義 |
+| `functions/` | Cloud Functions（全11個、XP付与・モデレーション・通知・ミーティング等） |
 | `docs/` | 仕様書・進捗メモ・広告素材（旧版仕様書は `docs/archive/`） |
 | `image/` | 広告/LP用スクリーンショット・デザイン素材（Git管理外・ローカルのみ） |
 | `firestore.rules` / `storage.rules` | Firebaseセキュリティルール |
