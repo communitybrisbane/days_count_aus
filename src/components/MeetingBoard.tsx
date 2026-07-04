@@ -137,15 +137,9 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
 
   return (
     <div className="px-4 pt-2">
-      {/* Section header with host entry point */}
-      <div className="flex items-center justify-between mb-2 px-1">
+      {/* Section header — hosting starts from the Become a Host card */}
+      <div className="mb-2 px-1">
         <p className="text-xs font-bold text-white/50">Live Meetings</p>
-        <button
-          onClick={() => setShowHostModal(true)}
-          className="text-[10px] font-bold text-white/40 border border-white/15 px-2 py-0.5 rounded-full active:text-white/70"
-        >
-          + Host
-        </button>
       </div>
 
       {/* Carousel: live meetings (or offline placeholder) + become-a-host card */}
