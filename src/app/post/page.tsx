@@ -358,24 +358,32 @@ export default function PostPage() {
             </div>
           </div>
 
-          {/* Image area — tappable to add/change photo */}
+          {/* Image area — diary text sits centered on the photo/gradient, like the final post */}
           <div
             className="relative cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             {imagePreview ? (
-              <div className="relative group">
+              <>
                 <img src={imagePreview} alt="" className="w-full aspect-square object-cover" />
-                <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
-                  <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change photo</span>
-                </div>
-              </div>
+                {/* Scrim for text readability */}
+                <div className="absolute inset-0 bg-black/20" />
+              </>
             ) : (
-              <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2`}>
-                <IconCamera size={28} className="text-white/40" />
-                <p className="text-white/40 text-xs font-medium">Tap to add photo</p>
-              </div>
+              <div className={`w-full aspect-square bg-gradient-to-br ${gradient}`} />
             )}
+            {/* Centered diary input over the image */}
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <textarea
+                value={content}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
+                maxLength={POST_CONTENT_MAX}
+                rows={4}
+                placeholder={"What happened today?\n(English only)"}
+                className="w-full bg-transparent text-white text-center text-sm font-medium leading-relaxed placeholder-white/50 focus:outline-none resize-none drop-shadow"
+              />
+            </div>
             {/* Visibility toggle — tap to switch, without opening the photo picker */}
             <button
               onClick={(e) => { e.stopPropagation(); setVisibility(visibility === "public" ? "private" : "public"); }}
@@ -385,19 +393,16 @@ export default function PostPage() {
               {visibility === "public" ? <IconGlobe size={14} /> : <IconLock size={14} />}
               {visibility === "public" ? "Public" : "Private"}
             </button>
+            {/* Photo hint */}
+            <div className="absolute bottom-2 right-2 bg-black/40 text-white rounded-full px-2.5 py-1 text-[10px] font-bold flex items-center gap-1 pointer-events-none">
+              <IconCamera size={12} />
+              {imagePreview ? "Change photo" : "Add photo"}
+            </div>
           </div>
 
-          {/* Content + tags — edited in place, styled like PostCard */}
+          {/* Tags + counter below the image */}
           <div className="p-3">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
-              maxLength={POST_CONTENT_MAX}
-              rows={3}
-              placeholder="What happened today? (English only)"
-              className="w-full text-sm text-gray-700 placeholder-gray-300 bg-transparent focus:outline-none resize-none"
-            />
-            <div className="flex items-center justify-between -mt-1">
+            <div className="flex items-center justify-between">
               <AsciiWarn show={showWarn} />
               <p className="text-[10px] text-gray-300 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
             </div>

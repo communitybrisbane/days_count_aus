@@ -372,7 +372,17 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         <XPToast xp={xpGained} show={showXP} />
         <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
           {post.imageUrl ? (
-            <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+            <>
+              <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+              {/* Diary text centered over the photo */}
+              {post.content && (
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-3">
+                  <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4 drop-shadow">
+                    {post.content}
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
             <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-3`}>
               <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4">
@@ -477,9 +487,19 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       {/* Image or gradient card */}
       <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
         {post.imageUrl ? (
-          <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+          <>
+            <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+            {/* Diary text centered over the photo */}
+            {post.content && (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-6">
+                <p className="text-white text-center font-medium text-sm leading-relaxed drop-shadow">
+                  {post.content}
+                </p>
+              </div>
+            )}
+          </>
         ) : (
-          <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
+          <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
             <p className="text-white text-center font-medium text-sm leading-relaxed">
               {post.content}
             </p>
@@ -500,15 +520,10 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-3">
-        {(post.content) && (
-          <p className="text-sm text-gray-700">
-            {post.content}
-          </p>
-        )}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+      {/* Tags (diary text lives on the image) */}
+      {post.tags && post.tags.length > 0 && (
+        <div className="px-3 pt-3">
+          <div className="flex flex-wrap gap-1">
             {post.tags.map((tag, i) => (
               <a
                 key={i}
@@ -520,12 +535,12 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               </a>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Actions */}
       {showActions && (
-        <div className="flex items-center justify-between px-3 pb-3">
+        <div className="flex items-center justify-between px-3 py-3">
           <div className="flex items-center gap-2">
             <button
               onClick={handleLike}
