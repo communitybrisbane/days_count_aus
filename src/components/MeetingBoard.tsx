@@ -243,7 +243,19 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-white/80">Become a Host</p>
-                  <p className="text-xs text-white/40 mt-0.5">Want to host a meeting? Contact <span className="font-bold text-accent-orange">count_taku</span> for the host pass</p>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    Want to host a meeting? Contact{" "}
+                    <a
+                      href="https://www.instagram.com/count_taku/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-bold text-accent-orange underline underline-offset-2"
+                    >
+                      count_taku
+                    </a>{" "}
+                    for the host pass
+                  </p>
                 </div>
                 <span className="text-xs font-bold text-white/60 px-3 py-1.5 rounded-full border border-white/20 shrink-0">
                   Host
@@ -289,7 +301,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Staff password"
+              placeholder="Host pass"
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange mb-3"
             />
             <div className="flex gap-2">
@@ -315,12 +327,12 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
             </div>
             <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}>
               <div>
-                <p className="text-xs font-bold text-gray-500 mb-1">Staff password</p>
+                <p className="text-xs font-bold text-gray-500 mb-1">Host pass</p>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
+                  placeholder="Host pass"
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange"
                 />
               </div>
