@@ -177,18 +177,6 @@ export async function isFirstPost(uid: string): Promise<boolean> {
 }
 
 
-export async function updateUserXPAndStreak(
-  uid: string,
-  xpGain: number,
-  newStreak: number
-): Promise<void> {
-  await updateDoc(doc(db, "users", uid), {
-    totalXP: increment(xpGain),
-    currentStreak: newStreak,
-    lastPostAt: new Date().toISOString(),
-  });
-}
-
 // ─── Moderation ───
 
 const REPORT_THRESHOLD = 3;

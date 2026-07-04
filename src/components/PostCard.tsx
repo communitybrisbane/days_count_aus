@@ -200,21 +200,14 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       try {
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
-        // Receiver XP is granted server-side (onLikeCreated) with its own daily cap
+        // Sender + receiver XP are granted server-side (onLikeCreated) with daily caps.
+        // Patch local state optimistically so quota UI stays responsive.
         if (!isOwnPost && hasXPQuota) {
-          try {
-            const newDailyCount = profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1;
-            await updateDoc(doc(db, "users", user.uid), {
-              totalXP: increment(LIKE_SEND_XP),
-              dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
-              lastLikeDate: today,
-            });
-            patchProfile({
-              totalXP: (profile.totalXP ?? 0) + LIKE_SEND_XP,
-              dailyLikeCount: newDailyCount,
-              lastLikeDate: today,
-            });
-          } catch {}
+          patchProfile({
+            totalXP: (profile.totalXP ?? 0) + LIKE_SEND_XP,
+            dailyLikeCount: profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1,
+            lastLikeDate: today,
+          });
           const prevLevel = calculateLevel(profile.totalXP ?? 0);
           const newLevel = calculateLevel((profile.totalXP ?? 0) + LIKE_SEND_XP);
           setXpGained(LIKE_SEND_XP);

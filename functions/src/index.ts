@@ -247,6 +247,27 @@ export const onLikeCreated = onDocumentCreated(
       console.error(`Failed to grant receive-like XP to ${authorId}:`, e);
     }
 
+    // Sender XP: +3 per like, capped at 5/day (server-authoritative)
+    const LIKE_SEND_XP = 3;
+    const LIKE_SEND_DAILY_MAX = 5;
+    try {
+      await db.runTransaction(async (tx) => {
+        const senderRef = db.doc(`users/${likerId}`);
+        const senderSnap = await tx.get(senderRef);
+        if (!senderSnap.exists) return;
+        const u = senderSnap.data()!;
+        const count = u.lastLikeDate === today ? (u.dailyLikeCount || 0) : 0;
+        if (count >= LIKE_SEND_DAILY_MAX) return;
+        tx.update(senderRef, {
+          totalXP: admin.firestore.FieldValue.increment(LIKE_SEND_XP),
+          dailyLikeCount: count + 1,
+          lastLikeDate: today,
+        });
+      });
+    } catch (e) {
+      console.error(`Failed to grant send-like XP to ${likerId}:`, e);
+    }
+
     // Rate-limit notifications per author (prevent rapid like spam from multiple users)
     const now = Date.now();
     const lastNotif = likeNotifCooldown.get(authorId) || 0;
@@ -807,3 +828,109 @@ export const manageMeeting = onCall(
     throw new HttpsError("invalid-argument", "Unknown action.");
   }
 );
+
+// ─── Server-authoritative post XP & streaks ───
+// Mirrors the client's display math exactly (UTC day semantics), but the
+// authoritative write happens here so XP/streaks can't be forged.
+const POST_XP = 10;
+const POST_XP_DAILY_MAX = 3;
+const WEEKLY_XP = [10, 12, 15, 20, 30, 40, 60];
+const WEEK_STREAK_THRESHOLD = 5;
+const WEEK_STREAK_BONUS = 5;
+const WEEK_STREAK_MAX = 10;
+
+function currentTuesdayUTC(now: Date): Date {
+  const day = now.getUTCDay();
+  const daysSinceTuesday = (day + 5) % 7;
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysSinceTuesday));
+}
+
+export const onPostCreatedXP = onDocumentCreated("posts/{postId}", async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+  const post = snap.data();
+  const uid = post.userId as string;
+  if (!uid) return;
+
+  await db.runTransaction(async (tx) => {
+    // Idempotency: retried triggers must not double-grant
+    const postRef = db.doc(`posts/${event.params.postId}`);
+    const postSnap = await tx.get(postRef);
+    if (!postSnap.exists || postSnap.data()!.xpProcessed) return;
+
+    const userRef = db.doc(`users/${uid}`);
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) return;
+    const user = userSnap.data()!;
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const alreadyPostedToday =
+      !!user.lastPostAt && new Date(user.lastPostAt).toISOString().slice(0, 10) === todayStr;
+
+    // Daily post count (including this post) — UTC day
+    const todayStart = new Date(`${todayStr}T00:00:00Z`);
+    const dailySnap = await tx.get(
+      db.collection("posts")
+        .where("userId", "==", uid)
+        .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(todayStart))
+        .limit(10)
+    );
+    let xp = 0;
+    if (dailySnap.size <= POST_XP_DAILY_MAX) xp += POST_XP;
+
+    let newStreak = user.currentStreak ?? 1;
+    const updates: Record<string, unknown> = {};
+
+    if (!alreadyPostedToday) {
+      // Distinct posting days this week (Tue start), before this post
+      const tuesdayStart = currentTuesdayUTC(now);
+      const weekSnap = await tx.get(
+        db.collection("posts")
+          .where("userId", "==", uid)
+          .where("status", "==", "active")
+          .orderBy("createdAt", "desc")
+          .limit(10)
+      );
+      const daysSet = new Set<string>();
+      weekSnap.docs.forEach((d) => {
+        const ca = d.data().createdAt;
+        if (ca?.toDate && ca.toDate() >= tuesdayStart) daysSet.add(ca.toDate().toISOString().slice(0, 10));
+      });
+      const weeklyBefore = daysSet.size - (daysSet.has(todayStr) ? 1 : 0);
+
+      const streakWeeks = Math.min(user.weekStreak || 0, WEEK_STREAK_MAX);
+      if (weeklyBefore < 7) {
+        xp += WEEKLY_XP[weeklyBefore] + streakWeeks * WEEK_STREAK_BONUS;
+      }
+
+      // Daily streak (UTC day comparison, same as legacy client logic)
+      newStreak = 1;
+      if (user.lastPostAt) {
+        const yesterday = new Date(now);
+        yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+        if (new Date(user.lastPostAt).toISOString().slice(0, 10) === yesterday.toISOString().slice(0, 10)) {
+          newStreak = (user.currentStreak ?? 0) + 1;
+        }
+      }
+
+      // Weekly challenge completion → advance week streak
+      if (weeklyBefore === WEEK_STREAK_THRESHOLD - 1) {
+        const currentTuesdayStr = tuesdayStart.toISOString().slice(0, 10);
+        const prevTuesday = new Date(tuesdayStart);
+        prevTuesday.setUTCDate(prevTuesday.getUTCDate() - 7);
+        const consecutive = user.lastCompletedWeekStart === prevTuesday.toISOString().slice(0, 10);
+        updates.weekStreak = consecutive ? (user.weekStreak || 0) + 1 : 1;
+        updates.lastCompletedWeekStart = currentTuesdayStr;
+      }
+    }
+
+    tx.update(userRef, {
+      ...updates,
+      totalXP: admin.firestore.FieldValue.increment(xp),
+      currentStreak: newStreak,
+      lastPostAt: now.toISOString(),
+    });
+    tx.update(postRef, { xpProcessed: true });
+  });
+});
