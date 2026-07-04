@@ -513,14 +513,14 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Tags (diary text lives on the image) */}
       {post.tags && post.tags.length > 0 && (
-        <div className="px-3 pt-1.5">
+        <div className="px-3 pt-0.5">
           <div className="flex flex-wrap gap-1">
             {post.tags.map((tag, i) => (
               <a
                 key={i}
                 href={`/explore?q=${encodeURIComponent(tag)}`}
                 onClick={(e) => { e.stopPropagation(); }}
-                className="text-[11px] text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0.5 active:bg-accent-orange/20 transition-colors"
+                className="text-[11px] text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0 leading-tight active:bg-accent-orange/20 transition-colors"
               >
                 {tag}
               </a>
