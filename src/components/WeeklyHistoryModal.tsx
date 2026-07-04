@@ -12,12 +12,10 @@ const MODE_BAR_COLORS: Record<string, string> = {
   english: "#3B82F6",   // blue
   skill: "#8B5CF6",     // violet
   challenge: "#10B981", // emerald
-  work: "#F97316",      // orange
-  chill: "#78716C",     // stone
 };
 
 // Mode order for consistent stacking
-const MODE_ORDER = ["english", "skill", "challenge", "work", "chill"];
+const MODE_ORDER = ["english", "skill", "challenge"];
 
 // Rainbow streak text colors matching WeeklyChallenge
 const STREAK_TEXT_COLORS = [

@@ -26,14 +26,13 @@ import { IconEucalyptus, IconSearch, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { rankPosts, markSeen, recordInteraction } from "@/lib/feedScore";
+import { getBlockedByIds } from "@/lib/services/users";
 
 const PAGE_SIZE = 20;
 // First page of the ranked feed pulls a larger candidate pool so scoring has
 // room to reorder — ranking 20 time-ordered docs is barely better than
 // chronological.
 const FIRST_PAGE_CANDIDATES = 60;
-
-type SortTab = "new" | "popular";
 
 export default function ExplorePage() {
   useAuthGuard({ requireProfile: false });
@@ -42,7 +41,6 @@ export default function ExplorePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
-  const [sortTab, setSortTab] = useState<SortTab>("new");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchUserIds, setSearchUserIds] = useState<string[] | null>(null);
@@ -57,6 +55,13 @@ export default function ExplorePage() {
   profileRef.current = profile;
   const privateDataRef = useRef(privateData);
   privateDataRef.current = privateData;
+
+  // Mutual invisibility: also hide posts from users who blocked me
+  const blockedByRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    getBlockedByIds(user.uid).then((ids) => { blockedByRef.current = ids; });
+  }, [user]);
   const followingRef = useRef(following);
   followingRef.current = following;
   const fetchPosts = useCallback(
@@ -71,15 +76,11 @@ export default function ExplorePage() {
         if (modeFilter) {
           constraints.push(where("mode", "==", modeFilter));
         }
-        if (sortTab === "popular") {
-          constraints.push(orderBy("likeCount", "desc"));
-        } else {
-          constraints.push(orderBy("createdAt", "desc"));
-        }
+        constraints.push(orderBy("createdAt", "desc"));
         if (!reset && lastDocRef.current) {
           constraints.push(startAfter(lastDocRef.current));
         }
-        const isRankedFeed = sortTab === "new" && searchUserIds === null && !searchTag;
+        const isRankedFeed = searchUserIds === null && !searchTag;
         const fetchSize = isRankedFeed && reset ? FIRST_PAGE_CANDIDATES : PAGE_SIZE;
         constraints.push(limit(fetchSize));
 
@@ -92,6 +93,10 @@ export default function ExplorePage() {
           newPosts = newPosts.filter(
             (p) => !privateDataRef.current!.blockedUsers.includes(p.userId)
           );
+        }
+
+        if (blockedByRef.current.length) {
+          newPosts = newPosts.filter((p) => !blockedByRef.current.includes(p.userId));
         }
 
         if (privateDataRef.current?.reportedPosts?.length) {
@@ -139,7 +144,7 @@ export default function ExplorePage() {
         setLoadingPosts(false);
       }
     },
-    [sortTab, modeFilter, searchUserIds, searchTag]
+    [modeFilter, searchUserIds, searchTag]
   );
 
   // Impression tracking: mark a post "seen" only once it's actually on screen
@@ -310,28 +315,11 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Sort tabs: New / Popular */}
-        <div className="flex px-4 gap-2 pb-2">
-          {(["new", "popular"] as SortTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSortTab(tab)}
-              className={`flex-1 py-1.5 rounded-full text-xs font-bold text-center transition-all ${
-                sortTab === tab
-                  ? "bg-accent-orange text-white"
-                  : "bg-forest-light/20 text-white/50"
-              }`}
-            >
-              {tab === "new" ? "New" : "Popular"}
-            </button>
-          ))}
-        </div>
-
         {/* Mode filter tabs */}
-        <div className="flex px-4 gap-1.5 pb-2 overflow-x-auto scrollbar-hide">
+        <div className="flex px-4 gap-1.5 pb-2">
           <button
             onClick={() => setModeFilter("")}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+            className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
               !modeFilter ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
             }`}
           >
@@ -341,7 +329,7 @@ export default function ExplorePage() {
             <button
               key={m.id}
               onClick={() => setModeFilter(modeFilter === m.id ? "" : m.id)}
-              className={`shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-bold transition-all ${
                 modeFilter === m.id ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
               }`}
             >

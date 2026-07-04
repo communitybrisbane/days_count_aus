@@ -26,7 +26,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
-import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, resolveMode } from "@/lib/constants";
+import { fetchUserGroups } from "@/lib/groups";
+import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, GROUP_JOIN_LEVEL, getMaxCommunitySlots, resolveMode } from "@/lib/constants";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -76,22 +77,6 @@ export default function GroupChatPage() {
       const snap = await getDoc(doc(db, "groups", groupId));
       if (!snap.exists()) return;
       const data = { id: snap.id, ...snap.data() } as Group;
-
-      if (data.isOfficial && !data.iconUrl && user && !data.memberIds.includes(user.uid)) {
-        try {
-          await updateDoc(doc(db, "groups", groupId), {
-            memberIds: arrayUnion(user.uid),
-            memberCount: increment(1),
-          });
-          await updateDoc(doc(db, "users", user.uid), {
-            groupIds: arrayUnion(groupId),
-          });
-          data.memberIds = [...data.memberIds, user.uid];
-          data.memberCount = data.memberCount + 1;
-        } catch (err) {
-          console.warn("Auto-join official group failed:", err);
-        }
-      }
 
       setGroup(data);
       setEditGoal(data.goal || "");
@@ -191,15 +176,18 @@ export default function GroupChatPage() {
       alert("You cannot rejoin this group.");
       return;
     }
-    if (userLevel < 5) {
-      alert("You need Lv.5 or higher to join a community.");
-      return;
-    }
-    // Group limit: max 2 groups excluding mode group (mode group + 2 = 3 total in groupIds)
+    // Mode groups are open to everyone — level and slot limits apply to communities only
     if (!isModeGroup) {
-      const myGroupIds = profile?.groupIds || [];
-      if (myGroupIds.length >= 3) {
-        alert("Max 2 groups. Please leave one first.");
+      if (userLevel < GROUP_JOIN_LEVEL) {
+        alert(`You need Lv.${GROUP_JOIN_LEVEL} or higher to join a community.`);
+        return;
+      }
+      // Membership slots: level-tiered cap on communities you belong to (created or joined; mode groups are free)
+      const maxSlots = getMaxCommunitySlots(userLevel);
+      const myGroups = await fetchUserGroups(profile?.groupIds || []);
+      const communityCount = myGroups.filter((g) => !g.isOfficial).length;
+      if (communityCount >= maxSlots) {
+        alert(`Your community slots are full (${communityCount}/${maxSlots}). Please leave one first.`);
         return;
       }
     }
@@ -225,6 +213,10 @@ export default function GroupChatPage() {
       memberIds: arrayUnion(user.uid),
       memberCount: increment(1),
     });
+    // New members only see messages sent after they joined
+    const joinedAt = Timestamp.now();
+    await setDoc(doc(db, "groups", groupId, "lastRead", user.uid), { clearedAt: joinedAt }, { merge: true });
+    setClearedAt(joinedAt);
     await updateDoc(doc(db, "users", user.uid), { groupIds: arrayUnion(groupId) });
     await addSystemMessage(`${profile?.displayName || "Someone"} joined the group`);
     setGroup((g) => g ? { ...g, memberIds: [...g.memberIds, user.uid], memberCount: g.memberCount + 1 } : g);
@@ -232,13 +224,14 @@ export default function GroupChatPage() {
   };
 
   const [showLeaderExitModal, setShowLeaderExitModal] = useState(false);
-  const [transferTarget, setTransferTarget] = useState<string | null>(null);
+  const [finalMessage, setFinalMessage] = useState("");
+  const [disbanding, setDisbanding] = useState(false);
 
   const handleLeaveConfirm = async () => {
     if (!user || !group) return;
     setShowLeaveModal(false);
-    if (isLeader) {
-      // Leader: show transfer/disband choice
+    if (isLeader && !isModeGroup) {
+      // Leader leaving disbands the group. With members present, offer one final message first.
       const otherMembers = group.memberIds.filter((id) => id !== user.uid);
       if (otherMembers.length === 0) {
         // No other members — just close
@@ -262,30 +255,34 @@ export default function GroupChatPage() {
     router.replace("/groups");
   };
 
-  const handleTransferAndLeave = async () => {
-    if (!user || !group || !transferTarget) return;
-    const targetName = memberProfiles[transferTarget]?.displayName || "Someone";
-    await addSystemMessage(`${profile?.displayName || "Someone"} left the group. ${targetName} is the new leader`);
-    await updateDoc(doc(db, "groups", groupId), {
-      creatorId: transferTarget,
-      memberIds: arrayRemove(user.uid),
-      memberCount: increment(-1),
-    });
-    await updateDoc(doc(db, "users", user.uid), { groupIds: arrayRemove(groupId) });
-    await refreshProfile();
-    setShowLeaderExitModal(false);
-    router.replace("/groups");
-  };
-
-  const handleDisbandGroup = async () => {
-    if (!user || !group) return;
-    if (!confirm("This will permanently close the group for everyone. Are you sure?")) return;
-    await addSystemMessage("Leader closed the group");
-    await updateDoc(doc(db, "groups", groupId), { isClosed: true });
-    await updateDoc(doc(db, "users", user.uid), { groupIds: arrayRemove(groupId) });
-    await refreshProfile();
-    setShowLeaderExitModal(false);
-    router.replace("/groups");
+  const handleLeaderDisband = async () => {
+    if (!user || !group || disbanding) return;
+    // Same input rules as regular chat messages
+    const farewell = finalMessage.trim().slice(0, MESSAGE_CHAR_LIMIT);
+    if (farewell && URL_PATTERN.test(farewell)) {
+      alert("Links are not allowed in group chat.");
+      return;
+    }
+    setDisbanding(true);
+    try {
+      // Final message must go out before the group is closed (closed groups are read-only)
+      if (farewell) {
+        await addDoc(collection(db, "groups", groupId, "messages"), {
+          senderId: user.uid,
+          text: farewell,
+          createdAt: serverTimestamp(),
+          reactions: {},
+        });
+      }
+      await addSystemMessage("The leader has left — this group is now closed");
+      await updateDoc(doc(db, "groups", groupId), { isClosed: true });
+      await updateDoc(doc(db, "users", user.uid), { groupIds: arrayRemove(groupId) });
+      await refreshProfile();
+      setShowLeaderExitModal(false);
+      router.replace("/groups");
+    } finally {
+      setDisbanding(false);
+    }
   };
 
   const handleKick = async (uid: string) => {
@@ -425,7 +422,7 @@ export default function GroupChatPage() {
               <Image src={group.iconUrl} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-forest-light/30 flex items-center justify-center">
-                <FocusModeIcon modeId={group.mode || "chill"} size={22} className="text-white/60" />
+                <FocusModeIcon modeId={group.mode || ""} size={22} className="text-white/60" />
               </div>
             )}
             <input ref={iconInputRef} type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
@@ -455,8 +452,10 @@ export default function GroupChatPage() {
             )}
             {isClosed ? (
               <span className="text-xs text-red-400/70 px-2 py-1">Closed</span>
-            ) : isModeGroup ? (
-              <span className="text-xs bg-accent-orange text-white px-2.5 py-1 rounded-full">Official</span>
+            ) : isModeGroup && !isMember ? (
+              <button onClick={handleJoinAttempt} className="bg-accent-orange text-white text-sm px-4 py-1.5 rounded-full flex items-center gap-1">
+                Join
+              </button>
             ) : isMember ? (
               <button onClick={() => setShowLeaveModal(true)} className="text-sm text-red-400 px-2 py-1">Leave</button>
             ) : !isFull && userLevel >= 5 ? (
@@ -538,7 +537,7 @@ export default function GroupChatPage() {
                   <Image src={group.iconUrl} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-forest-light/20 flex items-center justify-center">
-                    <FocusModeIcon modeId={group.mode || "chill"} size={16} className="text-forest-mid" />
+                    <FocusModeIcon modeId={group.mode || ""} size={16} className="text-forest-mid" />
                   </div>
                 )}
                 <span className="text-xs text-gray-500 font-medium">Change icon</span>
@@ -606,7 +605,7 @@ export default function GroupChatPage() {
       {showLeaveModal && (
         <ConfirmModal
           title="Leave Community"
-          message="Are you sure you want to leave this community?"
+          message={isLeader && !isModeGroup ? "You are the leader — leaving will close this community for everyone." : "Are you sure you want to leave this community?"}
           confirmLabel="Leave"
           confirmVariant="danger"
           onConfirm={handleLeaveConfirm}
@@ -619,54 +618,35 @@ export default function GroupChatPage() {
           <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowLeaderExitModal(false)} aria-hidden="true" />
           <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[70dvh] flex flex-col animate-slide-up">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <h3 className="font-bold text-sm">Leave as Leader</h3>
+              <h3 className="font-bold text-sm">Leave &amp; Close Community</h3>
               <button onClick={() => setShowLeaderExitModal(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
             <div className="p-4 space-y-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-              {/* Transfer option */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-sm font-bold text-gray-800 mb-1">Transfer Leadership</p>
-                <p className="text-xs text-gray-500 mb-3">Choose a member to become the new leader. You will leave the group.</p>
-                <div className="space-y-2">
-                  {group.memberIds.filter((id) => id !== user?.uid).map((uid) => {
-                    const member = memberProfiles[uid];
-                    return (
-                      <button
-                        key={uid}
-                        onClick={() => setTransferTarget(uid)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all ${
-                          transferTarget === uid ? "bg-accent-orange/10 border border-accent-orange" : "bg-white border border-gray-200"
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0 relative">
-                          {member?.photoURL && <Image src={member.photoURL} alt="" width={32} height={32} className="object-cover w-full h-full" />}
-                        </div>
-                        <span className="text-sm font-medium truncate">{member?.displayName || uid.slice(0, 8)}</span>
-                        {transferTarget === uid && <span className="ml-auto text-accent-orange text-xs font-bold">Selected</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={handleTransferAndLeave}
-                  disabled={!transferTarget}
-                  className="w-full mt-3 py-2.5 text-sm font-bold text-white bg-forest-mid rounded-full disabled:opacity-30"
-                >
-                  Transfer & Leave
-                </button>
-              </div>
-
-              {/* Disband option */}
               <div className="bg-red-50 rounded-xl p-4">
-                <p className="text-sm font-bold text-red-600 mb-1">Close Community</p>
-                <p className="text-xs text-red-400 mb-3">Permanently close the group for all members. This cannot be undone.</p>
-                <button
-                  onClick={handleDisbandGroup}
-                  className="w-full py-2.5 text-sm font-bold text-white bg-red-500 rounded-full active:bg-red-600"
-                >
-                  Close Community
-                </button>
+                <p className="text-sm font-bold text-red-600 mb-1">Leaving closes this community</p>
+                <p className="text-xs text-red-400">When the leader leaves, the group is closed for all members. This cannot be undone. Members can still read past messages.</p>
               </div>
+              <div>
+                <p className="text-sm font-bold text-gray-800 mb-1">Final message <span className="font-normal text-gray-400">(optional)</span></p>
+                <p className="text-xs text-gray-500 mb-2">Leave one last message for your members before the group closes.</p>
+                <textarea
+                  value={finalMessage}
+                  onChange={(e) => setFinalMessage(sanitize(e.target.value).slice(0, MESSAGE_CHAR_LIMIT))}
+                  maxLength={MESSAGE_CHAR_LIMIT}
+                  rows={3}
+                  placeholder="Thanks for everything, everyone!"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-forest-mid"
+                />
+                {showWarn && <p className="text-[10px] text-red-400 mt-1">English characters only</p>}
+                <p className="text-[10px] text-gray-400 mt-1 text-right">{finalMessage.length}/{MESSAGE_CHAR_LIMIT}</p>
+              </div>
+              <button
+                onClick={handleLeaderDisband}
+                disabled={disbanding}
+                className="w-full py-2.5 text-sm font-bold text-white bg-red-500 rounded-full active:bg-red-600 disabled:opacity-50"
+              >
+                {disbanding ? "Closing..." : finalMessage.trim() ? "Send & Close Community" : "Close Community"}
+              </button>
             </div>
           </div>
         </>

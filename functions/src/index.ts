@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import * as nodemailer from "nodemailer";
@@ -41,7 +42,13 @@ async function getBannedWords(): Promise<string[]> {
  */
 function checkBannedWords(text: string, bannedWords: string[]): string[] {
   const lower = text.toLowerCase();
-  return bannedWords.filter((word) => lower.includes(word.toLowerCase()));
+  return bannedWords.filter((word) => {
+    const w = word.toLowerCase().trim();
+    if (!w) return false;
+    // Word-boundary match so e.g. "class" doesn't trip on "ass"
+    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`).test(lower);
+  });
 }
 
 /**
@@ -216,6 +223,29 @@ export const onLikeCreated = onDocumentCreated(
 
     // Don't notify if user liked their own post
     if (authorId === likerId) return;
+
+    // Receiver XP: +5 per like, capped per day. Granted server-side so the
+    // cap can't be bypassed and clients no longer write other users' XP.
+    const LIKE_RECEIVE_XP = 5;
+    const LIKE_RECEIVE_DAILY_MAX = 10;
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await db.runTransaction(async (tx) => {
+        const userRef = db.doc(`users/${authorId}`);
+        const userSnap = await tx.get(userRef);
+        if (!userSnap.exists) return;
+        const u = userSnap.data()!;
+        const count = u.lastLikeReceivedDate === today ? (u.dailyLikeReceivedCount || 0) : 0;
+        if (count >= LIKE_RECEIVE_DAILY_MAX) return;
+        tx.update(userRef, {
+          totalXP: admin.firestore.FieldValue.increment(LIKE_RECEIVE_XP),
+          dailyLikeReceivedCount: count + 1,
+          lastLikeReceivedDate: today,
+        });
+      });
+    } catch (e) {
+      console.error(`Failed to grant receive-like XP to ${authorId}:`, e);
+    }
 
     // Rate-limit notifications per author (prevent rapid like spam from multiple users)
     const now = Date.now();
@@ -685,5 +715,95 @@ export const onBlockListChanged = onDocumentWritten(
         console.log(`[BLOCK] Removed blockedBy ${userId} from ${targetUid}`);
       } catch {}
     }
+  }
+);
+
+// ─── Live Meetings ───
+// Anyone who knows the staff password can host/end a live meeting.
+// Password lives in the MEETING_PASSWORD secret — never in client code or Firestore.
+const meetingPassword = defineSecret("MEETING_PASSWORD");
+
+export const manageMeeting = onCall(
+  { region: "us-central1", secrets: [meetingPassword] },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Sign in required.");
+
+    const { action, password } = request.data as { action: string; password: string };
+    if (password !== meetingPassword.value()) {
+      throw new HttpsError("permission-denied", "Wrong password.");
+    }
+
+    if (action === "create") {
+      const { title, mode, url, joinType, expiresAtMillis, startsAtMillis } = request.data as {
+        title: string; mode: string; url: string; joinType: string; expiresAtMillis: number; startsAtMillis: number;
+      };
+      if (!title || typeof title !== "string" || title.trim().length === 0 || title.length > 30) {
+        throw new HttpsError("invalid-argument", "Title must be 1-30 characters.");
+      }
+      if (!["english", "skill", "challenge"].includes(mode)) {
+        throw new HttpsError("invalid-argument", "Invalid mode.");
+      }
+      if (typeof url !== "string" || !url.startsWith("https://") || url.length > 500) {
+        throw new HttpsError("invalid-argument", "URL must start with https://");
+      }
+      if (!["open", "friends"].includes(joinType)) {
+        throw new HttpsError("invalid-argument", "Invalid join type.");
+      }
+      // Times are client-local round hours; server only sanity-checks the ranges
+      if (typeof expiresAtMillis !== "number" || expiresAtMillis <= Date.now() || expiresAtMillis > Date.now() + 24 * 3600_000) {
+        throw new HttpsError("invalid-argument", "End time must be within the next 24 hours.");
+      }
+      if (typeof startsAtMillis !== "number" || startsAtMillis < Date.now() - 3600_000 || startsAtMillis >= expiresAtMillis) {
+        throw new HttpsError("invalid-argument", "Start time must be before the end time.");
+      }
+      // One live meeting per account: block if this host already has an active, unexpired one
+      const existing = await db.collection("meetings")
+        .where("hostUid", "==", uid)
+        .where("active", "==", true)
+        .get();
+      const nowMs = Date.now();
+      const hasLive = existing.docs.some((d) => {
+        const exp = d.data().expiresAt;
+        return !exp || exp.toMillis() > nowMs;
+      });
+      if (hasLive) {
+        throw new HttpsError("failed-precondition", "You already have a live meeting. End it first.");
+      }
+
+      // Host name is always the account display name (not editable)
+      const userSnap = await db.doc(`users/${uid}`).get();
+      const hostName = userSnap.data()?.displayName || "Host";
+      const hostPhotoURL = userSnap.data()?.photoURL || "";
+
+      const ref = await db.collection("meetings").add({
+        title: title.trim(),
+        hostName,
+        hostPhotoURL,
+        hostUid: uid,
+        mode,
+        url,
+        joinType,
+        active: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        // Card shows from 15 min before startsAt and auto-hides at expiresAt;
+        // the actual call ends whenever the host ends it externally
+        startsAt: admin.firestore.Timestamp.fromMillis(startsAtMillis),
+        expiresAt: admin.firestore.Timestamp.fromMillis(expiresAtMillis),
+      });
+      return { ok: true, meetingId: ref.id };
+    }
+
+    if (action === "end") {
+      const { meetingId } = request.data as { meetingId: string };
+      if (!meetingId || typeof meetingId !== "string") {
+        throw new HttpsError("invalid-argument", "meetingId required.");
+      }
+      // Any password holder may end any meeting (staff moderation)
+      await db.doc(`meetings/${meetingId}`).update({ active: false });
+      return { ok: true };
+    }
+
+    throw new HttpsError("invalid-argument", "Unknown action.");
   }
 );

@@ -11,6 +11,7 @@ import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, contain
 import dynamic from "next/dynamic";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
+import RegionWheelModal from "@/components/RegionWheelModal";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import Avatar from "@/components/Avatar";
@@ -43,11 +44,18 @@ export default function PostPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const [openSection, setOpenSection] = useState<"" | "mode" | "tags" | "visibility">("");
   const dayCount = useDayCount(profile ?? null);
 
-  const tagsRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow the diary textarea so the full text is always visible (no inner scroll)
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [content]);
 
   // Set defaults from profile
   useEffect(() => {
@@ -56,14 +64,6 @@ export default function PostPage() {
     if (!postRegion && profile.region) setPostRegion(profile.region);
   }, [profile, mode, postRegion]);
 
-
-  const handleModeSelect = (id: string) => {
-    setMode(id);
-    // Auto-scroll to tags after mode selection
-    setTimeout(() => {
-      tagsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -222,30 +222,13 @@ export default function PostPage() {
           onCancel={() => setCropSrc("")}
         />
       )}
-      {/* Region picker modal */}
+      {/* Region picker modal — drum wheel */}
       {showRegionPicker && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowRegionPicker(false)} />
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[50dvh] flex flex-col animate-slide-up">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <h3 className="font-bold text-sm">Select Region</h3>
-              <button onClick={() => setShowRegionPicker(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-3 gap-2" style={{ scrollbarWidth: "none" }}>
-              {REGIONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setPostRegion(r); setShowRegionPicker(false); }}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium text-center transition-all active:scale-[0.97] ${
-                    postRegion === r ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
+        <RegionWheelModal
+          value={postRegion}
+          onDone={(r) => { setPostRegion(r); setShowRegionPicker(false); }}
+          onClose={() => setShowRegionPicker(false)}
+        />
       )}
       {/* Day picker modal — select date to compute day number */}
       {showDayPicker && (
@@ -353,7 +336,19 @@ export default function PostPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">{profile.displayName || "You"}</p>
               <p className="text-xs text-gray-400">
-                {todayStr} · {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle mr-0.5" />}{modeInfo?.label || "Select a mode"}
+                {todayStr} ·{" "}
+                {/* Mode toggle — tap to cycle through the 3 modes */}
+                <button
+                  onClick={() => {
+                    const idx = FOCUS_MODES.findIndex((m) => m.id === mode);
+                    setMode(FOCUS_MODES[(idx + 1) % FOCUS_MODES.length].id);
+                  }}
+                  className="inline-flex items-center gap-0.5 text-accent-orange font-medium active:opacity-70"
+                  aria-label="Change mode"
+                >
+                  {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle" />}
+                  {modeInfo?.label || "Select a mode"}
+                </button>
               </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -372,39 +367,91 @@ export default function PostPage() {
             </div>
           </div>
 
-          {/* Image area — tappable to add/change photo */}
+          {/* Image area — diary text sits centered on the photo/gradient, like the final post */}
           <div
             className="relative cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             {imagePreview ? (
-              <div className="relative group">
+              <>
                 <img src={imagePreview} alt="" className="w-full aspect-square object-cover" />
-                <div className="absolute inset-0 bg-black/0 group-active:bg-black/20 transition-colors flex items-center justify-center">
-                  <span className="text-white/0 group-active:text-white/80 transition-colors text-[10px] font-bold">Tap to change photo</span>
-                </div>
-              </div>
+                {/* Scrim for text readability */}
+                <div className="absolute inset-0 bg-black/20" />
+              </>
             ) : (
-              <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2`}>
-                <IconCamera size={28} className="text-white/40" />
-                <p className="text-white/40 text-xs font-medium">Tap to add photo</p>
-              </div>
+              <div className={`w-full aspect-square bg-gradient-to-br ${gradient}`} />
             )}
-            {visibility === "private" && (
-              <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1 flex items-center gap-1.5 text-xs">
-                <IconLock size={18} />
-              </div>
-            )}
+            {/* Centered diary input over the image */}
+            <div className="absolute inset-0 flex items-center justify-center p-6">
+              <textarea
+                ref={contentRef}
+                value={content}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const cleaned = sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu);
+                  // Max 10 lines — keeps the centered text within ~70% of the image height
+                  setContent(cleaned.split("\n").slice(0, 10).join("\n"));
+                }}
+                maxLength={POST_CONTENT_MAX}
+                rows={3}
+                placeholder={"What happened today?\n(English only)"}
+                className="w-[70%] max-h-full bg-transparent text-white text-center text-sm font-medium leading-relaxed placeholder-white/50 focus:outline-none resize-none drop-shadow overflow-hidden"
+              />
+            </div>
+            {/* Visibility toggle — tap to switch, without opening the photo picker */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setVisibility(visibility === "public" ? "private" : "public"); }}
+              className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold active:bg-black/70"
+              aria-label="Toggle visibility"
+            >
+              {visibility === "public" ? <IconGlobe size={14} /> : <IconLock size={14} />}
+              {visibility === "public" ? "Public" : "Private"}
+            </button>
+            {/* Photo hint */}
+            <div className="absolute bottom-2 right-2 bg-black/40 text-white rounded-full px-2.5 py-1 text-[10px] font-bold flex items-center gap-1 pointer-events-none">
+              <IconCamera size={12} />
+              {imagePreview ? "Change photo" : "Add photo"}
+            </div>
           </div>
 
-          {/* Content + tags — matches PostCard */}
+          {/* Tags + counter below the image */}
           <div className="p-3">
-            {content.trim() && (
-              <p className="text-sm text-gray-700">{content}</p>
-            )}
-            {tags.length > 0 && (
-              <p className="text-xs text-accent-orange mt-1.5">{tags.join(" ")}</p>
-            )}
+            <div className="flex items-center justify-between">
+              <AsciiWarn show={showWarn} />
+              <p className="text-[10px] text-gray-300 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
+            </div>
+
+            {/* Tags — tap a tag to remove it, type to add */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className="text-xs text-accent-orange font-medium active:opacity-60"
+                  aria-label={`Remove ${tag}`}
+                >
+                  {tag} <span className="text-accent-orange/50">&times;</span>
+                </button>
+              ))}
+              {tags.length < HASHTAG_MAX && (
+                <span className="inline-flex items-center text-xs text-accent-orange font-medium">
+                  {/* Live "#" prefix so the tag appears as you type */}
+                  {customTag && <span>#</span>}
+                  <input
+                    type="text"
+                    value={customTag}
+                    onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
+                    onBlur={addCustomTag}
+                    placeholder={tags.length === 0 ? "#tags" : "#"}
+                    maxLength={20}
+                    size={Math.max(customTag.length, 4)}
+                    className="text-xs text-accent-orange font-medium placeholder-gray-300 bg-transparent focus:outline-none"
+                    style={{ width: `${Math.max(customTag.length, 4) + 1}ch` }}
+                  />
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Actions placeholder — matches PostCard */}
@@ -416,145 +463,8 @@ export default function PostPage() {
           </div>
         </div>
 
-        {/* ── Input controls below preview ── */}
-
-        {/* Diary input */}
-        <div className="px-4 mt-3">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
-            maxLength={POST_CONTENT_MAX}
-            rows={3}
-            placeholder="What happened today? (English only)"
-            className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
-          />
-          <div className="flex items-center justify-between">
-            <AsciiWarn show={showWarn} />
-            <p className="text-[10px] text-white/30 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
-          </div>
-        </div>
-
-        {/* ── Accordion sections ── */}
+        {/* ── Controls below preview ── */}
         <div className="px-4 mt-3 space-y-1.5">
-
-          {/* Mode toggle */}
-          <button
-            onClick={() => setOpenSection(openSection === "mode" ? "" : "mode")}
-            className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-forest-light/10 active:bg-forest-light/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={14} className="text-accent-orange" />}
-              <span className="text-xs font-bold text-white/70">Mode</span>
-              {modeInfo && <span className="text-xs text-accent-orange font-medium">{modeInfo.label}</span>}
-            </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/30 transition-transform ${openSection === "mode" ? "rotate-180" : ""}`}><path d="M3 4.5L6 7.5L9 4.5" /></svg>
-          </button>
-          {openSection === "mode" && (
-            <div className="px-1 pb-1">
-              {[["english", "skill", "challenge"], ["work", "chill"]].map((row, ri) => (
-                <div key={ri} className={`flex gap-1.5 ${ri === 0 ? "mb-1.5" : ""}`}>
-                  {FOCUS_MODES.filter((m) => row.includes(m.id)).map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => { handleModeSelect(m.id); setOpenSection(""); }}
-                      className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-full transition-all active:scale-[0.97] text-xs font-medium ${
-                        mode === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                      }`}
-                    >
-                      <FocusModeIcon modeId={m.id} size={14} />
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Tags toggle */}
-          {mode && (
-            <>
-              <button
-                onClick={() => setOpenSection(openSection === "tags" ? "" : "tags")}
-                className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-forest-light/10 active:bg-forest-light/20 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white/70">Tags</span>
-                  {tags.length > 0 && <span className="text-xs text-accent-orange font-medium">{tags.length}/{HASHTAG_MAX}</span>}
-                </div>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/30 transition-transform ${openSection === "tags" ? "rotate-180" : ""}`}><path d="M3 4.5L6 7.5L9 4.5" /></svg>
-              </button>
-              {openSection === "tags" && (
-                <div className="px-1 pb-1" ref={tagsRef}>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={`px-2.5 py-1 rounded-full text-xs transition-all active:scale-[0.97] ${
-                          tags.includes(tag) ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5 mt-2">
-                    <input
-                      type="text"
-                      value={customTag}
-                      onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-                      onKeyDown={(e) => e.key === "Enter" && addCustomTag()}
-                      placeholder="Custom tag"
-                      maxLength={20}
-                      className="flex-1 border border-forest-light/30 bg-forest-light/10 text-white rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30"
-                    />
-                    <button
-                      onClick={addCustomTag}
-                      disabled={!customTag.trim() || tags.length >= HASHTAG_MAX}
-                      className="px-3 py-1.5 bg-white text-forest-mid rounded-full text-xs font-bold disabled:opacity-30"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Visibility toggle */}
-          <button
-            onClick={() => setOpenSection(openSection === "visibility" ? "" : "visibility")}
-            className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-forest-light/10 active:bg-forest-light/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {visibility === "public" ? <IconGlobe size={14} className="text-white/50" /> : <IconLock size={14} className="text-white/50" />}
-              <span className="text-xs font-bold text-white/70">Visibility</span>
-              <span className="text-xs text-accent-orange font-medium">{visibility === "public" ? "Public" : "Private"}</span>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/30 transition-transform ${openSection === "visibility" ? "rotate-180" : ""}`}><path d="M3 4.5L6 7.5L9 4.5" /></svg>
-          </button>
-          {openSection === "visibility" && (
-            <div className="flex gap-1.5 px-1 pb-1">
-              <button
-                onClick={() => { setVisibility("public"); setOpenSection(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.98] ${
-                  visibility === "public" ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                <IconGlobe size={14} />
-                <span className="text-xs font-bold">Public</span>
-              </button>
-              <button
-                onClick={() => { setVisibility("private"); setOpenSection(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.98] ${
-                  visibility === "private" ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                <IconLock size={14} />
-                <span className="text-xs font-bold">Private</span>
-              </button>
-            </div>
-          )}
 
           {/* Remove photo */}
           {imagePreview && (

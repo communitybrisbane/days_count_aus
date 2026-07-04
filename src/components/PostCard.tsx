@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, LIKE_RECEIVE_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
@@ -202,10 +202,8 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       try {
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
+        // Receiver XP is granted server-side (onLikeCreated) with its own daily cap
         if (!isOwnPost && hasXPQuota) {
-          try {
-            await updateDoc(doc(db, "users", post.userId), { totalXP: increment(LIKE_RECEIVE_XP) });
-          } catch {}
           try {
             const newDailyCount = profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1;
             await updateDoc(doc(db, "users", user.uid), {
@@ -374,10 +372,20 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         <XPToast xp={xpGained} show={showXP} />
         <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
           {post.imageUrl ? (
-            <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+            <>
+              <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+              {/* Diary text centered over the photo */}
+              {post.content && (
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-3">
+                  <p className="max-w-[70%] text-white text-center font-medium text-xs leading-snug line-clamp-4 drop-shadow">
+                    {post.content}
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
             <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-3`}>
-              <p className="text-white text-center font-medium text-xs leading-snug line-clamp-4">
+              <p className="max-w-[70%] text-white text-center font-medium text-xs leading-snug line-clamp-4">
                 {post.content}
               </p>
             </div>
@@ -386,11 +394,6 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           {post.visibility === "private" && (
             <div className="absolute top-1.5 left-1.5 bg-black/50 text-white rounded-full px-2 py-1">
               <IconLock size={14} />
-            </div>
-          )}
-          {(post.region || authorProfile?.region) && authorProfile?.showRegion !== false && (
-            <div className="absolute top-1.5 right-1.5 bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded-full">
-              {post.region || authorProfile?.region}
             </div>
           )}
           <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black/40 to-transparent" />
@@ -484,10 +487,20 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       {/* Image or gradient card */}
       <div ref={imageRef} className="relative" onClick={handleDoubleTap}>
         {post.imageUrl ? (
-          <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+          <>
+            <Image src={post.imageUrl} alt="Post" width={450} height={450} className="w-full aspect-square object-cover" />
+            {/* Diary text centered over the photo */}
+            {post.content && (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-6">
+                <p className="max-w-[70%] text-white text-center font-medium text-sm leading-relaxed drop-shadow">
+                  {post.content}
+                </p>
+              </div>
+            )}
+          </>
         ) : (
-          <div className={`w-full aspect-[4/3] bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
-            <p className="text-white text-center font-medium text-sm leading-relaxed">
+          <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-6`}>
+            <p className="max-w-[70%] text-white text-center font-medium text-sm leading-relaxed">
               {post.content}
             </p>
           </div>
@@ -507,15 +520,10 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-3">
-        {(post.content) && (
-          <p className="text-sm text-gray-700">
-            {post.content}
-          </p>
-        )}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+      {/* Tags (diary text lives on the image) */}
+      {post.tags && post.tags.length > 0 && (
+        <div className="px-3 pt-3">
+          <div className="flex flex-wrap gap-1">
             {post.tags.map((tag, i) => (
               <a
                 key={i}
@@ -527,12 +535,12 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               </a>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Actions */}
       {showActions && (
-        <div className="flex items-center justify-between px-3 pb-3">
+        <div className="flex items-center justify-between px-3 py-3">
           <div className="flex items-center gap-2">
             <button
               onClick={handleLike}

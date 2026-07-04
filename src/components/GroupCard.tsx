@@ -116,6 +116,8 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
         memberIds: arrayUnion(currentUserId),
         memberCount: increment(1),
       });
+      // New members only see messages sent after they joined
+      await setDoc(doc(db, "groups", group.id, "lastRead", currentUserId), { clearedAt: Timestamp.now() }, { merge: true });
       await updateDoc(doc(db, "users", currentUserId), {
         groupIds: arrayUnion(group.id),
       });
@@ -190,7 +192,7 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
               <Image src={group.iconUrl} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
             ) : (
               <div className="w-12 h-12 rounded-full bg-forest-light/20 flex items-center justify-center">
-                <FocusModeIcon modeId={resolveMode(group.mode || "challenge")} size={26} className="text-forest-mid" />
+                <FocusModeIcon modeId={resolveMode(group.mode || "")} size={26} className="text-forest-mid" />
               </div>
             )}
             {muted && (
@@ -207,8 +209,7 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="font-bold text-sm truncate text-forest">{group.groupName}</p>
-              {isModeGroup && <span className="text-[10px] text-gray-400 shrink-0">by mode</span>}
-              {group.isOfficial && !isModeGroup && <span className="text-[10px] text-gray-400 shrink-0">by official</span>}
+              {isModeGroup && <span className="text-[10px] text-gray-400 shrink-0">official</span>}
               {!group.isOfficial && group.joinType === "friends" && <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full shrink-0">Friends only</span>}
               {!group.isOfficial && group.joinType !== "friends" && <span className="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full shrink-0">Anyone</span>}
               {!group.isOfficial && leaderName && <span className="text-[10px] text-gray-400 shrink-0">by {leaderName}</span>}
@@ -257,11 +258,13 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
                 <Image src={group.iconUrl} alt="" width={80} height={80} className="w-20 h-20 rounded-full object-cover mb-3" />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-forest-light/20 flex items-center justify-center mb-3">
-                  <FocusModeIcon modeId={resolveMode(group.mode || "challenge")} size={40} className="text-forest-mid" />
+                  <FocusModeIcon modeId={resolveMode(group.mode || "")} size={40} className="text-forest-mid" />
                 </div>
               )}
               <h3 className="font-bold text-lg text-forest text-center">{group.groupName}</h3>
-              {leaderName && (
+              {isModeGroup ? (
+                <p className="text-xs text-gray-400 mt-0.5">official</p>
+              ) : leaderName && (
                 <p className="text-xs text-gray-400 mt-0.5">by {leaderName}</p>
               )}
             </div>

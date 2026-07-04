@@ -9,8 +9,6 @@ import type { UserPrivate } from "@/types";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
-import { fetchAdminConfig } from "@/lib/services/users";
-import { joinOfficialGroup } from "@/lib/groups";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -18,7 +16,8 @@ import { GroupListSkeleton } from "@/components/Skeleton";
 import GroupCard from "@/components/GroupCard";
 import { IconSearch, IconUsers, IconLock, FocusModeIcon } from "@/components/icons";
 import BannerCarousel from "@/components/BannerCarousel";
-import type { Group, AdminConfig } from "@/types";
+import MeetingBoard from "@/components/MeetingBoard";
+import type { Group } from "@/types";
 
 export default function GroupsPage() {
   useAuthGuard({ requireProfile: false });
@@ -32,7 +31,6 @@ export default function GroupsPage() {
   const [showActionChoice, setShowActionChoice] = useState(false);
 
   const [leaderNames, setLeaderNames] = useState<Record<string, string>>({});
-  const [meeting, setMeeting] = useState<{ label: string; url: string; description: string } | null>(null);
   const [kickedNotices, setKickedNotices] = useState<{ groupId: string; groupName: string; at: string }[]>([]);
 
   useEffect(() => {
@@ -60,32 +58,8 @@ export default function GroupsPage() {
 
   useEffect(() => {
     if (user) {
-      fetchGroups().then(() => {
-        // Self-heal: if not a member of mode group, join it (both memberIds + groupIds)
-        if (profile?.mainMode) {
-          setGroups((currentGroups) => {
-            const modeGroup = currentGroups.find((g) => g.isOfficial && !g.iconUrl && g.mode === profile.mainMode);
-            if (modeGroup && !modeGroup.memberIds?.includes(user.uid)) {
-              joinOfficialGroup(user.uid, profile.mainMode)
-                .then(() => { refreshProfile(); fetchGroups(); })
-                .catch(() => {});
-            }
-            return currentGroups;
-          });
-        }
-      });
-      fetchAdminConfig().then((data) => {
-        if (data) {
-          const cfg = data as AdminConfig;
-          if (cfg.meetingLabel || cfg.meetingUrl) {
-            setMeeting({
-              label: cfg.meetingLabel || "Study Session",
-              url: cfg.meetingUrl || "",
-              description: cfg.meetingDescription || "No session scheduled",
-            });
-          }
-        }
-      }).catch(console.error);
+      // Mode groups are fully optional (join/leave freely) — no auto-rejoin here
+      fetchGroups();
     }
   }, [user]);
 
@@ -120,14 +94,12 @@ export default function GroupsPage() {
   const canJoinCommunity = level >= GROUP_JOIN_LEVEL;
   const userGroups = groups.filter((g) => !g.isOfficial);
   const isModeGroup = (g: Group) => g.isOfficial && !g.iconUrl;
-  // Show mode group only if user is a member OR it matches mainMode (pick first match only)
-  const myModeGroup = groups.find((g) =>
-    isModeGroup(g) && g.mode === profile?.mainMode && g.memberIds?.includes(user?.uid || "")
-  ) || groups.find((g) =>
-    isModeGroup(g) && g.mode === profile?.mainMode
+  // Mode groups are fully optional — show only the ones the user is actually in
+  const joinedModeGroups = groups.filter((g) =>
+    isModeGroup(g) && g.memberIds?.includes(user?.uid || "")
   );
   const myJoinedGroups = [
-    ...(myModeGroup ? [myModeGroup] : []),
+    ...joinedModeGroups,
     ...groups.filter((g) => !isModeGroup(g) && g.memberIds?.includes(user?.uid || "")),
   ].sort((a, b) => {
     const aCleared = clearedGroupIds.has(a.id);
@@ -144,8 +116,8 @@ export default function GroupsPage() {
   const canJoinMore = myJoinedExtra.length < maxSlots;
   const canCreateCommunity = level >= GROUP_CREATE_LEVEL;
 
-  // Search shows all groups (official + user-created), excluding already joined
-  const searchableGroups = groups.filter((g) => !g.isClosed && !isModeGroup(g) && !myJoinedGroups.some((j) => j.id === g.id));
+  // Search shows user-created communities + mode groups not yet joined
+  const searchableGroups = groups.filter((g) => !g.isClosed && !myJoinedGroups.some((j) => j.id === g.id));
   let filteredUserGroups = searchableGroups;
   if (modeFilter) {
     filteredUserGroups = filteredUserGroups.filter((g) => g.mode === modeFilter);
@@ -209,19 +181,6 @@ export default function GroupsPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-1.5">
-                {MAIN_MODE_OPTIONS.filter((m) => ["work", "chill"].includes(m.id)).map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setModeFilter(m.id)}
-                    className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      modeFilter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                    }`}
-                  >
-                    <FocusModeIcon modeId={m.id} size={14} /> {m.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -236,7 +195,7 @@ export default function GroupsPage() {
                 group={group}
                 currentUserId={user?.uid}
                 leaderName={leaderNames[group.creatorId]}
-                canJoin={canJoinCommunity && canJoinMore}
+                canJoin={isModeGroup(group) ? true : canJoinCommunity && canJoinMore}
                 onJoined={handleJoined}
                 showGoal
               />
@@ -252,63 +211,8 @@ export default function GroupsPage() {
             <GroupListSkeleton />
           ) : (
             <>
-              {/* Study Meeting */}
-              {meeting && (
-                <div className="px-4 pt-2">
-                  {meeting.url ? (
-                    <a
-                      href={meeting.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block bg-gradient-to-br from-forest-mid to-forest rounded-2xl p-4 shadow-lg border border-forest-light/20 active:scale-[0.98] transition-transform"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden">
-                          <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm text-white truncate">
-                              {meeting.label}
-                            </p>
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                              LIVE
-                            </span>
-                          </div>
-                          <p className="text-xs text-white/60 mt-0.5">{meeting.description}</p>
-                        </div>
-                        <div className="shrink-0">
-                          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none">
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  ) : (
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden opacity-40">
-                          <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-white/40">
-                            {meeting.label}
-                          </p>
-                          <p className="text-xs text-white/25 mt-0.5">
-                            {meeting.description}
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold text-white/20 px-3 py-1.5 rounded-full border border-white/10 shrink-0">
-                          Offline
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Live Meetings */}
+              <MeetingBoard currentUid={user?.uid} region={profile?.region} />
 
               {/* Kicked notices */}
               {kickedNotices.map((k) => (
@@ -320,7 +224,7 @@ export default function GroupsPage() {
 
               {/* Group Chat section */}
               <div className="px-4 pt-2">
-                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + 1}</span></p>
+                <p className="text-xs font-bold text-white/50 mb-2 px-1">Group Chat <span className="font-normal text-white/30">{myJoinedGroups.length}/{maxSlots + joinedModeGroups.length}</span></p>
               </div>
               <div className="flex flex-col">
                 {myJoinedGroups.map((group) => (
@@ -339,15 +243,13 @@ export default function GroupsPage() {
                   />
                 ))}
 
-                {/* Add Community */}
-                {!hasMaxGroups && canJoinCommunity && (
-                  <button
-                    onClick={() => setShowActionChoice(true)}
-                    className="w-full py-3 text-center text-sm font-bold text-accent-orange active:opacity-70 transition-opacity"
-                  >
-                    + Find or Create
-                  </button>
-                )}
+                {/* Add Community — always visible so mode groups stay joinable */}
+                <button
+                  onClick={() => setShowActionChoice(true)}
+                  className="w-full py-3 text-center text-sm font-bold text-accent-orange active:opacity-70 transition-opacity"
+                >
+                  + Find or Create
+                </button>
                 {!canJoinCommunity && (
                   <p className="text-center text-[10px] text-white/30 py-3">
                     <IconLock size={10} className="inline mr-1" />
@@ -380,16 +282,15 @@ export default function GroupsPage() {
               {/* Join */}
               <button
                 onClick={() => { setShowActionChoice(false); setShowSearch(true); }}
-                disabled={!canJoinMore}
-                className={`w-full flex items-center gap-3 p-4 rounded-xl text-left ${canJoinMore ? "bg-gray-50 active:bg-gray-100" : "bg-gray-50 opacity-40"}`}
+                className="w-full flex items-center gap-3 p-4 rounded-xl text-left bg-gray-50 active:bg-gray-100"
               >
                 <div className="w-10 h-10 rounded-full bg-forest-mid/10 flex items-center justify-center shrink-0">
                   <IconSearch size={18} className="text-forest-mid" />
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${canJoinMore ? "text-gray-800" : "text-gray-400"}`}>Join a Community</p>
+                  <p className="text-sm font-bold text-gray-800">Join a Community</p>
                   <p className="text-[10px] text-gray-400">
-                    {canJoinMore ? "Search and join an existing community" : "You've reached the join limit"}
+                    {canJoinMore ? "Search and join an existing community" : "Community slots are full — official groups are always open"}
                   </p>
                 </div>
               </button>

@@ -89,6 +89,22 @@ export interface Announcement {
   active: boolean;
 }
 
+/** Live meeting (meetings collection) — written only via the manageMeeting Cloud Function */
+export interface Meeting {
+  id: string;
+  title: string;
+  hostName: string;
+  hostPhotoURL?: string;
+  hostUid: string;
+  mode: string;
+  url: string;
+  joinType: "open" | "friends";
+  active: boolean;
+  createdAt?: { toMillis(): number };
+  startsAt?: { toMillis(): number };
+  expiresAt?: { toMillis(): number };
+}
+
 /** Admin config (admin_config/main) — all flat fields editable in Firebase Console */
 export interface AdminConfig {
   announcements?: Announcement[];

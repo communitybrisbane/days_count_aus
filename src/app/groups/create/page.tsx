@@ -85,7 +85,7 @@ export default function CreateGroupPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh p-6">
         <p className="text-white/60">You can only lead 1 group</p>
-        <p className="text-xs text-white/40 mt-1">Transfer or disband your current group first</p>
+        <p className="text-xs text-white/40 mt-1">Close your current group first</p>
         <button onClick={() => router.back()} className="mt-4 text-accent-orange">
           Back
         </button>
@@ -226,11 +226,11 @@ export default function CreateGroupPage() {
               </div>
               <div className="flex gap-3">
                 <span className="text-accent-orange font-bold shrink-0">5.</span>
-                <p><span className="font-bold text-white/80">1 group per leader.</span> You can lead 1 and join 1 other.</p>
+                <p><span className="font-bold text-white/80">1 group per leader.</span> You can lead only 1 community. It also uses one of your community slots.</p>
               </div>
               <div className="flex gap-3">
                 <span className="text-accent-orange font-bold shrink-0">6.</span>
-                <p><span className="font-bold text-white/80">Closing the group</span> removes it for everyone. This cannot be undone.</p>
+                <p><span className="font-bold text-white/80">Leaving closes the group.</span> When the leader leaves, the community is closed for everyone. This cannot be undone.</p>
               </div>
             </div>
           </div>

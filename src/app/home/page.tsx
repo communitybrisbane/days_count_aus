@@ -131,9 +131,26 @@ export default function HomePage() {
     setPhasePrompt(null);
   };
 
+  // Dismissed announcements are remembered per device, keyed by content —
+  // any edit to title or body makes the announcement reappear for everyone
+  const announcementKey = (a: { title: string; body?: string }) => `${a.title}|${a.body || ""}`;
+  const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      setDismissedAnnouncements(JSON.parse(localStorage.getItem("dismissed_announcements") || "[]"));
+    } catch { /* corrupted value — treat as none dismissed */ }
+  }, []);
+
+  const dismissAnnouncement = (key: string) => {
+    const updated = [...dismissedAnnouncements, key];
+    setDismissedAnnouncements(updated);
+    localStorage.setItem("dismissed_announcements", JSON.stringify(updated));
+  };
+
   const activeAnnouncements = useMemo(
-    () => adminConfig?.announcements?.filter((a) => a.active) ?? [],
-    [adminConfig?.announcements]
+    () => adminConfig?.announcements?.filter((a) => a.active && !dismissedAnnouncements.includes(announcementKey(a))) ?? [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [adminConfig?.announcements, dismissedAnnouncements]
   );
 
   if (loading || !profile) return <LoadingSpinner fullScreen />;
@@ -200,7 +217,44 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ===== 2. Weekly Goal — Material Card ===== */}
+      {/* ===== 2. Announcements ===== */}
+      {activeAnnouncements.length > 0 && (
+        <div className="px-5 mt-3 space-y-2">
+          {activeAnnouncements.map((ann, i) => {
+            const c = ANNOUNCEMENT_COLORS[ann.type] || ANNOUNCEMENT_COLORS.info;
+            return (
+              <div key={i} className={`${c.bg} border ${c.border} rounded-xl px-4 py-3`}>
+                <div className="flex items-start gap-2">
+                  <span className={`w-2 h-2 rounded-full ${c.dot} mt-1 shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${c.title}`}>{ann.title}</p>
+                    {ann.body && <p className="text-xs text-white/60 mt-0.5 leading-snug">{ann.body}</p>}
+                    {ann.linkUrl && isSafeUrl(ann.linkUrl) && (
+                      <a
+                        href={ann.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-block text-xs font-bold ${c.title} mt-1.5 underline underline-offset-2`}
+                      >
+                        {ann.linkLabel || "View details"}
+                      </a>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => dismissAnnouncement(announcementKey(ann))}
+                    className="shrink-0 -mt-1 -mr-1 w-7 h-7 flex items-center justify-center text-white/40 active:text-white/70 text-lg leading-none"
+                    aria-label="Dismiss announcement"
+                  >
+                    &times;
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ===== 3. Weekly Goal — Material Card ===== */}
       <div className="px-5 mt-3 relative z-10">
         <div className="bg-forest-mid/40 border border-forest-light/20 rounded-2xl overflow-hidden transition-all duration-500">
           <div className="px-4 pt-4 pb-3">
@@ -230,7 +284,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ===== 3. XP / Level ===== */}
+      {/* ===== 4. XP / Level ===== */}
       <div className="px-5 mt-3">
         <div className="bg-forest-mid/40 border border-forest-light/20 rounded-2xl px-4 py-3">
           <div className="flex items-center justify-between mb-2">
@@ -267,40 +321,10 @@ export default function HomePage() {
         />
       )}
 
-      {/* ===== 4. Banner Carousel ===== */}
+      {/* ===== 5. Banner Carousel ===== */}
       <div className="px-5 mt-3">
         <BannerCarousel location="home" bannerImageUrl={adminConfig?.bannerImageUrl} />
       </div>
-
-      {/* ===== 5. Announcements ===== */}
-      {activeAnnouncements.length > 0 && (
-        <div className="px-5 mt-3 space-y-2">
-          {activeAnnouncements.map((ann, i) => {
-            const c = ANNOUNCEMENT_COLORS[ann.type] || ANNOUNCEMENT_COLORS.info;
-            return (
-              <div key={i} className={`${c.bg} border ${c.border} rounded-xl px-4 py-3`}>
-                <div className="flex items-start gap-2">
-                  <span className={`w-2 h-2 rounded-full ${c.dot} mt-1 shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-bold ${c.title}`}>{ann.title}</p>
-                    {ann.body && <p className="text-xs text-white/60 mt-0.5 leading-snug">{ann.body}</p>}
-                    {ann.linkUrl && isSafeUrl(ann.linkUrl) && (
-                      <a
-                        href={ann.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-block text-xs font-bold ${c.title} mt-1.5 underline underline-offset-2`}
-                      >
-                        {ann.linkLabel || "View details"}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       <div className="h-6" />
       </div>{/* end scrollable content */}
