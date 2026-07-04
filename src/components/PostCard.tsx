@@ -368,7 +368,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               {/* Diary text centered over the photo */}
               {post.content && (
                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-3">
-                  <p className="max-w-[70%] text-white text-center font-medium text-xs leading-snug line-clamp-4 drop-shadow">
+                  <p className="max-w-[70%] text-white text-center font-medium text-[10px] leading-snug drop-shadow">
                     {post.content}
                   </p>
                 </div>
@@ -376,7 +376,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
             </>
           ) : (
             <div className={`w-full aspect-square bg-gradient-to-br ${gradient} flex items-center justify-center p-3`}>
-              <p className="max-w-[70%] text-white text-center font-medium text-xs leading-snug line-clamp-4">
+              <p className="max-w-[70%] text-white text-center font-medium text-[10px] leading-snug">
                 {post.content}
               </p>
             </div>
@@ -410,15 +410,15 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           XP limit reached — like still counted!
         </div>
       )}
-      {/* Author header */}
-      <div className="flex items-center gap-3 p-3">
+      {/* Author header — kept as thin as the tags/likes rows */}
+      <div className="flex items-center gap-2 px-3 py-1">
         {authorProfile && (
           <Link href={`/user/${post.userId}`}>
             <Avatar
               photoURL={authorProfile.photoURL}
               displayName={authorProfile.displayName}
               uid={authorProfile.uid}
-              size={36}
+              size={28}
             />
           </Link>
         )}
@@ -513,14 +513,14 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Tags (diary text lives on the image) */}
       {post.tags && post.tags.length > 0 && (
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-0.5">
           <div className="flex flex-wrap gap-1">
             {post.tags.map((tag, i) => (
               <a
                 key={i}
                 href={`/explore?q=${encodeURIComponent(tag)}`}
                 onClick={(e) => { e.stopPropagation(); }}
-                className="text-[11px] text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0.5 active:bg-accent-orange/20 transition-colors"
+                className="text-xs text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0 leading-tight active:bg-accent-orange/20 transition-colors"
               >
                 {tag}
               </a>
@@ -531,7 +531,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Actions */}
       {showActions && (
-        <div className="flex items-center justify-between px-3 py-3">
+        <div className="flex items-center justify-between px-3 py-0.5">
           <div className="flex items-center gap-2">
             <button
               onClick={handleLike}
@@ -562,7 +562,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
           <div className="relative">
             <button
               onClick={() => setShowMenu((v) => !v)}
-              className="text-gray-400 text-lg px-2 py-1 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+              className="text-gray-400 text-base px-2 py-0 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors leading-none"
               aria-label="More options"
             >
               ···

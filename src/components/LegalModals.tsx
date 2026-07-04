@@ -272,7 +272,7 @@ const PRIVACY_JA = `
 <p><b>b) 利用者が入力するプロフィール情報:</b></p>
 <p>・ニックネーム、地域、目標、フォーカスモード、出発日/到着日、プロフィール画像</p>
 <p><b>c) ユーザー生成コンテンツ:</b></p>
-<p>・投稿（テキスト最大400文字、画像は圧縮後最大300KB）</p>
+<p>・投稿（テキスト最大350文字、画像は圧縮後最大300KB）</p>
 <p>・グループメッセージ（最大100文字）、メッセージリアクション</p>
 <p>・いいね、フォロー、ブロック、通報（ユーザー通報には理由とスクリーンショット画像が含まれ、モデレーション目的で運営者が確認します）</p>
 <p>・ライブミーティングの開催情報（タイトル・開催者名・プロフィール画像・外部リンク・開催時間。開催中は全利用者に表示されます）</p>
@@ -348,7 +348,7 @@ const PRIVACY_EN = `
 <p><b>b) Profile information entered by the user:</b></p>
 <p>・Nickname, region, goal, focus mode, departure/arrival dates, profile picture</p>
 <p><b>c) User-generated content:</b></p>
-<p>・Posts (text up to 400 characters, images compressed to max 300KB)</p>
+<p>・Posts (text up to 350 characters, images compressed to max 300KB)</p>
 <p>・Group messages (max 100 characters), message reactions</p>
 <p>・Likes, follows, blocks, reports (user reports include a reason and a screenshot image, which the Operator reviews for moderation purposes)</p>
 <p>・Live meeting details (title, host name, profile picture, external link, and time — visible to all users while live)</p>
