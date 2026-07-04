@@ -226,11 +226,11 @@ export default function CreateGroupPage() {
               </div>
               <div className="flex gap-3">
                 <span className="text-accent-orange font-bold shrink-0">5.</span>
-                <p><span className="font-bold text-white/80">1 group per leader.</span> You can lead 1 and join 1 other.</p>
+                <p><span className="font-bold text-white/80">1 group per leader.</span> You can lead only 1 community. It also uses one of your community slots.</p>
               </div>
               <div className="flex gap-3">
                 <span className="text-accent-orange font-bold shrink-0">6.</span>
-                <p><span className="font-bold text-white/80">Closing the group</span> removes it for everyone. This cannot be undone.</p>
+                <p><span className="font-bold text-white/80">Leaving closes the group.</span> When the leader leaves, the community is closed for everyone. This cannot be undone.</p>
               </div>
             </div>
           </div>
