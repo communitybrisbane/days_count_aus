@@ -43,10 +43,8 @@ export default function PostPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const [openSection, setOpenSection] = useState<"" | "tags">("");
   const dayCount = useDayCount(profile ?? null);
 
-  const tagsRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Set defaults from profile
@@ -405,14 +403,46 @@ export default function PostPage() {
             </button>
           </div>
 
-          {/* Content + tags — matches PostCard */}
+          {/* Content + tags — edited in place, styled like PostCard */}
           <div className="p-3">
-            {content.trim() && (
-              <p className="text-sm text-gray-700">{content}</p>
-            )}
-            {tags.length > 0 && (
-              <p className="text-xs text-accent-orange mt-1.5">{tags.join(" ")}</p>
-            )}
+            <textarea
+              value={content}
+              onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
+              maxLength={POST_CONTENT_MAX}
+              rows={3}
+              placeholder="What happened today? (English only)"
+              className="w-full text-sm text-gray-700 placeholder-gray-300 bg-transparent focus:outline-none resize-none"
+            />
+            <div className="flex items-center justify-between -mt-1">
+              <AsciiWarn show={showWarn} />
+              <p className="text-[10px] text-gray-300 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
+            </div>
+
+            {/* Tags — tap a tag to remove it, type to add */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className="text-xs text-accent-orange font-medium active:opacity-60"
+                  aria-label={`Remove ${tag}`}
+                >
+                  {tag} <span className="text-accent-orange/50">&times;</span>
+                </button>
+              ))}
+              {tags.length < HASHTAG_MAX && (
+                <input
+                  type="text"
+                  value={customTag}
+                  onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
+                  onBlur={addCustomTag}
+                  placeholder={tags.length === 0 ? "#tags" : "#"}
+                  maxLength={20}
+                  className="w-20 text-xs text-accent-orange placeholder-gray-300 bg-transparent focus:outline-none"
+                />
+              )}
+            </div>
           </div>
 
           {/* Actions placeholder — matches PostCard */}
@@ -424,77 +454,8 @@ export default function PostPage() {
           </div>
         </div>
 
-        {/* ── Input controls below preview ── */}
-
-        {/* Diary input */}
-        <div className="px-4 mt-3">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
-            maxLength={POST_CONTENT_MAX}
-            rows={3}
-            placeholder="What happened today? (English only)"
-            className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange resize-none placeholder-white/30"
-          />
-          <div className="flex items-center justify-between">
-            <AsciiWarn show={showWarn} />
-            <p className="text-[10px] text-white/30 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
-          </div>
-        </div>
-
-        {/* ── Accordion sections ── */}
+        {/* ── Controls below preview ── */}
         <div className="px-4 mt-3 space-y-1.5">
-
-          {/* Tags toggle */}
-          {mode && (
-            <>
-              <button
-                onClick={() => setOpenSection(openSection === "tags" ? "" : "tags")}
-                className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-forest-light/10 active:bg-forest-light/20 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white/70">Tags</span>
-                  {tags.length > 0 && <span className="text-xs text-accent-orange font-medium">{tags.length}/{HASHTAG_MAX}</span>}
-                </div>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/30 transition-transform ${openSection === "tags" ? "rotate-180" : ""}`}><path d="M3 4.5L6 7.5L9 4.5" /></svg>
-              </button>
-              {openSection === "tags" && (
-                <div className="px-1 pb-1" ref={tagsRef}>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={`px-2.5 py-1 rounded-full text-xs transition-all active:scale-[0.97] ${
-                          tags.includes(tag) ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5 mt-2">
-                    <input
-                      type="text"
-                      value={customTag}
-                      onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-                      onKeyDown={(e) => e.key === "Enter" && addCustomTag()}
-                      placeholder="Custom tag"
-                      maxLength={20}
-                      className="flex-1 border border-forest-light/30 bg-forest-light/10 text-white rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent-orange placeholder-white/30"
-                    />
-                    <button
-                      onClick={addCustomTag}
-                      disabled={!customTag.trim() || tags.length >= HASHTAG_MAX}
-                      className="px-3 py-1.5 bg-white text-forest-mid rounded-full text-xs font-bold disabled:opacity-30"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
 
           {/* Remove photo */}
           {imagePreview && (
