@@ -101,6 +101,14 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
     setSlideIdx(Math.round(el.scrollLeft / el.clientWidth));
   };
 
+  // Auto-advance every 7s; manual swipes/dot taps reset the timer via slideIdx
+  useEffect(() => {
+    if (slideCount < 2) return;
+    const t = setTimeout(() => goToSlide((slideIdx + 1) % slideCount), 7000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideIdx, slideCount]);
+
   const openMeeting = (m: Meeting) => {
     window.open(m.url, "_blank", "noopener,noreferrer");
   };
