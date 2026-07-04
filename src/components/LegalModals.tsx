@@ -90,7 +90,7 @@ function LegalModalShell({
 // ─── Japanese fallback content ───
 
 const TERMS_JA = `
-<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年3月24日</p>
+<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年7月4日</p>
 <p class="font-bold text-sm text-gray-800">第1条（利用規約の同意）</p>
 <p>Days Count in AUS（以下「本アプリ」）をご利用いただくことで、本利用規約に同意したものとみなします。同意いただけない場合は、本アプリのご利用をお控えください。</p>
 <p class="font-bold text-sm text-gray-800">第2条（サービス概要）</p>
@@ -105,7 +105,7 @@ const TERMS_JA = `
 <p>・投稿したコンテンツ（テキスト・画像）の著作権は利用者に帰属します。</p>
 <p>・公開投稿を行った場合、他の利用者がアプリ内で閲覧する非独占的・無償の権利を付与するものとします。</p>
 <p>・公開投稿について、運営者は本アプリの宣伝・広告・プロモーション（SNS、ウェブサイト、広告素材等を含む）の目的で、無償かつ期間の制限なく利用できるものとします。利用にあたり、投稿者のニックネームやプロフィール画像が表示される場合があります。</p>
-<p>・投稿は作成後5分以内に編集可能で、削除はいつでも可能です。ただし、削除前に運営者が取得したコンテンツの宣伝利用は継続される場合があります。</p>
+<p>・投稿はいつでも編集（画像の変更を除く）・削除できます。ただし、削除前に運営者が取得したコンテンツの宣伝利用は継続される場合があります。</p>
 <p>・非公開投稿はご本人のみ閲覧できます。非公開投稿は宣伝目的に使用されません。</p>
 <p>・公開投稿の宣伝利用を希望しない場合は、お問い合わせ先までご連絡ください。該当コンテンツの宣伝利用を停止いたします。</p>
 <p>・アップロードされた画像は自動的に圧縮され、EXIF情報（位置情報含む）は削除されます。</p>
@@ -123,31 +123,31 @@ const TERMS_JA = `
 <p>・利用者は投稿や他の利用者を通報できます。3件以上の通報を受けた投稿は自動的に非表示となります。</p>
 <p>・非表示から30日以上経過した投稿は永久に削除される場合があります。</p>
 <p class="font-bold text-sm text-gray-800">第7条（コミュニティ）</p>
-<p>・Lv.13以上の利用者はコミュニティに参加でき、Lv.20以上で作成できます。</p>
-<p>・各利用者は最大2つのコミュニティに参加できます（公式コミュニティを除く）。</p>
-<p>・1コミュニティの上限は10名です。</p>
+<p>・Lv.2以上の利用者はコミュニティに参加・作成できます。</p>
+<p>・所属できるコミュニティ数はレベルに応じて増加します（最大3、公式グループを除く）。</p>
+<p>・1コミュニティの上限は12名です（公式グループに上限はありません）。</p>
 <p>・リーダーがコミュニティの管理責任を負います。リーダーが退会した場合、コミュニティは解散されます。</p>
 <p>・メッセージは100文字以内です。</p>
 <p>・グループチャット内での利用者間のトラブル（誹謗中傷、詐欺、個人情報の漏洩等）について、運営者は一切の責任を負いません。利用者間で解決するものとします。</p>
 <p>・運営者は、通報等により悪質と判断したメッセージやユーザーに対して、削除・アカウント停止等の措置を講じることがあります。</p>
 <p class="font-bold text-sm text-gray-800">第8条（XP・レベル・ストリーク）</p>
 <p>・XPは投稿やいいねの受信により獲得できます。XP・レベルに金銭的価値はありません。</p>
-<p>・ストリークは48時間投稿がない場合にリセットされます。期限の6時間前に警告通知が送信されます（通知を有効にしている場合）。</p>
-<p>・いいねの送信回数に制限はありませんが、いいね送信によるXP獲得は1日5回までです。</p>
+<p>・ストリークは暦日ベースで判定され、前日に投稿がない場合リセットされます。リセット前の夜に警告通知が送信されます（通知を有効にしている場合）。</p>
+<p>・いいねの送受信回数に制限はありませんが、XP獲得は送信が1日5回まで、受信が1日10回までです。</p>
 <p class="font-bold text-sm text-gray-800">第9条（広告の表示）</p>
 <p>・本アプリ内にスポンサーおよび第三者による広告が表示される場合があります。</p>
 <p>・広告の内容は運営者が管理しますが、広告主の商品・サービスについて運営者は一切の保証をいたしません。</p>
 <p>・広告のリンク先は外部サイトであり、当該サイトの利用規約およびプライバシーポリシーは各サイトのものが適用されます。</p>
 <p class="font-bold text-sm text-gray-800">第10条（外部リンク・外部サービス）</p>
-<p>・本アプリ内にはZoom、その他の外部サービスへのリンクが含まれる場合があります。</p>
+<p>・本アプリ内には、Zoom・Google Meet等の外部サービスへのリンクが含まれる場合があります。ライブミーティングのリンクは、開催権限を持つ利用者（ホスト）が設定する外部サービスのURLです。</p>
 <p>・外部サービスの利用は各サービスの利用規約に従うものとし、運営者は外部サービスの内容、安全性、可用性について一切の責任を負いません。</p>
 <p>・外部リンクを通じて発生したトラブル（個人情報の漏洩、詐欺、損害等）について、運営者は責任を負いません。</p>
-<p>・外部サービス上での利用者間のやり取り（Zoom通話を含む）において発生したトラブルについて、運営者は一切関与せず、責任を負いません。</p>
+<p>・外部サービス上での利用者間のやり取り（ライブミーティングでの通話を含む）において発生したトラブルについて、運営者は一切関与せず、責任を負いません。</p>
 <p class="font-bold text-sm text-gray-800">第11条（プッシュ通知）</p>
 <p>・プッシュ通知は任意です。ブラウザの設定からいつでも有効・無効を切り替えられます。</p>
 <p>・通知はストリーク警告、いいね通知、その他アプリ関連のお知らせに使用されます。</p>
 <p class="font-bold text-sm text-gray-800">第12条（ブロック・通報）</p>
-<p>・任意の利用者をブロックできます。ブロックした利用者の投稿はフィードに表示されません。</p>
+<p>・任意の利用者をブロックできます。ブロックした相手およびあなたをブロックした相手の投稿は、フィードに相互に表示されません。</p>
 <p>・通報には理由とスクリーンショットが必要です。虚偽の通報はアカウント停止の対象となります。</p>
 <p class="font-bold text-sm text-gray-800">第13条（アカウントの停止・削除）</p>
 <p>・運営者は、本規約に違反するアカウントを事前通知なく停止または削除する権利を有します。</p>
@@ -175,7 +175,7 @@ const TERMS_JA = `
 `;
 
 const TERMS_EN = `
-<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: March 24, 2026</p>
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: July 4, 2026</p>
 <p class="font-bold text-sm text-gray-800">Article 1 (Acceptance of Terms)</p>
 <p>By using Days Count in AUS (hereinafter "the App"), you are deemed to have agreed to these Terms of Service. If you do not agree, please refrain from using the App.</p>
 <p class="font-bold text-sm text-gray-800">Article 2 (Service Overview)</p>
@@ -190,7 +190,7 @@ const TERMS_EN = `
 <p>・Copyright of posted content (text and images) belongs to the user.</p>
 <p>・By making a public post, you grant other users a non-exclusive, royalty-free right to view it within the App.</p>
 <p>・The Operator may use public posts free of charge and without time limitation for the purpose of promoting, advertising, and marketing the App (including on social media, websites, and advertising materials). The poster's nickname and profile picture may be displayed in such use.</p>
-<p>・Posts can be edited within 5 minutes of creation and deleted at any time. However, promotional use of content obtained by the Operator before deletion may continue.</p>
+<p>・Posts can be edited (except for changing the image) and deleted at any time. However, promotional use of content obtained by the Operator before deletion may continue.</p>
 <p>・Private posts are visible only to the account owner. Private posts will not be used for promotional purposes.</p>
 <p>・If you do not wish your public posts to be used for promotional purposes, please contact us. We will cease promotional use of the relevant content.</p>
 <p>・Uploaded images are automatically compressed and EXIF data (including location information) is removed.</p>
@@ -209,7 +209,7 @@ const TERMS_EN = `
 <p>・Posts that have been hidden for more than 30 days may be permanently deleted.</p>
 <p class="font-bold text-sm text-gray-800">Article 7 (Communities)</p>
 <p>・Users at Lv.2 or above can join and create communities.</p>
-<p>・The number of communities a user can join increases with their level.</p>
+<p>・The number of communities a user can join increases with their level (up to 3, excluding official groups).</p>
 <p>・Each community has a maximum of 12 members (mode communities have no limit).</p>
 <p>・The leader is responsible for managing the community. If the leader leaves, the community will be disbanded.</p>
 <p>・Messages are limited to 100 characters.</p>
@@ -217,22 +217,22 @@ const TERMS_EN = `
 <p>・The Operator may take measures such as deleting messages or suspending accounts for users or messages deemed malicious through reports or other means.</p>
 <p class="font-bold text-sm text-gray-800">Article 8 (XP, Levels, and Streaks)</p>
 <p>・XP can be earned through posting and receiving likes. XP and levels have no monetary value.</p>
-<p>・Streaks are reset if no post is made within 48 hours. A warning notification is sent 6 hours before the deadline (if notifications are enabled).</p>
-<p>・There is no limit on sending likes, but XP earned from sending likes is capped at 5 times per day.</p>
+<p>・Streaks are evaluated per calendar day and reset if you did not post the previous day. A warning notification is sent in the evening before the reset (if notifications are enabled).</p>
+<p>・There is no limit on sending or receiving likes, but XP is capped at 5 sent likes and 10 received likes per day.</p>
 <p class="font-bold text-sm text-gray-800">Article 9 (Advertisements)</p>
 <p>・Sponsor and third-party advertisements may be displayed within the App.</p>
 <p>・While the Operator manages ad content, the Operator makes no guarantees regarding advertisers' products or services.</p>
 <p>・Ad links lead to external sites, which are governed by their own terms of service and privacy policies.</p>
 <p class="font-bold text-sm text-gray-800">Article 10 (External Links and Services)</p>
-<p>・The App may contain links to Zoom and other external services.</p>
+<p>・The App may contain links to external services such as Zoom and Google Meet. Live meeting links are external URLs set by users (hosts) authorized to host meetings.</p>
 <p>・Use of external services is subject to their respective terms of service. The Operator assumes no responsibility for the content, safety, or availability of external services.</p>
 <p>・The Operator is not responsible for issues arising from external links (including leaks of personal information, fraud, or damages).</p>
-<p>・The Operator is not involved in and assumes no responsibility for disputes between users on external services (including Zoom calls).</p>
+<p>・The Operator is not involved in and assumes no responsibility for disputes between users on external services (including live meeting calls).</p>
 <p class="font-bold text-sm text-gray-800">Article 11 (Push Notifications)</p>
 <p>・Push notifications are optional. They can be enabled or disabled at any time through your browser settings.</p>
 <p>・Notifications are used for streak warnings, like notifications, and other App-related announcements.</p>
 <p class="font-bold text-sm text-gray-800">Article 12 (Blocking and Reporting)</p>
-<p>・You can block any user. Posts from blocked users will not appear in your feed.</p>
+<p>・You can block any user. Posts are mutually hidden between you and anyone you block or who blocks you.</p>
 <p>・Reports require a reason and a screenshot. False reports may result in account suspension.</p>
 <p class="font-bold text-sm text-gray-800">Article 13 (Account Suspension and Deletion)</p>
 <p>・The Operator reserves the right to suspend or delete accounts that violate these Terms without prior notice.</p>
