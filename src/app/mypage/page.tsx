@@ -30,6 +30,8 @@ export default function MyPage() {
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modeFilter, setModeFilter] = useState("");
+  // Re-tapping "All" toggles the grid between 4 and 2 columns
+  const [gridCols, setGridCols] = useState<2 | 4>(4);
   const [showFollowing, setShowFollowing] = useState(false);
 
   useEffect(() => {
@@ -114,7 +116,13 @@ export default function MyPage() {
         </div>
       </div>
 
-      <ModeFilterBar value={modeFilter} onChange={setModeFilter} />
+      <ModeFilterBar
+        value={modeFilter}
+        onChange={(m) => {
+          if (m === "" && modeFilter === "") setGridCols((c) => (c === 4 ? 2 : 4));
+          setModeFilter(m);
+        }}
+      />
 
       {/* 投稿グリッド */}
       <div className="flex-1 min-h-0">
@@ -123,7 +131,7 @@ export default function MyPage() {
         ) : filteredPosts.length === 0 ? (
           <p className="text-center text-white/40 py-8">{modeFilter ? "No posts in this mode" : "No posts yet"}</p>
         ) : (
-          <PostGrid posts={filteredPosts} onSelect={setSelectedIndex} showText={!modeFilter} />
+          <PostGrid posts={filteredPosts} onSelect={setSelectedIndex} showText={!modeFilter} cols={modeFilter ? 4 : gridCols} />
         )}
       </div>
       </div>
