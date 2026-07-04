@@ -72,21 +72,22 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
   // call ends whenever the host ends it on the external service
   const liveMeetings = meetings.filter((m) => !m.expiresAt || m.expiresAt.toMillis() > now);
 
-  // Auto-scroll carousel — slides are the live meetings (or the offline
-  // placeholder) plus the trailing become-a-host card
+  // Carousel — slides are the live meetings (or the offline placeholder)
+  // plus the trailing become-a-host card. Switched by swipe or dot tap.
   const slideCount = Math.max(liveMeetings.length, 1) + 1;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const idxRef = useRef(0);
-  useEffect(() => {
-    if (slideCount < 2) return;
-    const timer = setInterval(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-      idxRef.current = (idxRef.current + 1) % slideCount;
-      el.scrollTo({ left: idxRef.current * el.clientWidth, behavior: "smooth" });
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [slideCount]);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const goToSlide = (i: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    setSlideIdx(i);
+  };
+  const handleCarouselScroll = () => {
+    const el = scrollRef.current;
+    if (!el || !el.clientWidth) return;
+    setSlideIdx(Math.round(el.scrollLeft / el.clientWidth));
+  };
 
   const openMeeting = (m: Meeting) => {
     window.open(m.url, "_blank", "noopener,noreferrer");
@@ -141,8 +142,8 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
         </button>
       </div>
 
-      {/* Auto-scrolling carousel: live meetings (or offline placeholder) + become-a-host card */}
-      <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl">
+      {/* Carousel: live meetings (or offline placeholder) + become-a-host card */}
+      <div ref={scrollRef} onScroll={handleCarouselScroll} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl">
           {liveMeetings.length === 0 && (
             /* Offline placeholder */
             <div className="w-full shrink-0 snap-center">
@@ -252,10 +253,17 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
           </div>
       </div>
 
-      {/* Dots for carousel (slides = meetings or offline placeholder + host card) */}
-      <div className="flex justify-center gap-1 mt-1.5">
+      {/* Tappable dots to switch slides */}
+      <div className="flex justify-center gap-2 mt-1.5">
         {Array.from({ length: slideCount }, (_, i) => (
-          <span key={i} className="w-1 h-1 rounded-full bg-white/25" aria-hidden="true" />
+          <button
+            key={i}
+            onClick={() => goToSlide(i)}
+            className="p-1 -m-0.5"
+            aria-label={`Go to card ${i + 1}`}
+          >
+            <span className={`block w-1.5 h-1.5 rounded-full transition-colors ${slideIdx === i ? "bg-accent-orange" : "bg-white/25"}`} />
+          </button>
         ))}
       </div>
 
