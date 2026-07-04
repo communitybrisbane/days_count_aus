@@ -131,9 +131,23 @@ export default function HomePage() {
     setPhasePrompt(null);
   };
 
+  // Dismissed announcements are remembered per device (keyed by title)
+  const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      setDismissedAnnouncements(JSON.parse(localStorage.getItem("dismissed_announcements") || "[]"));
+    } catch { /* corrupted value — treat as none dismissed */ }
+  }, []);
+
+  const dismissAnnouncement = (title: string) => {
+    const updated = [...dismissedAnnouncements, title];
+    setDismissedAnnouncements(updated);
+    localStorage.setItem("dismissed_announcements", JSON.stringify(updated));
+  };
+
   const activeAnnouncements = useMemo(
-    () => adminConfig?.announcements?.filter((a) => a.active) ?? [],
-    [adminConfig?.announcements]
+    () => adminConfig?.announcements?.filter((a) => a.active && !dismissedAnnouncements.includes(a.title)) ?? [],
+    [adminConfig?.announcements, dismissedAnnouncements]
   );
 
   if (loading || !profile) return <LoadingSpinner fullScreen />;
@@ -223,6 +237,13 @@ export default function HomePage() {
                       </a>
                     )}
                   </div>
+                  <button
+                    onClick={() => dismissAnnouncement(ann.title)}
+                    className="shrink-0 -mt-1 -mr-1 w-7 h-7 flex items-center justify-center text-white/40 active:text-white/70 text-lg leading-none"
+                    aria-label="Dismiss announcement"
+                  >
+                    &times;
+                  </button>
                 </div>
               </div>
             );
