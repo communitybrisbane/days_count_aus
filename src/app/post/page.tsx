@@ -43,7 +43,7 @@ export default function PostPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const [openSection, setOpenSection] = useState<"" | "mode" | "tags" | "visibility">("");
+  const [openSection, setOpenSection] = useState<"" | "mode" | "tags">("");
   const dayCount = useDayCount(profile ?? null);
 
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -390,11 +390,15 @@ export default function PostPage() {
                 <p className="text-white/40 text-xs font-medium">Tap to add photo</p>
               </div>
             )}
-            {visibility === "private" && (
-              <div className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1 flex items-center gap-1.5 text-xs">
-                <IconLock size={18} />
-              </div>
-            )}
+            {/* Visibility toggle — tap to switch, without opening the photo picker */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setVisibility(visibility === "public" ? "private" : "public"); }}
+              className="absolute top-2 left-2 bg-black/50 text-white rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold active:bg-black/70"
+              aria-label="Toggle visibility"
+            >
+              {visibility === "public" ? <IconGlobe size={14} /> : <IconLock size={14} />}
+              {visibility === "public" ? "Public" : "Private"}
+            </button>
           </div>
 
           {/* Content + tags — matches PostCard */}
@@ -519,41 +523,6 @@ export default function PostPage() {
                 </div>
               )}
             </>
-          )}
-
-          {/* Visibility toggle */}
-          <button
-            onClick={() => setOpenSection(openSection === "visibility" ? "" : "visibility")}
-            className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-forest-light/10 active:bg-forest-light/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {visibility === "public" ? <IconGlobe size={14} className="text-white/50" /> : <IconLock size={14} className="text-white/50" />}
-              <span className="text-xs font-bold text-white/70">Visibility</span>
-              <span className="text-xs text-accent-orange font-medium">{visibility === "public" ? "Public" : "Private"}</span>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/30 transition-transform ${openSection === "visibility" ? "rotate-180" : ""}`}><path d="M3 4.5L6 7.5L9 4.5" /></svg>
-          </button>
-          {openSection === "visibility" && (
-            <div className="flex gap-1.5 px-1 pb-1">
-              <button
-                onClick={() => { setVisibility("public"); setOpenSection(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.98] ${
-                  visibility === "public" ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                <IconGlobe size={14} />
-                <span className="text-xs font-bold">Public</span>
-              </button>
-              <button
-                onClick={() => { setVisibility("private"); setOpenSection(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.98] ${
-                  visibility === "private" ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                }`}
-              >
-                <IconLock size={14} />
-                <span className="text-xs font-bold">Private</span>
-              </button>
-            </div>
           )}
 
           {/* Remove photo */}
