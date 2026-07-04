@@ -315,12 +315,12 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Mode filter tabs */}
-        <div className="flex px-4 gap-1.5 pb-2">
+        {/* Mode filter tabs — compact "All" circle + labeled white pills */}
+        <div className="flex items-center px-4 gap-2 pb-2">
           <button
             onClick={() => setModeFilter("")}
-            className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
-              !modeFilter ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
+            className={`shrink-0 w-9 h-9 rounded-full text-xs font-bold transition-all ${
+              !modeFilter ? "bg-accent-orange text-white" : "bg-forest-light/20 text-white/50"
             }`}
           >
             All
@@ -329,11 +329,11 @@ export default function ExplorePage() {
             <button
               key={m.id}
               onClick={() => setModeFilter(modeFilter === m.id ? "" : m.id)}
-              className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-bold transition-all ${
-                modeFilter === m.id ? "bg-white text-forest" : "bg-forest-light/20 text-white/50"
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold transition-all ${
+                modeFilter === m.id ? "bg-accent-orange text-white" : "bg-white text-forest"
               }`}
             >
-              <FocusModeIcon modeId={m.id} size={13} />
+              <FocusModeIcon modeId={m.id} size={14} />
               {m.label}
             </button>
           ))}
