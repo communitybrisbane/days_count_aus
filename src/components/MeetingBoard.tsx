@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/lib/firebase";
@@ -39,27 +39,39 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
   const [endAtMillis, setEndAtMillis] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  // Upcoming round hours in the viewer's region time (next 24h) the host can pick as the end time
-  const endOptions = (() => {
-    const nowD = new Date();
-    // Round up to the next full hour in the region tz (handles half-hour offset regions too)
-    const tzMinute = parseInt(new Intl.DateTimeFormat("en-GB", { timeZone: tz, minute: "numeric" }).format(nowD), 10);
-    const first = nowD.getTime() + (((60 - tzMinute) * 60 - nowD.getSeconds()) * 1000);
-    return Array.from({ length: 24 }, (_, i) => {
-      const t = first + i * 3600_000;
-      return { millis: t, label: formatTime(t) };
-    });
-  })();
-
-  // Only offer end times strictly after the chosen start ("Now" allows every upcoming hour)
-  const validEndOptions = endOptions.filter((o) => o.millis > startAtMillis);
-
   // Re-evaluate expiry every minute so cards disappear on time
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  // Upcoming round hours in the viewer's region time (next 24h) the host can pick as the end time.
+  // Millis are snapped to exact hour boundaries and memoized so option values stay
+  // stable across re-renders — otherwise the selected value stops matching any option.
+  const endOptions = useMemo(() => {
+    const nowD = new Date(now);
+    // Round up to the next full hour in the region tz (handles half-hour offset regions too)
+    const tzMinute = parseInt(new Intl.DateTimeFormat("en-GB", { timeZone: tz, minute: "numeric" }).format(nowD), 10);
+    const first = nowD.getTime() + (((60 - tzMinute) * 60 - nowD.getSeconds()) * 1000) - nowD.getMilliseconds();
+    return Array.from({ length: 24 }, (_, i) => {
+      const t = first + i * 3600_000;
+      return {
+        millis: t,
+        label: new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: tz }),
+      };
+    });
+  }, [now, tz]);
+
+  // Only offer end times strictly after the chosen start ("Now" allows every upcoming hour)
+  const validEndOptions = endOptions.filter((o) => o.millis > startAtMillis);
+
+  // When the clock rolls past an hour, drop selections that fell out of the option list
+  useEffect(() => {
+    const valid = new Set(endOptions.map((o) => o.millis));
+    if (startAtMillis && !valid.has(startAtMillis)) setStartAtMillis(0);
+    if (endAtMillis && !valid.has(endAtMillis)) setEndAtMillis(0);
+  }, [endOptions, startAtMillis, endAtMillis]);
 
   // Live meetings feed
   useEffect(() => {
