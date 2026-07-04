@@ -43,7 +43,7 @@ export default function PostPage() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const [openSection, setOpenSection] = useState<"" | "mode" | "tags">("");
+  const [openSection, setOpenSection] = useState<"" | "tags">("");
   const dayCount = useDayCount(profile ?? null);
 
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -56,14 +56,6 @@ export default function PostPage() {
     if (!postRegion && profile.region) setPostRegion(profile.region);
   }, [profile, mode, postRegion]);
 
-
-  const handleModeSelect = (id: string) => {
-    setMode(id);
-    // Auto-scroll to tags after mode selection
-    setTimeout(() => {
-      tagsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -353,7 +345,19 @@ export default function PostPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">{profile.displayName || "You"}</p>
               <p className="text-xs text-gray-400">
-                {todayStr} · {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle mr-0.5" />}{modeInfo?.label || "Select a mode"}
+                {todayStr} ·{" "}
+                {/* Mode toggle — tap to cycle through the 3 modes */}
+                <button
+                  onClick={() => {
+                    const idx = FOCUS_MODES.findIndex((m) => m.id === mode);
+                    setMode(FOCUS_MODES[(idx + 1) % FOCUS_MODES.length].id);
+                  }}
+                  className="inline-flex items-center gap-0.5 text-accent-orange font-medium active:opacity-70"
+                  aria-label="Change mode"
+                >
+                  {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={12} className="inline-block align-middle" />}
+                  {modeInfo?.label || "Select a mode"}
+                </button>
               </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -440,39 +444,6 @@ export default function PostPage() {
 
         {/* ── Accordion sections ── */}
         <div className="px-4 mt-3 space-y-1.5">
-
-          {/* Mode toggle */}
-          <button
-            onClick={() => setOpenSection(openSection === "mode" ? "" : "mode")}
-            className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl bg-forest-light/10 active:bg-forest-light/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              {modeInfo && <FocusModeIcon modeId={modeInfo.id} size={14} className="text-accent-orange" />}
-              <span className="text-xs font-bold text-white/70">Mode</span>
-              {modeInfo && <span className="text-xs text-accent-orange font-medium">{modeInfo.label}</span>}
-            </div>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/30 transition-transform ${openSection === "mode" ? "rotate-180" : ""}`}><path d="M3 4.5L6 7.5L9 4.5" /></svg>
-          </button>
-          {openSection === "mode" && (
-            <div className="px-1 pb-1">
-              {[["english", "skill", "challenge"]].map((row, ri) => (
-                <div key={ri} className="flex gap-1.5">
-                  {FOCUS_MODES.filter((m) => row.includes(m.id)).map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => { handleModeSelect(m.id); setOpenSection(""); }}
-                      className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-full transition-all active:scale-[0.97] text-xs font-medium ${
-                        mode === m.id ? "bg-accent-orange text-white" : "bg-white text-forest-mid"
-                      }`}
-                    >
-                      <FocusModeIcon modeId={m.id} size={14} />
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Tags toggle */}
           {mode && (
