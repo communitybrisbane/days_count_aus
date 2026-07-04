@@ -144,7 +144,7 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                 tabIndex={0}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl shrink-0 bg-white/20 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-full shrink-0 bg-white/20 flex items-center justify-center overflow-hidden">
                     {m.hostPhotoURL ? (
                       <img src={m.hostPhotoURL} alt="" className="w-full h-full object-cover" />
                     ) : (
