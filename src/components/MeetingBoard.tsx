@@ -154,7 +154,6 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-sm text-white truncate">{m.title}</p>
-                      {m.joinType === "friends" && <IconLock size={13} className="text-white/80 shrink-0" />}
                       <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-white" />
                         LIVE
@@ -166,6 +165,22 @@ export default function MeetingBoard({ currentUid }: { currentUid?: string }) {
                         <span className="text-white/50"> · until {new Date(m.expiresAt.toMillis()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                       )}
                     </p>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-white/20 px-2 py-0.5 rounded-full">
+                        <FocusModeIcon modeId={resolveMode(m.mode)} size={10} />
+                        {FOCUS_MODES.find((f) => f.id === resolveMode(m.mode))?.label || m.mode}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-white/20 px-2 py-0.5 rounded-full">
+                        {m.joinType === "friends" ? (
+                          <>
+                            <IconLock size={10} />
+                            Friends only
+                          </>
+                        ) : (
+                          "Anyone"
+                        )}
+                      </span>
+                    </div>
                   </div>
                   <div className="shrink-0 flex flex-col items-end gap-1.5">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
