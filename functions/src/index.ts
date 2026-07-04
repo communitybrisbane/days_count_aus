@@ -42,7 +42,13 @@ async function getBannedWords(): Promise<string[]> {
  */
 function checkBannedWords(text: string, bannedWords: string[]): string[] {
   const lower = text.toLowerCase();
-  return bannedWords.filter((word) => lower.includes(word.toLowerCase()));
+  return bannedWords.filter((word) => {
+    const w = word.toLowerCase().trim();
+    if (!w) return false;
+    // Word-boundary match so e.g. "class" doesn't trip on "ass"
+    const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`).test(lower);
+  });
 }
 
 /**
