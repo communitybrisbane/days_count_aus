@@ -17,7 +17,6 @@ import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import Avatar from "@/components/Avatar";
 import { IconCamera, IconGlobe, IconLock, IconKangaroo, FocusModeIcon } from "@/components/icons";
-import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput, NON_ASCII_EMOJI_MULTILINE } from "@/hooks/useAsciiInput";
 
 export default function PostPage() {
@@ -388,15 +387,15 @@ export default function PostPage() {
               <IconCamera size={12} />
               {imagePreview ? "Change photo" : "Add photo"}
             </div>
+            {/* Char counter + English-only warning (kept off the card rows so the preview matches the real post) */}
+            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 pointer-events-none">
+              <span className="bg-black/40 text-white/80 rounded-full px-2 py-1 text-[10px]">{content.length}/{POST_CONTENT_MAX}</span>
+              {showWarn && <span className="bg-red-500/80 text-white rounded-full px-2 py-1 text-[10px] font-bold">English only</span>}
+            </div>
           </div>
 
-          {/* Tags + counter below the image — same thin rows as PostCard */}
+          {/* Tags below the image — same thin row as PostCard */}
           <div className="px-3 pt-0.5">
-            <div className="flex items-center justify-between">
-              <AsciiWarn show={showWarn} />
-              <p className="text-[10px] text-gray-300 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
-            </div>
-
             {/* Tags — tap a tag to remove it, type to add */}
             <div className="flex flex-wrap items-center gap-1.5">
               {tags.map((tag) => (
