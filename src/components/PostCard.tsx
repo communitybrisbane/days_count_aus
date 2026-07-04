@@ -520,7 +520,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
                 key={i}
                 href={`/explore?q=${encodeURIComponent(tag)}`}
                 onClick={(e) => { e.stopPropagation(); }}
-                className="text-[11px] text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0 leading-tight active:bg-accent-orange/20 transition-colors"
+                className="text-xs text-accent-orange bg-accent-orange/8 rounded-full px-2 py-0 leading-tight active:bg-accent-orange/20 transition-colors"
               >
                 {tag}
               </a>
