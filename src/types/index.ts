@@ -101,6 +101,7 @@ export interface Meeting {
   joinType: "open" | "friends";
   active: boolean;
   createdAt?: { toMillis(): number };
+  startsAt?: { toMillis(): number };
   expiresAt?: { toMillis(): number };
 }
 

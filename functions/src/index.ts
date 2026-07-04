@@ -706,8 +706,8 @@ export const manageMeeting = onCall(
     }
 
     if (action === "create") {
-      const { title, mode, url, joinType, expiresAtMillis } = request.data as {
-        title: string; mode: string; url: string; joinType: string; expiresAtMillis: number;
+      const { title, mode, url, joinType, expiresAtMillis, startsAtMillis } = request.data as {
+        title: string; mode: string; url: string; joinType: string; expiresAtMillis: number; startsAtMillis: number;
       };
       if (!title || typeof title !== "string" || title.trim().length === 0 || title.length > 30) {
         throw new HttpsError("invalid-argument", "Title must be 1-30 characters.");
@@ -721,9 +721,12 @@ export const manageMeeting = onCall(
       if (!["open", "friends"].includes(joinType)) {
         throw new HttpsError("invalid-argument", "Invalid join type.");
       }
-      // End time is a client-local round hour; server only sanity-checks the range
+      // Times are client-local round hours; server only sanity-checks the ranges
       if (typeof expiresAtMillis !== "number" || expiresAtMillis <= Date.now() || expiresAtMillis > Date.now() + 24 * 3600_000) {
         throw new HttpsError("invalid-argument", "End time must be within the next 24 hours.");
+      }
+      if (typeof startsAtMillis !== "number" || startsAtMillis < Date.now() - 3600_000 || startsAtMillis >= expiresAtMillis) {
+        throw new HttpsError("invalid-argument", "Start time must be before the end time.");
       }
       // One live meeting per account: block if this host already has an active, unexpired one
       const existing = await db.collection("meetings")
@@ -754,7 +757,9 @@ export const manageMeeting = onCall(
         joinType,
         active: true,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        // Card auto-hides after this; the actual call ends whenever the host ends it externally
+        // Card shows from 15 min before startsAt and auto-hides at expiresAt;
+        // the actual call ends whenever the host ends it externally
+        startsAt: admin.firestore.Timestamp.fromMillis(startsAtMillis),
         expiresAt: admin.firestore.Timestamp.fromMillis(expiresAtMillis),
       });
       return { ok: true, meetingId: ref.id };

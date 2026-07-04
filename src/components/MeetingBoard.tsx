@@ -35,6 +35,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
   const [mode, setMode] = useState("english");
   const [url, setUrl] = useState("");
   const [joinType, setJoinType] = useState<"open" | "friends">("open");
+  const [startAtMillis, setStartAtMillis] = useState(0); // 0 = starts now
   const [endAtMillis, setEndAtMillis] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -103,11 +104,16 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
       alert("Please pick an end time.");
       return;
     }
+    const startsAtMillis = startAtMillis || Date.now();
+    if (startsAtMillis >= endAtMillis) {
+      alert("Start time must be before the end time.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await manageMeeting({ action: "create", password, title, mode, url, joinType, expiresAtMillis: endAtMillis });
+      await manageMeeting({ action: "create", password, title, mode, url, joinType, startsAtMillis, expiresAtMillis: endAtMillis });
       setShowHostModal(false);
-      setTitle(""); setUrl(""); setPassword(""); setJoinType("open"); setEndAtMillis(0);
+      setTitle(""); setUrl(""); setPassword(""); setJoinType("open"); setStartAtMillis(0); setEndAtMillis(0);
     } catch (e) {
       alert((e as Error).message || "Failed to start meeting");
     } finally {
@@ -182,15 +188,25 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-sm text-white truncate">{m.title}</p>
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                        LIVE
-                      </span>
+                      {m.startsAt && m.startsAt.toMillis() > now ? (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-amber-500 px-2 py-0.5 rounded-full shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                          UPCOMING
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-green-500 px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                          LIVE
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-white/70 mt-0.5 truncate">
                       Hosted by {m.hostName}
                       {m.expiresAt && (
-                        <span className="text-white/50"> · until {formatTime(m.expiresAt.toMillis())} {tzShort}</span>
+                        <span className="text-white/50">
+                          {" · "}
+                          {m.startsAt ? `${formatTime(m.startsAt.toMillis())}–${formatTime(m.expiresAt.toMillis())}` : `until ${formatTime(m.expiresAt.toMillis())}`} {tzShort}
+                        </span>
                       )}
                     </p>
                     <div className="flex items-center gap-1.5 mt-1.5">
@@ -400,7 +416,18 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-500 mb-1">Until <span className="font-normal text-gray-400">({region && REGION_TZ[region] ? region : "Sydney"} time / {tzShort})</span></p>
+                <p className="text-xs font-bold text-gray-500 mb-1">From <span className="font-normal text-gray-400">({region && REGION_TZ[region] ? region : "Sydney"} time / {tzShort})</span></p>
+                <select
+                  value={startAtMillis || ""}
+                  onChange={(e) => setStartAtMillis(Number(e.target.value))}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-accent-orange mb-2"
+                >
+                  <option value="">Now</option>
+                  {endOptions.slice(0, 23).map((o) => (
+                    <option key={o.millis} value={o.millis}>{o.label}</option>
+                  ))}
+                </select>
+                <p className="text-xs font-bold text-gray-500 mb-1">Until</p>
                 <select
                   value={endAtMillis || ""}
                   onChange={(e) => setEndAtMillis(Number(e.target.value))}
