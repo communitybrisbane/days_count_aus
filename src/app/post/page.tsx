@@ -85,6 +85,10 @@ export default function PostPage() {
 
   const handleSubmit = async () => {
     if (!user || !profile || !mode) return;
+    if (!imageBlob) {
+      alert("Please add a photo to post.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -315,7 +319,7 @@ export default function PostPage() {
           </svg>
         </button>
         <button
-          disabled={!mode || submitting}
+          disabled={!mode || !imageBlob || submitting}
           onClick={handleSubmit}
           className="px-5 py-2 rounded-full bg-accent-orange text-white text-sm font-bold disabled:opacity-40 active:scale-[0.96] transition-transform"
         >
