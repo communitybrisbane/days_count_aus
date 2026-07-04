@@ -131,7 +131,9 @@ export default function HomePage() {
     setPhasePrompt(null);
   };
 
-  // Dismissed announcements are remembered per device (keyed by title)
+  // Dismissed announcements are remembered per device, keyed by content —
+  // any edit to title or body makes the announcement reappear for everyone
+  const announcementKey = (a: { title: string; body?: string }) => `${a.title}|${a.body || ""}`;
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>([]);
   useEffect(() => {
     try {
@@ -139,14 +141,15 @@ export default function HomePage() {
     } catch { /* corrupted value — treat as none dismissed */ }
   }, []);
 
-  const dismissAnnouncement = (title: string) => {
-    const updated = [...dismissedAnnouncements, title];
+  const dismissAnnouncement = (key: string) => {
+    const updated = [...dismissedAnnouncements, key];
     setDismissedAnnouncements(updated);
     localStorage.setItem("dismissed_announcements", JSON.stringify(updated));
   };
 
   const activeAnnouncements = useMemo(
-    () => adminConfig?.announcements?.filter((a) => a.active && !dismissedAnnouncements.includes(a.title)) ?? [],
+    () => adminConfig?.announcements?.filter((a) => a.active && !dismissedAnnouncements.includes(announcementKey(a))) ?? [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [adminConfig?.announcements, dismissedAnnouncements]
   );
 
@@ -238,7 +241,7 @@ export default function HomePage() {
                     )}
                   </div>
                   <button
-                    onClick={() => dismissAnnouncement(ann.title)}
+                    onClick={() => dismissAnnouncement(announcementKey(ann))}
                     className="shrink-0 -mt-1 -mr-1 w-7 h-7 flex items-center justify-center text-white/40 active:text-white/70 text-lg leading-none"
                     aria-label="Dismiss announcement"
                   >
