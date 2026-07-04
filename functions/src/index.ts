@@ -845,12 +845,37 @@ function currentTuesdayUTC(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysSinceTuesday));
 }
 
+const POSTS_PER_HOUR_MAX = 5;
+
 export const onPostCreatedXP = onDocumentCreated("posts/{postId}", async (event) => {
   const snap = event.data;
   if (!snap) return;
   const post = snap.data();
   const uid = post.userId as string;
   if (!uid) return;
+
+  // Rate limit: hide posts beyond POSTS_PER_HOUR_MAX in the last hour (spam guard)
+  const hourAgo = admin.firestore.Timestamp.fromMillis(Date.now() - 3600_000);
+  const recentSnap = await db.collection("posts")
+    .where("userId", "==", uid)
+    .where("createdAt", ">=", hourAgo)
+    .limit(POSTS_PER_HOUR_MAX + 1)
+    .get();
+  if (recentSnap.size > POSTS_PER_HOUR_MAX) {
+    console.log(`[RATE_LIMIT] Hiding post ${event.params.postId}: ${recentSnap.size} posts in the last hour by ${uid}`);
+    await db.doc(`posts/${event.params.postId}`).update({
+      status: "hidden",
+      xpProcessed: true, // no XP for rate-limited posts
+    });
+    await db.collection("moderation_logs").add({
+      postId: event.params.postId,
+      userId: uid,
+      action: "rate_limited",
+      reason: `More than ${POSTS_PER_HOUR_MAX} posts in one hour`,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return;
+  }
 
   await db.runTransaction(async (tx) => {
     // Idempotency: retried triggers must not double-grant

@@ -8,7 +8,7 @@ import { FOCUS_MODES, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK
 import { calculateLevel, dayNumberFromDeparture, formatDayLabel } from "@/lib/utils";
 import { modeGradient } from "@/lib/postUtils";
 import { useDayCount } from "@/hooks/useDayCount";
-import { createPost, isFirstPost, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount } from "@/lib/services/posts";
+import { createPost, isFirstPost, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount, getHourlyPostCount } from "@/lib/services/posts";
 import dynamic from "next/dynamic";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -99,6 +99,14 @@ export default function PostPage() {
 
     setSubmitting(true);
     try {
+      // Rate limit: max 5 posts per hour (also enforced server-side)
+      const hourlyCount = await getHourlyPostCount(user.uid);
+      if (hourlyCount >= 5) {
+        alert("You're posting too fast. Please wait a while and try again.");
+        setSubmitting(false);
+        return;
+      }
+
       const [bannedWords, firstPost] = await Promise.all([
         getBannedWords(),
         isFirstPost(user.uid),
