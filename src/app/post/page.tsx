@@ -431,16 +431,22 @@ export default function PostPage() {
                 </button>
               ))}
               {tags.length < HASHTAG_MAX && (
-                <input
-                  type="text"
-                  value={customTag}
-                  onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-                  onBlur={addCustomTag}
-                  placeholder={tags.length === 0 ? "#tags" : "#"}
-                  maxLength={20}
-                  className="w-20 text-xs text-accent-orange placeholder-gray-300 bg-transparent focus:outline-none"
-                />
+                <span className="inline-flex items-center text-xs text-accent-orange font-medium">
+                  {/* Live "#" prefix so the tag appears as you type */}
+                  {customTag && <span>#</span>}
+                  <input
+                    type="text"
+                    value={customTag}
+                    onChange={(e) => setCustomTag(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
+                    onBlur={addCustomTag}
+                    placeholder={tags.length === 0 ? "#tags" : "#"}
+                    maxLength={20}
+                    size={Math.max(customTag.length, 4)}
+                    className="text-xs text-accent-orange font-medium placeholder-gray-300 bg-transparent focus:outline-none"
+                    style={{ width: `${Math.max(customTag.length, 4) + 1}ch` }}
+                  />
+                </span>
               )}
             </div>
           </div>
