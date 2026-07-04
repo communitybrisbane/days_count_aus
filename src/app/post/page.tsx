@@ -47,6 +47,15 @@ export default function PostPage() {
   const dayCount = useDayCount(profile ?? null);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow the diary textarea so the full text is always visible (no inner scroll)
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [content]);
 
   // Set defaults from profile
   useEffect(() => {
@@ -375,13 +384,14 @@ export default function PostPage() {
             {/* Centered diary input over the image */}
             <div className="absolute inset-0 flex items-center justify-center p-6">
               <textarea
+                ref={contentRef}
                 value={content}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
                 maxLength={POST_CONTENT_MAX}
                 rows={3}
                 placeholder={"What happened today?\n(English only)"}
-                className="w-[70%] bg-transparent text-white text-center text-sm font-medium leading-relaxed placeholder-white/50 focus:outline-none resize-none drop-shadow"
+                className="w-[70%] max-h-full bg-transparent text-white text-center text-sm font-medium leading-relaxed placeholder-white/50 focus:outline-none resize-none drop-shadow overflow-hidden"
               />
             </div>
             {/* Visibility toggle — tap to switch, without opening the photo picker */}
