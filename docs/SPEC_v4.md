@@ -355,6 +355,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **フェーズ切り替え**: ステータスを手動変更。confirm確認ダイアログ付き。
 - **通知設定**: 3つのトグル（いいね通知、グループメッセージ通知、ストリーク警告通知）をアコーディオンで表示。`users/{uid}/private/config.notificationPrefs` に保存（未設定はON扱い）。Cloud Functions（`onLikeCreated` / `onGroupMessageCreated` / `checkStreaks`）が送信前に各設定を確認。
 - **地域変更**: 「Sydney ▼」形式の1行ボタン → ドラム式ホイールモーダルで選択。
+- ゴール編集は設定画面から削除（2026-07-05）。ホームの週間ゴールカード（WeeklyHistoryModal）からのみ編集。
 - **ブロックユーザー管理**: ブロック済みユーザーの一覧表示 + アンブロック（アコーディオン）。ブロックは**完全相互非表示**（§6.3参照）。
 - **法定項目**: プライバシーポリシー、利用規約、法的通知（Firestoreの `legal_docs` コレクションから取得、フォールバック付き）。
 - **アカウント管理**: ログアウト（confirm付き）、アカウント削除（confirm付き + 再認証）。

@@ -6,7 +6,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
-import { MAIN_MODE_OPTIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, AVATAR_SIZE, NICKNAME_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { uploadAvatar, deleteAccount, unblockUser, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
@@ -35,7 +35,6 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState(profile?.displayName || "");
   const [region, setRegion] = useState(profile?.region || "");
   const [showRegionWheel, setShowRegionWheel] = useState(false);
-  const [goal, setGoal] = useState(profile?.goal || "");
   const [mainMode, setMainMode] = useState(profile?.mainMode || "");
   const [departureDate, setDepartureDate] = useState(profile?.departureDate || "");
   const [status, setStatus] = useState<"pre-departure" | "in-australia" | "post-return">(profile?.status || "pre-departure");
@@ -65,7 +64,6 @@ export default function SettingsPage() {
     if (!profile) return;
     setNickname(profile.displayName || "");
     setRegion(profile.region || "");
-    setGoal(profile.goal || "");
     setMainMode(profile.mainMode || "");
     setDepartureDate(profile.departureDate || "");
     setStatus(profile.status || "pre-departure");
@@ -105,7 +103,6 @@ export default function SettingsPage() {
         displayNameLower: nickname.trim().toLowerCase(),
         region: region.trim(),
         showRegion,
-        goal: goal.trim(),
         mainMode,
         departureDate,
       });
@@ -315,12 +312,6 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-xs text-white/60">Goal</label>
-              <input type="text" maxLength={GOAL_MAX} value={goal} onChange={(e) => setGoal(sanitize(e.target.value))}
-                className="w-full border border-forest-light/30 bg-forest-light/10 text-white rounded-lg px-3 py-2 text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-accent-orange" />
-            </div>
-
-            <div>
               <label className="text-xs text-white/60">Main Mode</label>
               <div className="flex gap-1.5 mt-1">
                 {MAIN_MODE_OPTIONS.map((m) => (
@@ -363,7 +354,7 @@ export default function SettingsPage() {
                   { value: "post-return", label: "Returned" },
                 ].map((opt) => (
                   <button key={opt.value} type="button" onClick={() => handlePhaseChange(opt.value)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-medium ${status === opt.value ? "bg-accent-orange text-white font-bold" : "bg-white text-forest-mid"}`}
+                    className={`flex-1 py-1.5 rounded-full text-xs font-medium text-center ${status === opt.value ? "bg-accent-orange text-white font-bold" : "bg-white text-forest-mid"}`}
                   >{opt.label}{status === opt.value && " ✓"}</button>
                 ))}
               </div>
