@@ -5,9 +5,13 @@ export type PostThumb =
   | { type: "image"; url: string }
   | { type: "gradient"; gradient: string };
 
+/** Tailwind gradient classes for a (possibly legacy or empty) mode id */
+export function modeGradient(mode: string): string {
+  const idx = FOCUS_MODES.findIndex((m) => m.id === resolveMode(mode || ""));
+  return GRADIENTS[idx >= 0 ? idx : 0];
+}
+
 export function getPostThumb(post: Post): PostThumb {
   if (post.imageUrl) return { type: "image", url: post.imageUrl };
-  const resolved = resolveMode(post.mode || "");
-  const gradientIdx = resolved ? FOCUS_MODES.findIndex((m) => m.id === resolved) : 0;
-  return { type: "gradient", gradient: GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0] };
+  return { type: "gradient", gradient: modeGradient(post.mode || "") };
 }

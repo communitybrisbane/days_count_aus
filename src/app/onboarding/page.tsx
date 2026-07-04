@@ -6,7 +6,7 @@ import { doc, setDoc, getDoc, deleteDoc, updateDoc, arrayRemove, increment, serv
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { joinOfficialGroup, joinOfficialGroupById, QA_GROUP_ID } from "@/lib/groups";
@@ -24,8 +24,6 @@ const GOAL_PLACEHOLDERS: Record<string, string> = {
   english: "e.g. Order coffee without Google Translate",
   skill: "e.g. Build an app while in a WH",
   challenge: "e.g. Roadtrip from Sydney to Cairns",
-  work: "e.g. Save $10k before going home",
-  chill: "e.g. Find my favourite beach",
 };
 
 const TOTAL_STEPS = 6;

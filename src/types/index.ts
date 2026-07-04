@@ -14,7 +14,6 @@ export interface Post {
   reportCount: number;
   reportRestricted?: boolean;
   createdAt: Timestamp;
-  editableUntil: Timestamp;
   tags?: string[];
   region?: string;
 }
@@ -53,7 +52,6 @@ export interface UserProfile {
   isPro?: boolean;
   dailyLikeCount?: number;
   lastLikeDate?: string;
-  weeklyGoal?: number;
   groupIds?: string[];
   showRegion?: boolean;
   weekStreak?: number;
@@ -109,10 +107,6 @@ export interface Meeting {
 export interface AdminConfig {
   announcements?: Announcement[];
   bannerImageUrl?: string;
-  meetingLabel?: string;       // e.g. "Study Session"
-  meetingUrl?: string;         // Zoom URL — empty/missing = offline
-  meetingDescription?: string; // shown when offline
-  ai_prompt_template?: string;
 }
 
 /** Scrollbar-hiding style for inline use */

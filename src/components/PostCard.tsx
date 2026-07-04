@@ -19,7 +19,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, DAILY_LIKE_LIMIT, LIKE_SEND_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { modeGradient } from "@/lib/postUtils";
 import { calculateLevel } from "@/lib/utils";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
@@ -97,10 +98,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
   const resolvedMode = resolveMode(post.mode || "");
   const modeInfo = useMemo(() => FOCUS_MODES.find((m) => m.id === resolvedMode), [resolvedMode]);
-  const gradient = useMemo(() => {
-    const idx = resolvedMode ? FOCUS_MODES.findIndex((m) => m.id === resolvedMode) : 0;
-    return GRADIENTS[idx >= 0 ? idx : 0];
-  }, [resolvedMode]);
+  const gradient = useMemo(() => modeGradient(post.mode || ""), [post.mode]);
   const uniqueRecentLikers = useMemo(() => recentLikers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i), [recentLikers]);
   const uniqueLikers = useMemo(() => likers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i), [likers]);
 

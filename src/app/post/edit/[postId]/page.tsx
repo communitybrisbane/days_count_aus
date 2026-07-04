@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, POST_CONTENT_MAX, HASHTAG_MAX, REGIONS, resolveMode } from "@/lib/constants";
+import { dayNumberFromDeparture, formatDayLabel } from "@/lib/utils";
+import { FOCUS_MODES, POST_CONTENT_MAX, HASHTAG_MAX, resolveMode } from "@/lib/constants";
 import { FocusModeIcon, IconGlobe, IconLock } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
 import RegionWheelModal from "@/components/RegionWheelModal";
-import { useAsciiInput } from "@/hooks/useAsciiInput";
+import { useAsciiInput, NON_ASCII_EMOJI_MULTILINE } from "@/hooks/useAsciiInput";
 
 export default function EditPostPage() {
   const { postId } = useParams();
@@ -127,15 +128,7 @@ export default function EditPostPage() {
               />
               {dateInput && (
                 <p className="text-center text-sm text-gray-500">
-                  {(() => {
-                    const dep = profile?.departureDate;
-                    if (!dep) return `D+0`;
-                    const depDate = new Date(dep + "T00:00:00");
-                    const selected = new Date(dateInput + "T00:00:00");
-                    const diff = Math.floor((selected.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24));
-                    if (diff >= 0) return `D+${diff + 1}`;
-                    return `D${diff}`;
-                  })()}
+                  {profile?.departureDate ? formatDayLabel(dayNumberFromDeparture(profile.departureDate, dateInput)) : "D+0"}
                 </p>
               )}
               <div className="flex gap-2">
@@ -147,12 +140,9 @@ export default function EditPostPage() {
                 </button>
                 <button
                   onClick={() => {
-                    const dep = profile?.departureDate;
-                    if (!dep || !dateInput) { setShowDayPicker(false); return; }
-                    const depDate = new Date(dep + "T00:00:00");
-                    const selected = new Date(dateInput + "T00:00:00");
-                    const diff = Math.floor((selected.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24));
-                    setDayNumber(diff >= 0 ? diff + 1 : diff);
+                    if (profile?.departureDate && dateInput) {
+                      setDayNumber(dayNumberFromDeparture(profile.departureDate, dateInput));
+                    }
                     setShowDayPicker(false);
                   }}
                   className="flex-1 py-2.5 text-xs font-bold text-white bg-accent-orange rounded-xl"
@@ -198,7 +188,7 @@ export default function EditPostPage() {
         <div className="px-4 mt-3">
           <textarea
             value={content}
-            onChange={(e) => setContent(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
+            onChange={(e) => setContent(sanitize(e.target.value, NON_ASCII_EMOJI_MULTILINE))}
             maxLength={POST_CONTENT_MAX}
             rows={4}
             placeholder="What happened today? (English only)"

@@ -27,6 +27,7 @@ import {
 } from "firebase/auth";
 import { db, storage } from "@/lib/firebase";
 import { getCurrentTuesday } from "@/lib/utils";
+import { isModeGroup } from "@/lib/groups";
 import type { UserProfile, NotificationPrefs } from "@/types";
 
 export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
@@ -34,12 +35,6 @@ export async function fetchUserProfile(uid: string): Promise<UserProfile | null>
   return snap.exists() ? (snap.data() as UserProfile) : null;
 }
 
-export async function updateProfile(
-  uid: string,
-  data: Partial<Record<string, unknown>>
-): Promise<void> {
-  await updateDoc(doc(db, "users", uid), data);
-}
 
 export async function uploadAvatar(uid: string, blob: Blob): Promise<string> {
   const imgRef = ref(storage, `avatars/${uid}.jpg`);
@@ -142,7 +137,7 @@ export async function deleteAccount(user: User): Promise<void> {
   const groupsSnap = await getDocs(memberGroupsQ);
   for (const groupDoc of groupsSnap.docs) {
     const data = groupDoc.data();
-    const isModeGroup = data.isOfficial && !data.iconUrl;
+    const modeGroup = isModeGroup(data as { isOfficial?: boolean; iconUrl?: string });
 
     // Delete messages by this user (must run before leaving — message reads require membership)
     try {
@@ -160,7 +155,7 @@ export async function deleteAccount(user: User): Promise<void> {
       console.error(`Account deletion: message cleanup failed for group ${groupDoc.id}:`, e);
     }
 
-    if (data.creatorId === uid && !isModeGroup) {
+    if (data.creatorId === uid && !modeGroup) {
       // Close user-created groups when leader deletes account
       await updateDoc(groupDoc.ref, {
         isClosed: true,

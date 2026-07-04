@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { POST_EDIT_WINDOW_MS, resolveMode } from "@/lib/constants";
+import { resolveMode } from "@/lib/constants";
 import { getCurrentTuesday } from "@/lib/utils";
 import type { Post } from "@/types";
 
@@ -143,7 +143,6 @@ interface CreatePostInput {
 }
 
 export async function createPost(input: CreatePostInput): Promise<string> {
-  const editDeadline = new Date(Date.now() + POST_EDIT_WINDOW_MS);
 
   const postRef = await addDoc(collection(db, "posts"), {
     userId: input.userId,
@@ -159,7 +158,6 @@ export async function createPost(input: CreatePostInput): Promise<string> {
     tags: input.tags || [],
     region: input.region || "",
     createdAt: serverTimestamp(),
-    editableUntil: Timestamp.fromDate(editDeadline),
   });
 
   if (input.imageBlob) {
@@ -178,27 +176,6 @@ export async function isFirstPost(uid: string): Promise<boolean> {
   return snap.empty;
 }
 
-/** Check if user already has an active post today (local time) */
-export async function hasPostedToday(uid: string): Promise<boolean> {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const q = query(
-    collection(db, "posts"),
-    where("userId", "==", uid),
-    where("status", "==", "active"),
-    orderBy("createdAt", "desc"),
-    limit(5)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.some((d) => {
-    const ca = d.data().createdAt;
-    return ca?.toDate && ca.toDate() >= todayStart;
-  });
-}
-
-export async function deletePost(postId: string): Promise<void> {
-  await deleteDoc(doc(db, "posts", postId));
-}
 
 export async function updateUserXPAndStreak(
   uid: string,
