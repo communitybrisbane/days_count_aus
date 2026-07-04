@@ -386,11 +386,6 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
               <IconLock size={14} />
             </div>
           )}
-          {(post.region || authorProfile?.region) && authorProfile?.showRegion !== false && (
-            <div className="absolute top-1.5 right-1.5 bg-black/50 text-white text-[9px] px-1.5 py-0.5 rounded-full">
-              {post.region || authorProfile?.region}
-            </div>
-          )}
           <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-black/40 to-transparent" />
           <button
             onClick={(e) => { e.stopPropagation(); handleLike(); }}
