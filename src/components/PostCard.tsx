@@ -513,7 +513,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Tags (diary text lives on the image) */}
       {post.tags && post.tags.length > 0 && (
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-1.5">
           <div className="flex flex-wrap gap-1">
             {post.tags.map((tag, i) => (
               <a
@@ -531,7 +531,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
       {/* Actions */}
       {showActions && (
-        <div className="flex items-center justify-between px-3 py-3">
+        <div className="flex items-center justify-between px-3 py-1">
           <div className="flex items-center gap-2">
             <button
               onClick={handleLike}
