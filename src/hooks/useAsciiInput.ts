@@ -1,5 +1,9 @@
 import { useState, useCallback, useRef } from "react";
 
+/** Disallowed chars for multiline inputs: keep printable ASCII + newline + emoji */
+export const NON_ASCII_EMOJI_MULTILINE =
+  /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu;
+
 /**
  * Hook that filters non-ASCII input and shows a temporary warning.
  * Returns { warn, showWarn, sanitize }

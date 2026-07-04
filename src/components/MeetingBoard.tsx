@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/lib/firebase";
-import { FOCUS_MODES, GRADIENTS, resolveMode, REGION_TZ, DEFAULT_TZ } from "@/lib/constants";
+import { FOCUS_MODES, resolveMode, REGION_TZ, DEFAULT_TZ } from "@/lib/constants";
+import { modeGradient } from "@/lib/postUtils";
 import { FocusModeIcon, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Meeting } from "@/types";
@@ -12,11 +13,6 @@ import type { Meeting } from "@/types";
 const manageMeeting = httpsCallable(functions, "manageMeeting");
 
 // Meeting times are shown in the viewer's registered region timezone (Sydney fallback)
-
-function modeGradient(mode: string): string {
-  const idx = FOCUS_MODES.findIndex((m) => m.id === resolveMode(mode));
-  return GRADIENTS[idx >= 0 ? idx : 0];
-}
 
 export default function MeetingBoard({ currentUid, region }: { currentUid?: string; region?: string }) {
   const tz = (region && REGION_TZ[region]) || DEFAULT_TZ;

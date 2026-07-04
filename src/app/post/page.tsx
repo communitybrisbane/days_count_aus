@@ -4,10 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { FOCUS_MODES, GRADIENTS, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_XP, POST_XP_DAILY_MAX, POST_CONTENT_MAX, HASHTAG_MAX, REGIONS } from "@/lib/constants";
-import { calculateLevel } from "@/lib/utils";
+import { FOCUS_MODES, WEEKLY_XP, WEEK_STREAK_BONUS, WEEK_STREAK_MAX, WEEK_STREAK_THRESHOLD, FIRST_POST_BONUS, POST_XP, POST_XP_DAILY_MAX, POST_CONTENT_MAX, HASHTAG_MAX } from "@/lib/constants";
+import { calculateLevel, dayNumberFromDeparture, formatDayLabel } from "@/lib/utils";
+import { modeGradient } from "@/lib/postUtils";
 import { useDayCount } from "@/hooks/useDayCount";
-import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount } from "@/lib/services/posts";
+import { createPost, isFirstPost, getBannedWords, containsBannedWord, getWeeklyPostCount, getDailyPostCount } from "@/lib/services/posts";
 import dynamic from "next/dynamic";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -15,9 +16,9 @@ import RegionWheelModal from "@/components/RegionWheelModal";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import Avatar from "@/components/Avatar";
-import { IconCamera, IconGlobe, IconLock, IconBoomerang, IconKangaroo, FocusModeIcon } from "@/components/icons";
+import { IconCamera, IconGlobe, IconLock, IconKangaroo, FocusModeIcon } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
-import { useAsciiInput } from "@/hooks/useAsciiInput";
+import { useAsciiInput, NON_ASCII_EMOJI_MULTILINE } from "@/hooks/useAsciiInput";
 
 export default function PostPage() {
   const { user, profile, loading } = useAuthGuard();
@@ -121,15 +122,14 @@ export default function PostPage() {
         region: postRegion || "",
       });
 
+      // XP/streaks are granted server-side (onPostCreatedXP Cloud Function).
+      // The math below mirrors it purely for the optimistic toast display.
       const now = new Date();
       const todayStr = now.toISOString().slice(0, 10);
       const alreadyPostedToday = profile.lastPostAt
         && new Date(profile.lastPostAt).toISOString().slice(0, 10) === todayStr;
 
       let totalXpGain = 0;
-      let newStreak = 1;
-
-      // Post XP: 10 XP per post, up to 3 posts per day
       const [dailyCount, weeklyCount] = await Promise.all([
         getDailyPostCount(user.uid),
         !alreadyPostedToday ? getWeeklyPostCount(user.uid) : Promise.resolve(0),
@@ -137,34 +137,12 @@ export default function PostPage() {
       if (dailyCount <= POST_XP_DAILY_MAX) {
         totalXpGain += POST_XP;
       }
-
-      if (!alreadyPostedToday) {
+      if (!alreadyPostedToday && weeklyCount < 7) {
         const streakWeeks = Math.min(profile.weekStreak || 0, WEEK_STREAK_MAX);
-        const baseXp = weeklyCount < 7 ? WEEKLY_XP[weeklyCount] : 0;
-        const streakBonus = weeklyCount < 7 ? streakWeeks * WEEK_STREAK_BONUS : 0;
-        totalXpGain += baseXp + streakBonus + (firstPost ? FIRST_POST_BONUS : 0);
-
-        if (profile.lastPostAt) {
-          const lastPostStr = new Date(profile.lastPostAt).toISOString().slice(0, 10);
-          const yesterday = new Date(now);
-          yesterday.setDate(yesterday.getDate() - 1);
-          if (lastPostStr === yesterday.toISOString().slice(0, 10)) {
-            newStreak = (profile.currentStreak ?? 0) + 1;
-          }
-        }
-
-        if (weeklyCount === WEEK_STREAK_THRESHOLD - 1) {
-          const { updateWeekStreak } = await import("@/lib/services/users");
-          await updateWeekStreak(user.uid, profile.weekStreak, profile.lastCompletedWeekStart);
-        }
-      } else {
-        newStreak = profile.currentStreak ?? 1;
+        totalXpGain += WEEKLY_XP[weeklyCount] + streakWeeks * WEEK_STREAK_BONUS + (firstPost ? FIRST_POST_BONUS : 0);
       }
 
       const prevLevel = calculateLevel(profile.totalXP);
-      await updateUserXPAndStreak(user.uid, totalXpGain, newStreak);
-      await refreshProfile();
-
       setXpGained(totalXpGain);
       setShowXP(true);
 
@@ -174,10 +152,12 @@ export default function PostPage() {
           setShowXP(false);
           setLevelUpTo(newLevel);
           setShowLevelUp(true);
+          refreshProfile();
         }, 1200);
       } else {
         setTimeout(() => {
           setShowXP(false);
+          refreshProfile();
           router.push("/home");
         }, 1500);
       }
@@ -202,8 +182,7 @@ export default function PostPage() {
   }
 
   const modeInfo = FOCUS_MODES.find((m) => m.id === mode);
-  const gradientIdx = mode ? FOCUS_MODES.findIndex((m) => m.id === mode) : 0;
-  const gradient = GRADIENTS[gradientIdx >= 0 ? gradientIdx : 0];
+  const gradient = modeGradient(mode);
   const todayStr = new Date().toLocaleDateString("en-AU");
   const currentDay = customDayNumber !== null ? customDayNumber : dayCount.number;
 
@@ -248,15 +227,7 @@ export default function PostPage() {
               />
               {dateInput && (
                 <p className="text-center text-sm text-gray-500">
-                  {(() => {
-                    const dep = profile?.departureDate;
-                    if (!dep) return `D+0`;
-                    const depDate = new Date(dep + "T00:00:00");
-                    const selected = new Date(dateInput + "T00:00:00");
-                    const diff = Math.floor((selected.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24));
-                    if (diff >= 0) return `D+${diff + 1}`;
-                    return `D${diff}`;
-                  })()}
+                  {profile?.departureDate ? formatDayLabel(dayNumberFromDeparture(profile.departureDate, dateInput)) : "D+0"}
                 </p>
               )}
               <div className="flex gap-2">
@@ -268,12 +239,9 @@ export default function PostPage() {
                 </button>
                 <button
                   onClick={() => {
-                    const dep = profile?.departureDate;
-                    if (!dep || !dateInput) { setShowDayPicker(false); return; }
-                    const depDate = new Date(dep + "T00:00:00");
-                    const selected = new Date(dateInput + "T00:00:00");
-                    const diff = Math.floor((selected.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24));
-                    setCustomDayNumber(diff >= 0 ? diff + 1 : diff);
+                    if (profile?.departureDate && dateInput) {
+                      setCustomDayNumber(dayNumberFromDeparture(profile.departureDate, dateInput));
+                    }
                     setShowDayPicker(false);
                   }}
                   className="flex-1 py-2.5 text-xs font-bold text-white bg-accent-orange rounded-xl"
@@ -388,7 +356,7 @@ export default function PostPage() {
                 value={content}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => {
-                  const cleaned = sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu);
+                  const cleaned = sanitize(e.target.value, NON_ASCII_EMOJI_MULTILINE);
                   // Max 10 lines — keeps the centered text within ~70% of the image height
                   setContent(cleaned.split("\n").slice(0, 10).join("\n"));
                 }}

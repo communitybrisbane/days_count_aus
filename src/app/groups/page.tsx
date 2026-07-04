@@ -9,6 +9,7 @@ import type { UserPrivate } from "@/types";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { MAIN_MODE_OPTIONS, GROUP_JOIN_LEVEL, GROUP_CREATE_LEVEL, getMaxCommunitySlots, NAV_HEIGHT } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
+import { isModeGroup } from "@/lib/groups";
 import { useUnreadGroups } from "@/hooks/useUnreadGroups";
 import BottomNav from "@/components/layout/BottomNav";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -93,7 +94,6 @@ export default function GroupsPage() {
   const level = profile ? calculateLevel(profile.totalXP) : 1;
   const canJoinCommunity = level >= GROUP_JOIN_LEVEL;
   const userGroups = groups.filter((g) => !g.isOfficial);
-  const isModeGroup = (g: Group) => g.isOfficial && !g.iconUrl;
   // Mode groups are fully optional — show only the ones the user is actually in
   const joinedModeGroups = groups.filter((g) =>
     isModeGroup(g) && g.memberIds?.includes(user?.uid || "")

@@ -19,7 +19,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { FOCUS_MODES, GRADIENTS, DAILY_LIKE_LIMIT, LIKE_SEND_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { FOCUS_MODES, DAILY_LIKE_LIMIT, LIKE_SEND_XP, NAV_HEIGHT, resolveMode } from "@/lib/constants";
+import { modeGradient } from "@/lib/postUtils";
 import { calculateLevel } from "@/lib/utils";
 import { followUser, unfollowUser } from "@/lib/follow";
 import Avatar from "./Avatar";
@@ -97,10 +98,7 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
 
   const resolvedMode = resolveMode(post.mode || "");
   const modeInfo = useMemo(() => FOCUS_MODES.find((m) => m.id === resolvedMode), [resolvedMode]);
-  const gradient = useMemo(() => {
-    const idx = resolvedMode ? FOCUS_MODES.findIndex((m) => m.id === resolvedMode) : 0;
-    return GRADIENTS[idx >= 0 ? idx : 0];
-  }, [resolvedMode]);
+  const gradient = useMemo(() => modeGradient(post.mode || ""), [post.mode]);
   const uniqueRecentLikers = useMemo(() => recentLikers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i), [recentLikers]);
   const uniqueLikers = useMemo(() => likers.filter((l, i, arr) => arr.findIndex((x) => x.uid === l.uid) === i), [likers]);
 
@@ -202,21 +200,14 @@ function PostCard({ post, onDelete, showActions = true, listRounded, compact = f
       try {
         await setDoc(likeRef, { userId: user.uid, createdAt: Timestamp.now() });
         await updateDoc(doc(db, "posts", post.id), { likeCount: increment(1) });
-        // Receiver XP is granted server-side (onLikeCreated) with its own daily cap
+        // Sender + receiver XP are granted server-side (onLikeCreated) with daily caps.
+        // Patch local state optimistically so quota UI stays responsive.
         if (!isOwnPost && hasXPQuota) {
-          try {
-            const newDailyCount = profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1;
-            await updateDoc(doc(db, "users", user.uid), {
-              totalXP: increment(LIKE_SEND_XP),
-              dailyLikeCount: profile.lastLikeDate === today ? increment(1) : 1,
-              lastLikeDate: today,
-            });
-            patchProfile({
-              totalXP: (profile.totalXP ?? 0) + LIKE_SEND_XP,
-              dailyLikeCount: newDailyCount,
-              lastLikeDate: today,
-            });
-          } catch {}
+          patchProfile({
+            totalXP: (profile.totalXP ?? 0) + LIKE_SEND_XP,
+            dailyLikeCount: profile.lastLikeDate === today ? (profile.dailyLikeCount ?? 0) + 1 : 1,
+            lastLikeDate: today,
+          });
           const prevLevel = calculateLevel(profile.totalXP ?? 0);
           const newLevel = calculateLevel((profile.totalXP ?? 0) + LIKE_SEND_XP);
           setXpGained(LIKE_SEND_XP);

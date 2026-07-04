@@ -14,6 +14,11 @@ import { db } from "./firebase";
 import { MAX_GROUP_MEMBERS } from "./constants";
 import type { Group } from "@/types";
 
+/** Official groups without an icon get "mode group" treatment: slot-free, always joinable */
+export function isModeGroup(g: { isOfficial?: boolean; iconUrl?: string }): boolean {
+  return !!g.isOfficial && !g.iconUrl;
+}
+
 /**
  * Fetch visible groups for a user by their groupIds.
  * Filters out closed groups and official groups without icons.
@@ -98,21 +103,4 @@ export async function joinOfficialGroup(uid: string, mode: string) {
   });
 }
 
-/**
- * Leave the official group of the given mode.
- */
-export async function leaveOfficialGroup(uid: string, mode: string) {
-  const group = await getOfficialGroup(mode);
-  if (!group) return;
-  const memberIds = group.memberIds || [];
-  if (!memberIds.includes(uid)) return;
 
-  const { doc: firestoreDoc } = await import("firebase/firestore");
-  await updateDoc(firestoreDoc(db, "groups", group.id), {
-    memberIds: arrayRemove(uid),
-    memberCount: increment(-1),
-  });
-  await updateDoc(firestoreDoc(db, "users", uid), {
-    groupIds: arrayRemove(group.id),
-  });
-}

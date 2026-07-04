@@ -24,6 +24,19 @@ export function getInitials(name: string): string {
   return name.charAt(0).toUpperCase();
 }
 
+/** Day number for a given date relative to departure (departure day = D+1, before = negative) */
+export function dayNumberFromDeparture(departureDate: string, dateStr: string): number {
+  const diff = Math.floor(
+    (new Date(dateStr + "T00:00:00").getTime() - new Date(departureDate + "T00:00:00").getTime()) / 86_400_000
+  );
+  return diff >= 0 ? diff + 1 : diff;
+}
+
+/** "D+5" / "D-3" display label for a day number */
+export function formatDayLabel(n: number): string {
+  return n > 0 ? `D+${n}` : `D${n}`;
+}
+
 /** Calculate level from totalXP */
 export function calculateLevel(totalXP: number): number {
   return Math.floor(Math.sqrt(totalXP / 6)) + 1;
@@ -92,10 +105,4 @@ export function getCurrentTuesday(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceTuesday, 0, 0, 0, 0);
 }
 
-/** Format day count for display */
-export function formatDayCount(label: string, number: number): string {
-  if (label === "D" && number < 0) {
-    return `D - ${Math.abs(number)}`;
-  }
-  return `${label} + ${number}`;
-}
+

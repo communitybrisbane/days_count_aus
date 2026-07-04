@@ -207,7 +207,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **WeeklyHistoryModal**: 鉛筆ボタンから開く。ゴール編集 + 過去12週のモード別スタック棒グラフ + 現在/最高ストリーク表示。
 - **XP/Lvバー**: コンパクトな1行表示（Lv + プログレスバー + 次Lvまでの残XP）。
 - **バナーカルーセル**: BannerCarousel + adminConfig のバナー画像。
-- **お知らせ**: `admin_config/main.announcements` 配列から `active: true` のものを表示（info/warning/event 3タイプ、リンク付き対応）。お知らせカラー: info=green系、warning=red系、event=orange系。
+- **お知らせ**: ヒーローヘッダー直下（週間ゴールカードの上）に表示（2026-07-04に移動）。`admin_config/main.announcements` 配列から `active: true` のものを表示（info/warning/event 3タイプ、リンク付き対応）。お知らせカラー: info=green系、warning=red系、event=orange系。**右上の×で消せる**（タイトル+本文をキーに端末のlocalStorageへ記録。内容を1文字でも更新すると全員に再表示）。
 - **通知バナー**: 初回訪問時にプッシュ通知許可バナー表示（dismissで `localStorage` に記録）。
 - **フェーズ自動遷移**: 渡航予定日超過 or D+365超過時に ConfirmModal で切り替え提案。
 - **マイルストーン演出**: D+30, 100, 200, 365 到達時にフルスクリーンアニメーション。`localStorage` で表示済みフラグ管理（1回のみ表示）。
@@ -227,7 +227,7 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
   - **既読ペナルティ**: -40pt
   - **発見ボーナス**: 未フォロー & 未インタラクション著者に+3pt
   - **日替わりジッター**: 投稿ID+日付の決定的ハッシュで0〜5pt（同日内は安定、日ごとに変化）
-  - 検索モード・Popularタブではスコアリングをスキップ。
+  - 検索モードではスコアリングをスキップ。
 - **ポストパス処理**: ①著者分散（直前2枠と同じ著者を避ける）、②新規投稿の露出枠（6枠ごとに未読・24時間以内・いいね2以下の投稿を昇格 — コールドスタート対策）。
 - **インタラクション履歴**: いいね（重み3）・詳細閲覧（重み1）を `localStorage` に記録（最大300件、30日TTL、半減期14日の指数減衰）。著者・タグ別のアフィニティ構築に使用。
 - **既読追跡（インプレッションベース）**: IntersectionObserver でグリッドセルが50%表示された時点で記録（取得時ではない）。`localStorage` に投稿IDを保存（最大500件、3日間TTL、初回表示時刻を保持）。
@@ -249,28 +249,28 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 
 **ルート**: `/post`, `/post/edit/[postId]`
 
-**投稿画面の構成**:
+**投稿画面の構成（プレビュー一体型、2026-07-04刷新）**: 全要素をPostCard風のプレビューカード上で直接編集する（旧アコーディオンUIは全廃）。
 
-- **モード選択**: 3つのフォーカスモードからpill型ボタンで1つ選択（必須）。デフォルトはプロフィールのメインモード。
-- **公開設定**: Public / Private のトグル。
-- **画像（任意）**: タップで画像選択 → react-easy-crop で1:1クロップ → Canvas APIで1024×1024pxにリサイズ（JPEG品質85%、最大300KB） → EXIF自動除去。
-- **地域選択（任意）**: 投稿に地域タグを付与。デフォルトはプロフィールの地域。
-- **日数オーバーライド（任意）**: 日付ピッカーでカスタムD+数値を設定可能。
-- **ハッシュタグ**: カスタムタグ作成のみ。最大5個。
-- **テキスト入力**: 400文字以内（ASCII文字 + 絵文字のみ、リアルタイム文字数カウント）。
-- **禁止語句チェック**: 投稿前にクライアント側で照合。該当時は投稿ブロック。
+- **モード選択**: プレビューヘッダーのモードラベルをタップするたびに English → Skill → Challenge と循環。デフォルトはプロフィールのメインモード。写真なしプレビューの背景グラデーションも連動。
+- **公開設定**: 画像左上の「Public / Private」バッジをタップで切替。
+- **画像（任意）**: 画像エリアタップで選択 → react-easy-crop で1:1クロップ → Canvas APIで1024×1024pxにリサイズ（JPEG品質85%、最大300KB） → EXIF自動除去。右下に「Add photo / Change photo」ヒントバッジ。
+- **地域選択（任意）**: ヘッダー右の地域バッジタップ → ドラム式ホイールモーダル（RegionWheelModal）で選択。デフォルトはプロフィールの地域。
+- **日数オーバーライド（任意）**: ヘッダー右のD+バッジタップ → 日付ピッカーでカスタムD+数値を設定可能。
+- **テキスト入力**: **画像（またはグラデーション）の中央に直接入力**。幅は画像の70%・最大10行・400文字以内（ASCII + 絵文字のみ）。入力欄は文章量に応じて自動で伸びる（内側スクロールなし）。
+- **ハッシュタグ**: 画像下のタグ行で直接編集。入力と同時に `#` 付きでライブ表示、Enter/フォーカスアウトで確定、タグタップで削除。カスタムタグのみ・最大5個。
+- **禁止語句チェック**: 投稿前にクライアント側で照合。**単語境界マッチ**（"class" が "ass" に誤ヒットしない）。ワードリストは `moderation_config/main.bannedWords`（約80語: 罵倒・差別語・性的表現・ハラスメント）で運営が随時更新可。該当時は投稿ブロック。投稿後もCloud Function `moderatePost` が同リストで自動非表示判定。
 
 **投稿制限**: 1日複数回投稿可能。ただしXP付与は1日3回まで（`POST_XP_DAILY_MAX = 3`）。週間段階制XPは1日1回分のみ加算（`lastPostAt` で当日判定）。
 
 **画像保存先**: `posts/{userId}/{postId}.jpg`
 
-**画像なし投稿**: フォーカスモード対応グラデーション背景にテキスト中央寄せのカードデザイン。
+**投稿の表示（2026-07-04刷新）**: 本文は**画像の中央にオーバーレイ表示**（白文字+ドロップシャドウ、幅70%。写真あり投稿は黒20%のスクリムを重ねる）。画像下に表示するのはタグ・いいね行のみ。画像なし投稿はモード対応グラデーション背景+中央テキスト（正方形）。EXPLOREグリッドのタイルにも同様に本文を中央表示（都市バッジは廃止、いいね数のみ）。
 
 **XP付与**: 投稿完了時に +10XP（週間段階制で追加XP）。レベルアップ時は LevelUpAnimation を表示。
 
 **ストリーク更新**: 最終投稿日が昨日なら `currentStreak + 1`、今日なら維持、それ以前なら `1` にリセット。
 
-**投稿の編集** (`/post/edit/[postId]`): 本人はいつでも編集可能（**時間制限なし**、2026-04-02に5分制限を撤廃）。テキスト・モード・タグ・地域・公開範囲・日数を編集可（画像変更のみ不可）。`editableUntil` フィールドは作成時に書き込まれるが編集制限には未使用（レガシー）。
+**投稿の編集** (`/post/edit/[postId]`): 本人はいつでも編集可能（**時間制限なし**、2026-04-02に5分制限を撤廃）。テキスト・モード・タグ・地域・公開範囲・日数を編集可（画像変更のみ不可）。（旧 `editableUntil` フィールドは2026-07-04に書き込みごと廃止。）
 
 **投稿の削除**: いつでも可能（本人のみ、confirm確認付き）。
 
@@ -283,13 +283,15 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 #### ライブミーティング（Live Meetings）
 - GROUPSタブ最上部の「Live Meetings」セクション。**運営パスワードを知っている人なら誰でもアプリ内から開催できる**（2026-07-04 に旧 24時間 Study Room / `admin_config.meeting*` フラットフィールドから置き換え）。
 - **データ**: `meetings` コレクション（`title`・`hostName`・`hostUid`・`mode`・`url`・`joinType`・`active`・`createdAt`）。書き込みはルールで全面禁止、`manageMeeting` Cloud Function（callable）経由のみ。
-- **開催**: 「+ Host」→ フォーム（パスワード / タイトル30字 / モード / httpsリンク / 公開範囲）→ `manageMeeting(action: "create")`。パスワードは Functions シークレット `MEETING_PASSWORD` でサーバー照合。開催者名はアカウントの displayName 固定（編集不可）。**同一アカウントの同時開催は1件まで**（未終了・未失効のミーティングがあると新規開催はエラー）。
+- **開催**: カルーセル最後尾の「Become a Host」カードをタップ → フォーム（Host pass / タイトル30字 / モード / httpsリンク / 公開範囲 / 開始・終了時刻）→ `manageMeeting(action: "create")`。パスワードは Functions シークレット `MEETING_PASSWORD` でサーバー照合。開催者名はアカウントの displayName 固定（編集不可）。**同一アカウントの同時開催は1件まで**（未終了・未失効のミーティングがあると新規開催はエラー）。
 - **公開範囲（joinType）**: `open`（誰でも参加可）or `friends`（鍵アイコン表示。タップ時に「知り合い向け」確認モーダルを挟んでからリンクを開く）。ホストが開催時に選択。
 - **終了**: ホスト本人のカードに「End」ボタン（パスワード再入力）。パスワード保持者は誰のミーティングでも終了可能（モデレーション用途）。加えて開催時に**開始時刻（Now or 毎正時）と終了時刻（次の24時間以内の毎正時）**を設定。開始前のカードはアンバーの「UPCOMING」バッジで開催予定として表示され、開始時刻を過ぎると緑の「LIVE」に切り替わる。`expiresAt` を過ぎたカードは自動で非表示（クライアント側で毎分再判定）。カードには「HH:MM–HH:MM」の時間帯を表示（閲覧者の登録地域のタイムゾーン、Sydneyフォールバック）。実際の会議の終了は遷移先のオンライン会議サービス上でホストが行う。
-- **表示**: モード色グラデーションのカードに タイトル / Hosted by {開催者名} / LIVEバッジ / 鍵アイコン（friendsのみ）。複数同時開催時は**4秒ごとに自動スクロールするカルーセル**+ドットインジケータ。0件時は「No live meeting / Offline」プレースホルダー。
+- **表示**: モード色グラデーションのカードに ホストのプロフィール画像（丸型）/ タイトル / LIVE・UPCOMINGバッジ / Hosted by {開催者名} · 開始–終了時刻 / モードタグ / 公開範囲バッジ（Anyone / 🔒 Friends only）。カルーセルは**スワイプ or ドットタップで切替**（自動スクロールなし、現在位置のドットはオレンジ）。0件時は「No live meeting / Offline」プレースホルダー。
+- **Become a Host カード**: カルーセルの最終スライドに常設。「Contact count_taku for the host pass」（count_taku はInstagramへのリンク）。タップで開催フォームが開くが、**自分のミーティングが既に開催中の場合はアラートで拒否**（サーバー側でも同時1件を強制）。
 
 #### 公式グループ（Official Groups）
-- 各フォーカスモードごとに1つのモードグループが存在（`isOfficial: true`）。カードに「by mode」表示。
+- 各フォーカスモードごとに1つのモードグループが存在（English Mode / Skill Mode / Challenge Mode、`isOfficial: true`・`creatorId: "system"`）。カードに「official」ラベル表示。
+- **WH Ask Anything**（固定ID `official-ask-anything`、mode なし・地球儀アイコン表示）: ワーホリの質問なんでもOKの公式Q&Aグループ。モードグループと同じ扱い（スロット対象外・出入り自由）で、オンボーディング時にモードグループとあわせて自動参加。
 - **参加は完全に任意**: オンボーディング時に選択したメインモードのグループへ初期参加するのみで、以後の出入りは自由。未参加のモードグループは検索（Find）に表示され、いつでも参加できる（レベル・スロット制限の対象外）。参加中のモードグループはチャット画面右上の「Leave」からいつでも退出できる。
 - メインモード変更時にグループ所属は変更しない（自動入れ替えなし）。
 - 公式グループはメンバー上限なし。「+ Find or Create」ボタンはレベル・スロットに関係なく常時表示（コミュニティ側の制限は参加時に適用）。
@@ -352,11 +354,14 @@ Level = floor( sqrt( TotalXP / 6 ) ) + 1
 - **地域表示設定**: `showRegion` でプロフィールの地域表示ON/OFF。
 - **フェーズ切り替え**: ステータスを手動変更。confirm確認ダイアログ付き。
 - **通知設定**: 3つのトグル（いいね通知、グループメッセージ通知、ストリーク警告通知）をアコーディオンで表示。`users/{uid}/private/config.notificationPrefs` に保存（未設定はON扱い）。Cloud Functions（`onLikeCreated` / `onGroupMessageCreated` / `checkStreaks`）が送信前に各設定を確認。
-- **ブロックユーザー管理**: ブロック済みユーザーの一覧表示 + アンブロック（アコーディオン）。
+- **地域変更**: 「Sydney ▼」形式の1行ボタン → ドラム式ホイールモーダルで選択。
+- **ブロックユーザー管理**: ブロック済みユーザーの一覧表示 + アンブロック（アコーディオン）。ブロックは**完全相互非表示**（§6.3参照）。
 - **法定項目**: プライバシーポリシー、利用規約、法的通知（Firestoreの `legal_docs` コレクションから取得、フォールバック付き）。
 - **アカウント管理**: ログアウト（confirm付き）、アカウント削除（confirm付き + 再認証）。
 
 ### 地域選択肢（REGIONS）
+
+> 並び順: Japan が先頭、以降オーストラリア都市をA→Z、最後に Other（2026-07-04〜）。選択UIは全画面共通のドラム式ホイールモーダル（RegionWheelModal、下からスライド・スナップスクロール・中央ハイライト）。
 Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Cairns, Darwin, Hobart, Japan, Other
 
 ---
@@ -549,7 +554,6 @@ D+30, D+100, D+200, D+365 に **Framer Motion を用いた全画面祝祭アニ�
 | tags | string[] | ハッシュタグ（最大5個） |
 | region | string | 投稿時の地域（任意） |
 | createdAt | timestamp | 投稿日時 |
-| editableUntil | timestamp | レガシー: 作成時に5分後で書き込まれるが編集制限には未使用 |
 
 ### `posts/{postId}/likes` サブコレクション
 
@@ -710,13 +714,13 @@ Canvas を通すことで EXIF メタデータを自動除去。
 
 ---
 
-## 13. Cloud Functions（全10個、デプロイ済み）
+## 13. Cloud Functions（全11個、デプロイ済み）
 
 | 関数名 | トリガー | 機能 |
 |---|---|---|
 | `moderatePost` | `onDocumentCreated("posts/{postId}")` | 投稿自動モデレーション。禁止語句チェック + 毒性スコア。該当時は `status: "hidden"`。 |
 | `checkReportThreshold` | `onDocumentCreated("posts/{postId}/reports/{reporterId}")` | 通報3件で自動非表示。管理者メール（1〜3件目すべて）。`ADMIN_EMAIL` シークレット。 |
-| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | いいねFCM通知。自己いいねスキップ。60秒クールダウン。 |
+| `onLikeCreated` | `onDocumentCreated("posts/{postId}/likes/{likerId}")` | 受信いいねXP付与（+5、1日10回までトランザクション管理）+ いいねFCM通知。自己いいねスキップ。60秒クールダウン。 |
 | `checkStreaks` | `onSchedule("every 1 hours")` | カレンダー日ベース: 最終投稿が一昨日以前ならリセット。警告通知はユーザーのローカル時刻20:00と23:00に送信（`streakWarningSent` で重複防止）。 |
 | `cleanupHiddenPosts` | `onSchedule("every day 03:00")` | 非表示投稿の30日後自動削除（100件/回）。 |
 | `onGroupMessageCreated` | `onDocumentCreated("groups/{groupId}/messages/{messageId}")` | グループメッセージFCM通知。システムメッセージはスキップ。10秒クールダウン。 |
@@ -724,6 +728,7 @@ Canvas を通すことで EXIF メタデータを自動除去。
 | `onUserReportCreated` | `onDocumentCreated("reports/{reportId}")` | ユーザー通報処理。管理者メール通知。未解決10件で自動アカウント制限。 |
 | `onRestrictionLifted` | `onDocumentUpdated("users/{uid}")` | `restricted: true→false` 時に未解決通報を全件自動解決。 |
 | `onBlockListChanged` | `onDocumentUpdated("users/{uid}/private/config")` | ブロック同期。相互フォロー解除 + `blockedBy` マーカー作成/削除。 |
+| `manageMeeting` | `onCall` (callable) | ライブミーティングの開催/終了。`MEETING_PASSWORD` シークレットでHost pass照合、バリデーション、同時開催1件/人の強制。 |
 
 ---
 
@@ -816,7 +821,7 @@ next.config.ts
 sentry.client.config.ts
 sentry.server.config.ts
 sentry.edge.config.ts
-functions/src/index.ts          # Cloud Functions（全10個、§13参照）
+functions/src/index.ts          # Cloud Functions（全11個、§13参照）
 public/
 ├── manifest.json
 ├── robots.txt
@@ -848,6 +853,7 @@ public/
 | v3 改訂5 | 2026-03-27 | セキュリティ監査・強化、パフォーマンス改善。 |
 | **v4** | **2026-03-28** | **実装準拠で全面書き直し。主な差分**: フォーカスモード5種リネーム（English/Skill/Challenge/Work/Chill）+ レガシーマッピング。XP計算式変更（除数6、POST_XP=10、LIKE_SEND_XP=3、LIKE_RECEIVE_XP=5、初投稿ボーナス廃止）。グループ参加/作成条件をLv.2に緩和 + スロット段階制（Lv.2→1枠〜Lv.8→4枠）。グループ最大人数10→12名。ハッシュタグシステム新設（最大5個/投稿、モード別候補）。投稿に地域タグ・日数オーバーライド機能追加。オンボーディングを1画面→6ステップ制に刷新。グループjoinType（open/friends）追加。メッセージ編集/取消機能追加。`reportRestricted` フラグ追加。`showRegion` / `displayNameLower` フィールド追加。グラデーション全5色刷新。ルート構成更新（`(auth)` route group廃止）。コンポーネント一覧・hooks一覧を最新化。 |
 | v4 改訂1 | 2026-04-02 | 通報した投稿を通報者から非表示（`reportedPosts`）。レポートメール通知を1〜3件目すべてに変更。 |
+| **v4 改訂5** | **2026-07-04** | **主な差分**: ライブミーティング機能新設（`meetings` コレクション + `manageMeeting` callable、Host pass 開催、開始/終了時刻、UPCOMING→LIVE、地域別タイムゾーン表示、Become a Host カード、同時開催1件/人）。投稿画面をプレビュー一体型に刷新（本文を画像中央にオーバーレイ・幅70%/10行、モードはタップ循環、公開バッジ、タグのライブ編集）。公式Q&Aグループ「WH Ask Anything」新設 + オンボーディング自動参加。モードグループを English/Skill/Challenge Mode にリネーム。リーダー退出=解散（移譲廃止、最後のメッセージ1通）。新規参加者は参加後のメッセージのみ閲覧可能に。所属スロット上限を3に（Lv.8ティア削除）。受信いいねXPを1日10回までに（サーバー付与化）。ブロックを完全相互非表示に。地域選択をドラム式ホイールに統一（Japan先頭+A-Z順）。ホームのお知らせをヘッダー直下へ移動+×で消せるように。禁止ワードを80語+単語境界マッチに拡充。`editableUntil` の書き込み廃止。Cloud Functions 10→11個（`manageMeeting` 追加）。 |
 | **v4 改訂4** | **2026-07-02** | **主な差分**: フォーカスモードを5種→3種に削減（Work / Chill を廃止、レガシーマッピングで challenge に統合。ユーザー mainMode 正規化・Chill Vibes / Earn & Learn モードグループのクローズ・work/chill 趣味グループ4個の削除を本番移行済み）。旧・趣味グループ（Hobby Groups、トピック別公式グループ10個）は一時「Hobby」枠として整理後、同日中に全削除 — グループは公式モードグループ + ユーザー作成コミュニティの2種類のみに。EXPLOREのPopularソートタブを廃止しランキングフィード一本化。 |
 | **v4 改訂3** | **2026-07-02** | **実装との突き合わせ監査を反映**: 投稿編集の5分制限撤廃（タグ・地域・公開範囲・日数も編集可、`editableUntil` はレガシー化）。PWAインストールバナーのモバイル限定化。マイページを横並びヘッダーレイアウトに（アバター左96px）。グループカード右スワイプミュートを追記。Study Room設定を `meeting*` フラットフィールドに訂正。`checkStreaks` をカレンダー日ベース+20時/23時警告に訂正。`streakWarningSent` フィールド追加。アカウント削除手順を実装準拠の10ステップに更新（メッセージ削除のフィールド名バグ修正+ルールに `allow delete` 追加）。Exploreのソートタブ・#タグ検索を追記。未実装項目（通知トグルUI・ハッシュタグ候補・ストリーク+100XP）を§15へ移動。 |
 | **v4 改訂2** | **2026-04-03** | **主な差分**: Next.js 16.2.2 に更新。絵文字入力対応（投稿・チャット）。ブロック機能強化（自動アンフォロー + blockedBy同期 + プロフィール閲覧制限）。ユーザー通報をプロフィール画面に移動（スクリーンショット必須化）。アカウント自動制限（通報10件で restricted モード）+ 制限解除時の通報自動解決。グループ: システムメッセージ（参加/退出/キック/リーダー移譲/クローズ）、CLOSEDグループの読み取り専用チャット閲覧、friends参加確認モーダル、スワイプで既読クリア、キック済みユーザー再参加防止。いいね受信時のレベルアップ演出。OG画像を静的PNGに変更。Cloud Functions 7→10個（`onUserReportCreated`, `onRestrictionLifted`, `onBlockListChanged` 追加）。 |

@@ -19,26 +19,22 @@ service cloud.firestore {
     // ═══════════════════════════════════════════
     match /users/{userId} {
       allow read: if isAuth();
-      allow create: if isOwner(userId);
+      // Profile must start with zeroed progression (XP is server-authoritative)
+      allow create: if isOwner(userId)
+                     && request.resource.data.totalXP == 0
+                     && request.resource.data.currentStreak == 0;
       allow delete: if isOwner(userId);
 
-      // Own update: whitelist safe fields only
-      // isPro, createdAt, uid are immutable
+      // Own update: whitelist safe fields only.
+      // isPro, createdAt, uid are immutable.
+      // XP / streak / like-quota fields are server-authoritative (Cloud Functions
+      // via Admin SDK) and can no longer be written from clients (2026-07-05).
       allow update: if isOwner(userId)
                      && changed().hasOnly([
                        'displayName', 'displayNameLower', 'photoURL', 'region', 'showRegion', 'goal', 'mainMode',
                        'departureDate', 'returnStartDate', 'status', 'weeklyGoal',
-                       'groupIds',
-                       'currentStreak', 'lastPostAt', 'totalXP',
-                       'dailyLikeCount', 'lastLikeDate', 'streakWarningSent',
-                       'weekStreak', 'lastCompletedWeekStart'
+                       'groupIds'
                      ]);
-
-      // Other user update: XP grant from like system only (+5 fixed)
-      allow update: if isAuth()
-                     && request.auth.uid != userId
-                     && changed().hasOnly(['totalXP'])
-                     && request.resource.data.totalXP == resource.data.totalXP + 5;
 
       // Private subcollection: blockedUsers, fcmToken — owner only
       match /private/{docId} {

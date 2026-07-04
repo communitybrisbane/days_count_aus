@@ -8,6 +8,7 @@ import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { FOCUS_MODES, GROUP_NAME_MAX, GROUP_CREATE_LEVEL, getMaxCommunitySlots } from "@/lib/constants";
 import { calculateLevel } from "@/lib/utils";
+import { isModeGroup } from "@/lib/groups";
 import { isGroupNameTaken } from "@/lib/validators";
 import { FocusModeIcon, IconCamera } from "@/components/icons";
 import dynamic from "next/dynamic";
@@ -123,9 +124,7 @@ export default function CreateGroupPage() {
         try {
           const snap = await getDoc(doc(db, "groups", gid));
           if (snap.exists()) {
-            const g = snap.data();
-            const isModeGroup = g?.isOfficial && !g?.iconUrl;
-            if (!isModeGroup) communityCount++;
+            if (!isModeGroup(snap.data() as { isOfficial?: boolean; iconUrl?: string })) communityCount++;
           }
         } catch {}
       }));

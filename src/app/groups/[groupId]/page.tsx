@@ -26,7 +26,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateLevel } from "@/lib/utils";
-import { fetchUserGroups } from "@/lib/groups";
+import { fetchUserGroups, isModeGroup as isModeGroupCheck } from "@/lib/groups";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, MESSAGE_CHAR_LIMIT, GROUP_JOIN_LEVEL, getMaxCommunitySlots, resolveMode } from "@/lib/constants";
 import Image from "next/image";
 import Avatar from "@/components/Avatar";
@@ -35,7 +35,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { FocusModeIcon, IconKangaroo, IconCamera, IconEdit } from "@/components/icons";
 import type { Group } from "@/types";
 import { compressImage } from "@/lib/imageUtils";
-import { useAsciiInput } from "@/hooks/useAsciiInput";
+import { useAsciiInput, NON_ASCII_EMOJI_MULTILINE } from "@/hooks/useAsciiInput";
 import { emitGroupRead } from "@/hooks/useUnreadGroups";
 
 interface Message {
@@ -159,8 +159,7 @@ export default function GroupChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group?.memberIds?.join(","), messages.length]);
 
-  const isOfficial = !!group?.isOfficial;
-  const isModeGroup = isOfficial && !group?.iconUrl;
+  const isModeGroup = !!group && isModeGroupCheck(group);
   const isMember = isMemberNow;
   const isLeader = group?.creatorId === user?.uid;
   const isFull = !isModeGroup && (group?.memberCount || 0) >= MAX_GROUP_MEMBERS;
@@ -185,7 +184,7 @@ export default function GroupChatPage() {
       // Membership slots: level-tiered cap on communities you belong to (created or joined; mode groups are free)
       const maxSlots = getMaxCommunitySlots(userLevel);
       const myGroups = await fetchUserGroups(profile?.groupIds || []);
-      const communityCount = myGroups.filter((g) => !g.isOfficial).length;
+      const communityCount = myGroups.filter((g) => !isModeGroupCheck(g)).length;
       if (communityCount >= maxSlots) {
         alert(`Your community slots are full (${communityCount}/${maxSlots}). Please leave one first.`);
         return;
@@ -573,7 +572,7 @@ export default function GroupChatPage() {
               <label className="block text-xs font-medium text-gray-500 mb-1">Goal / Rules</label>
               <textarea
                 value={editGoal}
-                onChange={(e) => setEditGoal(sanitize(e.target.value, /[^\x20-\x7E\n\u{1F300}-\u{1FAF8}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu))}
+                onChange={(e) => setEditGoal(sanitize(e.target.value, NON_ASCII_EMOJI_MULTILINE))}
                 maxLength={200}
                 rows={3}
                 placeholder="Write your community's goals or rules"

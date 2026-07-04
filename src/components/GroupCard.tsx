@@ -6,6 +6,7 @@ import Image from "next/image";
 import { doc, updateDoc, arrayUnion, increment, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
+import { isModeGroup as isModeGroupCheck } from "@/lib/groups";
 import { emitGroupCleared, emitGroupMuteToggle } from "@/hooks/useUnreadGroups";
 import { FocusModeIcon, IconUsers } from "@/components/icons";
 import type { Group } from "@/types";
@@ -42,7 +43,7 @@ interface GroupCardProps {
 export default memo(function GroupCard({ group, currentUserId, leaderName, canJoin, onJoined, showGoal, unreadCount = 0, liveMessageText, cleared, muted = false, onClearHistory }: GroupCardProps) {
   const router = useRouter();
   const modeInfo = FOCUS_MODES.find((m) => m.id === resolveMode(group.mode || ""));
-  const isModeGroup = group.isOfficial && !group.iconUrl;
+  const isModeGroup = isModeGroupCheck(group);
   const isFull = !isModeGroup && group.memberCount >= MAX_GROUP_MEMBERS;
   const isMember = group.memberIds?.includes(currentUserId || "");
 

@@ -35,8 +35,8 @@ npm run lint
 | `src/components/` | UIコンポーネント |
 | `src/lib/` | ロジック・Firebase・バリデーション |
 | `functions/` | Cloud Functions |
-| `docs/` | 仕様書・進捗メモ・広告素材 |
-| `image/` | 広告/LP用スクリーンショット・デザイン素材 |
+| `docs/` | 仕様書・進捗メモ・広告素材（旧版仕様書は `docs/archive/`） |
+| `image/` | 広告/LP用スクリーンショット・デザイン素材（Git管理外・ローカルのみ） |
 | `firestore.rules` / `storage.rules` | Firebaseセキュリティルール |
 
 ## ブランチ運用
