@@ -58,4 +58,4 @@
 
 - 本番URL: https://days-count.com （Vercelプロジェクト: `days-count-aus`）
 - ブランチ: 開発は `dev`、PRは `master` へ
-- `image/` フォルダの写真は未コミット（Git管理外にするか要検討）
+- `image/` フォルダ（広告/デザイン素材 14MB）はGit管理外・ローカル保管（2026-07-04に確定）

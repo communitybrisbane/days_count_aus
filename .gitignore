@@ -63,7 +63,9 @@ sa-key.json
 
 # OneDrive duplicate copies and camera metadata
 *.modd
-image/* 1.jpg
+
+# Marketing/design source photos — kept locally, not in git (14MB of binaries)
+image/
 
 # Playwright MCP artifacts
 .playwright-mcp/
