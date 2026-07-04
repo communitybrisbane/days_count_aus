@@ -390,15 +390,15 @@ export default function PostPage() {
             </div>
           </div>
 
-          {/* Tags + counter below the image */}
-          <div className="p-3">
+          {/* Tags + counter below the image — same thin rows as PostCard */}
+          <div className="px-3 pt-0.5">
             <div className="flex items-center justify-between">
               <AsciiWarn show={showWarn} />
               <p className="text-[10px] text-gray-300 ml-auto">{content.length}/{POST_CONTENT_MAX}</p>
             </div>
 
             {/* Tags — tap a tag to remove it, type to add */}
-            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               {tags.map((tag) => (
                 <button
                   key={tag}
@@ -431,10 +431,10 @@ export default function PostPage() {
           </div>
 
           {/* Actions placeholder — matches PostCard */}
-          <div className="flex items-center px-3 pb-3">
+          <div className="flex items-center px-3 py-0.5">
             <div className="flex items-center gap-1 text-gray-300">
-              <IconKangaroo size={18} />
-              <span className="text-sm">0</span>
+              <IconKangaroo size={20} />
+              <span className="text-xs">0</span>
             </div>
           </div>
         </div>
