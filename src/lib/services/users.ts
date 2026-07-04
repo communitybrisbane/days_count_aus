@@ -211,6 +211,16 @@ export async function blockUser(myUid: string, targetUid: string): Promise<void>
   // Note: reverse unfollow + blockedBy write handled by Cloud Function
 }
 
+/** List all users who have blocked me (own blockedBy subcollection, written by CF) */
+export async function getBlockedByIds(uid: string): Promise<string[]> {
+  try {
+    const snap = await getDocs(collection(db, "users", uid, "blockedBy"));
+    return snap.docs.map((d) => d.id);
+  } catch {
+    return [];
+  }
+}
+
 /** Check if targetUid has blocked viewerUid (via blockedBy subcollection written by CF) */
 export async function isBlockedBy(viewerUid: string, targetUid: string): Promise<boolean> {
   try {

@@ -26,6 +26,7 @@ import { IconEucalyptus, IconSearch, FocusModeIcon } from "@/components/icons";
 import type { Post } from "@/types";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { rankPosts, markSeen, recordInteraction } from "@/lib/feedScore";
+import { getBlockedByIds } from "@/lib/services/users";
 
 const PAGE_SIZE = 20;
 // First page of the ranked feed pulls a larger candidate pool so scoring has
@@ -54,6 +55,13 @@ export default function ExplorePage() {
   profileRef.current = profile;
   const privateDataRef = useRef(privateData);
   privateDataRef.current = privateData;
+
+  // Mutual invisibility: also hide posts from users who blocked me
+  const blockedByRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    getBlockedByIds(user.uid).then((ids) => { blockedByRef.current = ids; });
+  }, [user]);
   const followingRef = useRef(following);
   followingRef.current = following;
   const fetchPosts = useCallback(
@@ -85,6 +93,10 @@ export default function ExplorePage() {
           newPosts = newPosts.filter(
             (p) => !privateDataRef.current!.blockedUsers.includes(p.userId)
           );
+        }
+
+        if (blockedByRef.current.length) {
+          newPosts = newPosts.filter((p) => !blockedByRef.current.includes(p.userId));
         }
 
         if (privateDataRef.current?.reportedPosts?.length) {
