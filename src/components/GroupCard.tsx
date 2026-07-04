@@ -7,6 +7,7 @@ import { doc, updateDoc, arrayUnion, increment, setDoc, Timestamp } from "fireba
 import { db } from "@/lib/firebase";
 import { FOCUS_MODES, MAX_GROUP_MEMBERS, resolveMode } from "@/lib/constants";
 import { isModeGroup as isModeGroupCheck } from "@/lib/groups";
+import ConfirmModal from "@/components/ConfirmModal";
 import { emitGroupCleared, emitGroupMuteToggle } from "@/hooks/useUnreadGroups";
 import { FocusModeIcon, IconUsers } from "@/components/icons";
 import type { Group } from "@/types";
@@ -48,6 +49,7 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
   const isMember = group.memberIds?.includes(currentUserId || "");
 
   const [joining, setJoining] = useState(false);
+  const [showFriendsConfirm, setShowFriendsConfirm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
   // Swipe state — supports both left (clear) and right (mute)
@@ -301,7 +303,13 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
                 </div>
               ) : canJoin ? (
                 <button
-                  onClick={handleJoinClick}
+                  onClick={() => {
+                    if (!isModeGroup && group.joinType === "friends") {
+                      setShowFriendsConfirm(true);
+                    } else {
+                      handleJoinClick();
+                    }
+                  }}
                   disabled={joining}
                   className="w-full bg-gradient-to-br from-accent-orange to-accent-orange-dark text-white font-bold py-3 rounded-xl disabled:opacity-50 active:scale-[0.98]"
                 >
@@ -321,6 +329,17 @@ export default memo(function GroupCard({ group, currentUserId, leaderName, canJo
             </div>
           </div>
         </>
+      )}
+
+      {/* Friends-only join confirmation */}
+      {showFriendsConfirm && (
+        <ConfirmModal
+          title="Friends Only Group"
+          message={`This is a group for people who know each other. Are you friends with the leader${leaderName ? ` (${leaderName})` : ""}? Only join if you know them.`}
+          confirmLabel="Yes, join"
+          onConfirm={async () => { setShowFriendsConfirm(false); await handleJoinClick(); }}
+          onCancel={() => setShowFriendsConfirm(false)}
+        />
       )}
     </>
   );

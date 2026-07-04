@@ -594,7 +594,7 @@ export default function GroupChatPage() {
       {showFriendsConfirm && (
         <ConfirmModal
           title="Friends Only Group"
-          message="This group is for people who know each other. Only join if you're friends with the members."
+          message={`This is a group for people who know each other. Are you friends with the leader${memberProfiles[group?.creatorId || ""]?.displayName ? ` (${memberProfiles[group!.creatorId].displayName})` : ""}? Only join if you know them.`}
           confirmLabel="Join"
           onConfirm={async () => { setShowFriendsConfirm(false); await performJoin(); }}
           onCancel={() => setShowFriendsConfirm(false)}
