@@ -72,19 +72,21 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
   // call ends whenever the host ends it on the external service
   const liveMeetings = meetings.filter((m) => !m.expiresAt || m.expiresAt.toMillis() > now);
 
-  // Auto-scroll carousel when multiple meetings are live
+  // Auto-scroll carousel — slides are the live meetings (or the offline
+  // placeholder) plus the trailing become-a-host card
+  const slideCount = Math.max(liveMeetings.length, 1) + 1;
   const scrollRef = useRef<HTMLDivElement>(null);
   const idxRef = useRef(0);
   useEffect(() => {
-    if (liveMeetings.length < 2) return;
+    if (slideCount < 2) return;
     const timer = setInterval(() => {
       const el = scrollRef.current;
       if (!el) return;
-      idxRef.current = (idxRef.current + 1) % liveMeetings.length;
+      idxRef.current = (idxRef.current + 1) % slideCount;
       el.scrollTo({ left: idxRef.current * el.clientWidth, behavior: "smooth" });
     }, 4000);
     return () => clearInterval(timer);
-  }, [liveMeetings.length]);
+  }, [slideCount]);
 
   const openMeeting = (m: Meeting) => {
     window.open(m.url, "_blank", "noopener,noreferrer");
@@ -139,25 +141,27 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
         </button>
       </div>
 
-      {liveMeetings.length === 0 ? (
-        /* Offline placeholder */
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden opacity-40">
-              <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
+      {/* Auto-scrolling carousel: live meetings (or offline placeholder) + become-a-host card */}
+      <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl">
+          {liveMeetings.length === 0 && (
+            /* Offline placeholder */
+            <div className="w-full shrink-0 snap-center">
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10 h-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl shrink-0 overflow-hidden opacity-40">
+                    <img src="/icons/icon-192x192.png" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-white/40">No live meeting</p>
+                    <p className="text-xs text-white/25 mt-0.5">Check back later</p>
+                  </div>
+                  <span className="text-xs font-bold text-white/20 px-3 py-1.5 rounded-full border border-white/10 shrink-0">
+                    Offline
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm text-white/40">No live meeting</p>
-              <p className="text-xs text-white/25 mt-0.5">Check back later</p>
-            </div>
-            <span className="text-xs font-bold text-white/20 px-3 py-1.5 rounded-full border border-white/10 shrink-0">
-              Offline
-            </span>
-          </div>
-        </div>
-      ) : (
-        /* Auto-scrolling carousel of live meetings */
-        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl">
+          )}
           {liveMeetings.map((m) => (
             <div key={m.id} className="w-full shrink-0 snap-center">
               <div
@@ -224,17 +228,36 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
               </div>
             </div>
           ))}
-        </div>
-      )}
+          {/* Become-a-host card — always the last slide */}
+          <div className="w-full shrink-0 snap-center">
+            <div
+              onClick={() => setShowHostModal(true)}
+              className="bg-white/5 rounded-2xl p-4 border border-dashed border-white/20 cursor-pointer active:scale-[0.98] transition-transform h-full"
+              role="button"
+              tabIndex={0}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full shrink-0 bg-accent-orange/20 flex items-center justify-center">
+                  <span className="text-xl">🎙️</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-white/80">Become a Host</p>
+                  <p className="text-xs text-white/40 mt-0.5">Want to host a meeting? Contact <span className="font-bold text-accent-orange">count_taku</span> for the host pass</p>
+                </div>
+                <span className="text-xs font-bold text-white/60 px-3 py-1.5 rounded-full border border-white/20 shrink-0">
+                  Host
+                </span>
+              </div>
+            </div>
+          </div>
+      </div>
 
-      {/* Dots for carousel */}
-      {liveMeetings.length > 1 && (
-        <div className="flex justify-center gap-1 mt-1.5">
-          {liveMeetings.map((m, i) => (
-            <span key={m.id} className="w-1 h-1 rounded-full bg-white/25" aria-hidden="true" data-idx={i} />
-          ))}
-        </div>
-      )}
+      {/* Dots for carousel (slides = meetings or offline placeholder + host card) */}
+      <div className="flex justify-center gap-1 mt-1.5">
+        {Array.from({ length: slideCount }, (_, i) => (
+          <span key={i} className="w-1 h-1 rounded-full bg-white/25" aria-hidden="true" />
+        ))}
+      </div>
 
       {/* Friends-only confirmation */}
       {friendsConfirm && (
