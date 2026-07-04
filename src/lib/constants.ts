@@ -99,17 +99,18 @@ export const REGION_TZ: Record<string, string> = {
 };
 export const DEFAULT_TZ = "Australia/Sydney";
 
+// Japan first (pre-departure users), then Australian cities A-Z, Other last
 export const REGIONS = [
-  "Sydney",
-  "Melbourne",
-  "Brisbane",
-  "Perth",
-  "Adelaide",
-  "Gold Coast",
-  "Canberra",
-  "Cairns",
-  "Darwin",
-  "Hobart",
   "Japan",
+  "Adelaide",
+  "Brisbane",
+  "Cairns",
+  "Canberra",
+  "Darwin",
+  "Gold Coast",
+  "Hobart",
+  "Melbourne",
+  "Perth",
+  "Sydney",
   "Other",
 ] as const;
