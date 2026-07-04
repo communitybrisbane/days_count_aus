@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { FOCUS_MODES, POST_CONTENT_MAX, HASHTAG_MAX, REGIONS, resolveMode } from "@/lib/constants";
 import { FocusModeIcon, IconGlobe, IconLock } from "@/components/icons";
 import AsciiWarn from "@/components/AsciiWarn";
+import RegionWheelModal from "@/components/RegionWheelModal";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 
 export default function EditPostPage() {
@@ -99,30 +100,13 @@ export default function EditPostPage() {
 
   return (
     <div className="min-h-dvh flex flex-col" style={{ paddingTop: "max(0rem, env(safe-area-inset-top, 0px))", paddingBottom: "max(0rem, env(safe-area-inset-bottom, 0px))" }}>
-      {/* Region picker modal */}
+      {/* Region picker modal — drum wheel */}
       {showRegionPicker && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowRegionPicker(false)} />
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[50dvh] flex flex-col animate-slide-up">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <h3 className="font-bold text-sm">Select Region</h3>
-              <button onClick={() => setShowRegionPicker(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-3 gap-2" style={{ scrollbarWidth: "none" }}>
-              {REGIONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setPostRegion(r); setShowRegionPicker(false); }}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium text-center transition-all active:scale-[0.97] ${
-                    postRegion === r ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
+        <RegionWheelModal
+          value={postRegion}
+          onDone={(r) => { setPostRegion(r); setShowRegionPicker(false); }}
+          onClose={() => setShowRegionPicker(false)}
+        />
       )}
 
       {/* Day picker modal */}

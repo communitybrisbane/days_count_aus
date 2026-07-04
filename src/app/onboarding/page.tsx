@@ -16,6 +16,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import AsciiWarn from "@/components/AsciiWarn";
 import { useAsciiInput } from "@/hooks/useAsciiInput";
 import { FocusModeIcon } from "@/components/icons";
+import RegionWheelModal from "@/components/RegionWheelModal";
 
 type Phase = "pre-departure" | "in-australia" | "post-return";
 
@@ -43,6 +44,7 @@ export default function OnboardingPage() {
   const [departureDate, setDepartureDate] = useState("");
   const [mainMode, setMainMode] = useState("");
   const [region, setRegion] = useState("");
+  const [showRegionWheel, setShowRegionWheel] = useState(false);
   const [goal, setGoal] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -351,21 +353,20 @@ export default function OnboardingPage() {
             <h2 className="text-xl font-bold mb-1">Where are you based?</h2>
             <p className="text-sm text-gray-400 mb-8">Optional — shown on your profile</p>
 
-            <div className="grid grid-cols-3 gap-2">
-              {REGIONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setRegion(r); goNext(); }}
-                  className={`py-3 rounded-xl text-xs font-medium border-2 transition-all active:scale-[0.97] ${
-                    region === r
-                      ? "bg-accent-orange text-white border-accent-orange"
-                      : "bg-white text-gray-600 border-gray-100"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setShowRegionWheel(true)}
+              className="w-full flex items-center justify-between border-2 border-gray-100 rounded-xl px-4 py-3.5 text-sm bg-white active:bg-gray-50"
+            >
+              <span className={region ? "text-gray-800 font-medium" : "text-gray-400"}>{region || "Select your city"}</span>
+              <span className="text-gray-300 text-xs">&#9660;</span>
+            </button>
+            {showRegionWheel && (
+              <RegionWheelModal
+                value={region}
+                onDone={(r) => { setRegion(r); setShowRegionWheel(false); goNext(); }}
+                onClose={() => setShowRegionWheel(false)}
+              />
+            )}
 
             <div className="flex-1" />
             <button

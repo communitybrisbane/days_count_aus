@@ -11,6 +11,7 @@ import { createPost, isFirstPost, updateUserXPAndStreak, getBannedWords, contain
 import dynamic from "next/dynamic";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 import LoadingSpinner from "@/components/LoadingSpinner";
+import RegionWheelModal from "@/components/RegionWheelModal";
 import XPToast from "@/components/XPToast";
 import LevelUpAnimation from "@/components/LevelUpAnimation";
 import Avatar from "@/components/Avatar";
@@ -216,30 +217,13 @@ export default function PostPage() {
           onCancel={() => setCropSrc("")}
         />
       )}
-      {/* Region picker modal */}
+      {/* Region picker modal — drum wheel */}
       {showRegionPicker && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setShowRegionPicker(false)} />
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl max-h-[50dvh] flex flex-col animate-slide-up">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <h3 className="font-bold text-sm">Select Region</h3>
-              <button onClick={() => setShowRegionPicker(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 grid grid-cols-3 gap-2" style={{ scrollbarWidth: "none" }}>
-              {REGIONS.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => { setPostRegion(r); setShowRegionPicker(false); }}
-                  className={`py-2 px-2 rounded-xl text-xs font-medium text-center transition-all active:scale-[0.97] ${
-                    postRegion === r ? "bg-accent-orange text-white" : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
+        <RegionWheelModal
+          value={postRegion}
+          onDone={(r) => { setPostRegion(r); setShowRegionPicker(false); }}
+          onClose={() => setShowRegionPicker(false)}
+        />
       )}
       {/* Day picker modal — select date to compute day number */}
       {showDayPicker && (

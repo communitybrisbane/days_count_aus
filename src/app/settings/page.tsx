@@ -6,13 +6,14 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { signOut } from "@/lib/auth";
-import { MAIN_MODE_OPTIONS, REGIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
+import { MAIN_MODE_OPTIONS, AVATAR_SIZE, NICKNAME_MAX, GOAL_MAX } from "@/lib/constants";
 import { getTodayStr } from "@/lib/utils";
 import { isNicknameTaken } from "@/lib/validators";
 import { uploadAvatar, deleteAccount, unblockUser, fetchNotificationPrefs, updateNotificationPrefs } from "@/lib/services/users";
 import type { NotificationPrefs } from "@/types";
 import dynamic from "next/dynamic";
 import ConfirmModal from "@/components/ConfirmModal";
+import RegionWheelModal from "@/components/RegionWheelModal";
 const ImageCropper = dynamic(() => import("@/components/ImageCropper"), { ssr: false });
 const TermsModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.TermsModal })), { ssr: false });
 const PrivacyModal = dynamic(() => import("@/components/LegalModals").then((m) => ({ default: m.PrivacyModal })), { ssr: false });
@@ -33,6 +34,7 @@ export default function SettingsPage() {
 
   const [nickname, setNickname] = useState(profile?.displayName || "");
   const [region, setRegion] = useState(profile?.region || "");
+  const [showRegionWheel, setShowRegionWheel] = useState(false);
   const [goal, setGoal] = useState(profile?.goal || "");
   const [mainMode, setMainMode] = useState(profile?.mainMode || "");
   const [departureDate, setDepartureDate] = useState(profile?.departureDate || "");
@@ -285,22 +287,21 @@ export default function SettingsPage() {
 
             <div>
               <label className="text-xs text-white/60">Region</label>
-              <div className="grid grid-cols-3 gap-1.5 mt-0.5">
-                {REGIONS.map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRegion(region === r ? "" : r)}
-                    className={`py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      region === r
-                        ? "bg-accent-orange text-white border-accent-orange"
-                        : "bg-white text-gray-600 border-gray-200"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowRegionWheel(true)}
+                className="w-full flex items-center justify-between border border-forest-light/30 rounded-lg px-3 py-2 text-sm mt-0.5 bg-forest-light/10 text-white active:bg-forest-light/20"
+              >
+                <span className={region ? "" : "text-white/30"}>{region || "Select region"}</span>
+                <span className="text-white/30 text-xs">▼</span>
+              </button>
+              {showRegionWheel && (
+                <RegionWheelModal
+                  value={region}
+                  onDone={(r) => { setRegion(r); setShowRegionWheel(false); }}
+                  onClose={() => setShowRegionWheel(false)}
+                />
+              )}
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-white/60">Show region on posts</span>
                 <button
