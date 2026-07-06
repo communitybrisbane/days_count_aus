@@ -51,7 +51,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="w-full mb-24">
+        <div className="w-full mb-8">
           {/* Legal links */}
           <div className="flex justify-center gap-3 mb-3">
             <button type="button" onClick={() => setOpenModal("terms")} className="text-[11px] text-accent-orange underline">Terms</button>
