@@ -17,11 +17,8 @@ export default function SafeAreaTuner() {
       const shortfall = window.screen.height - window.innerHeight;
       if (shortfall > 8) {
         document.documentElement.style.setProperty("--safe-bottom", "0px");
-        // Sink the bottom nav halfway into the OS-reserved zone below the viewport
-        document.documentElement.style.setProperty("--nav-sink", `${Math.round(shortfall / 2)}px`);
       } else {
         document.documentElement.style.removeProperty("--safe-bottom");
-        document.documentElement.style.removeProperty("--nav-sink");
       }
     };
 
