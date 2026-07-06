@@ -51,6 +51,12 @@ export default function PWAInstallBanner() {
     // Mobile devices only — desktop browsers also fire beforeinstallprompt
     if (!/iPad|iPhone|iPod|Android/.test(navigator.userAgent)) return;
 
+    // Don't nag: show on the 1st visit, then only once every 10 visits
+    const VISIT_KEY = "pwaBannerVisitCount";
+    const visits = (parseInt(localStorage.getItem(VISIT_KEY) || "0", 10) || 0) + 1;
+    localStorage.setItem(VISIT_KEY, String(visits));
+    if (visits % 10 !== 1) return;
+
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     isIOSRef.current = ios;
 
