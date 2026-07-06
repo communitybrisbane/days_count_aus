@@ -90,7 +90,7 @@ function LegalModalShell({
 // ─── Japanese fallback content ───
 
 const TERMS_JA = `
-<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年7月4日</p>
+<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年7月6日</p>
 <p class="font-bold text-sm text-gray-800">第1条（利用規約の同意）</p>
 <p>Days Count in AUS（以下「本アプリ」）をご利用いただくことで、本利用規約に同意したものとみなします。同意いただけない場合は、本アプリのご利用をお控えください。</p>
 <p class="font-bold text-sm text-gray-800">第2条（サービス概要）</p>
@@ -128,6 +128,7 @@ const TERMS_JA = `
 <p>・1コミュニティの上限は12名です（公式グループに上限はありません）。</p>
 <p>・リーダーがコミュニティの管理責任を負います。リーダーが退会した場合、コミュニティは解散されます。</p>
 <p>・メッセージは100文字以内です。</p>
+<p>・グループチャットのメッセージは送信から30日後に自動的に削除されます。</p>
 <p>・グループチャット内での利用者間のトラブル（誹謗中傷、詐欺、個人情報の漏洩等）について、運営者は一切の責任を負いません。利用者間で解決するものとします。</p>
 <p>・運営者は、通報等により悪質と判断したメッセージやユーザーに対して、削除・アカウント停止等の措置を講じることがあります。</p>
 <p class="font-bold text-sm text-gray-800">第8条（XP・レベル・ストリーク）</p>
@@ -175,7 +176,7 @@ const TERMS_JA = `
 `;
 
 const TERMS_EN = `
-<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: July 4, 2026</p>
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: July 6, 2026</p>
 <p class="font-bold text-sm text-gray-800">Article 1 (Acceptance of Terms)</p>
 <p>By using Days Count in AUS (hereinafter "the App"), you are deemed to have agreed to these Terms of Service. If you do not agree, please refrain from using the App.</p>
 <p class="font-bold text-sm text-gray-800">Article 2 (Service Overview)</p>
@@ -213,6 +214,7 @@ const TERMS_EN = `
 <p>・Each community has a maximum of 12 members (mode communities have no limit).</p>
 <p>・The leader is responsible for managing the community. If the leader leaves, the community will be disbanded.</p>
 <p>・Messages are limited to 100 characters.</p>
+<p>・Group chat messages are automatically deleted 30 days after they are sent.</p>
 <p>・The Operator assumes no responsibility for disputes between users in group chats (including defamation, fraud, or leaks of personal information). Users shall resolve such matters among themselves.</p>
 <p>・The Operator may take measures such as deleting messages or suspending accounts for users or messages deemed malicious through reports or other means.</p>
 <p class="font-bold text-sm text-gray-800">Article 8 (XP, Levels, and Streaks)</p>
@@ -260,7 +262,7 @@ const TERMS_EN = `
 `;
 
 const PRIVACY_JA = `
-<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年7月4日</p>
+<p class="text-[10px] text-gray-400">制定日: 2026年3月24日 ｜ 最終更新日: 2026年7月6日</p>
 <p class="font-bold text-sm text-gray-800">第1条（運営者）</p>
 <p>Days Count in AUS（以下「本アプリ」）は、Count.（運営者: 岳尾拓馬、以下「運営者」）が運営しています。</p>
 <p class="font-bold text-sm text-gray-800">第2条（収集する情報）</p>
@@ -300,7 +302,7 @@ const PRIVACY_JA = `
 <p>・Firebaseセキュリティルールによりユーザー権限に応じたアクセス制御を実施しています。</p>
 <p>・機密データ（プッシュ通知トークン、ブロックリスト）はアカウント所有者のみアクセス可能な非公開サブコレクションに保存されます。</p>
 <p>・本アプリはVercelでホスティングされています。</p>
-<p>・データはアカウントが有効な間保持されます。</p>
+<p>・データはアカウントが有効な間保持されます。ただし、グループチャットのメッセージは送信から30日後に自動的に削除されます。</p>
 <p>・データはGoogle Cloud Platform（米国等の海外サーバーを含む）に保存される場合があります。Googleのセキュリティ基準およびデータ保護方針に基づき管理されます。</p>
 <p class="font-bold text-sm text-gray-800">第6条（データの共有）</p>
 <p>運営者は利用者の個人情報を第三者に販売、交換、共有<b>しません</b>。ただし以下の場合を除きます。</p>
@@ -336,7 +338,7 @@ const PRIVACY_JA = `
 `;
 
 const PRIVACY_EN = `
-<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: July 4, 2026</p>
+<p class="text-[10px] text-gray-400">Effective: March 24, 2026 ｜ Last updated: July 6, 2026</p>
 <p class="font-bold text-sm text-gray-800">Article 1 (Operator)</p>
 <p>Days Count in AUS (hereinafter "the App") is operated by Count. (Operator: Takuma Takeo, hereinafter "the Operator").</p>
 <p class="font-bold text-sm text-gray-800">Article 2 (Information We Collect)</p>
@@ -376,7 +378,7 @@ const PRIVACY_EN = `
 <p>・Firebase Security Rules enforce access controls based on user permissions.</p>
 <p>・Sensitive data (push notification tokens, block lists) is stored in private subcollections accessible only to the account owner.</p>
 <p>・The App is hosted on Vercel.</p>
-<p>・Data is retained as long as the account is active.</p>
+<p>・Data is retained as long as the account is active. However, group chat messages are automatically deleted 30 days after they are sent.</p>
 <p>・Data may be stored on Google Cloud Platform (including overseas servers such as those in the United States). Data is managed in accordance with Google's security standards and data protection policies.</p>
 <p class="font-bold text-sm text-gray-800">Article 6 (Data Sharing)</p>
 <p>The Operator does <b>not</b> sell, trade, or share users' personal information with third parties, except in the following cases:</p>
