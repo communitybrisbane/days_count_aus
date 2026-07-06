@@ -11,7 +11,7 @@ import { useEffect } from "react";
  */
 export default function SafeAreaTuner() {
   useEffect(() => {
-    if (!window.matchMedia("(display-mode: standalone)").matches) return;
+    if (!window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) return;
 
     const tune = () => {
       const shortfall = window.screen.height - window.innerHeight;
