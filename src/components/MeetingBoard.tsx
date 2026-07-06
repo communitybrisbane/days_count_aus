@@ -22,6 +22,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
     new Date(millis).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: tz });
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [showHostModal, setShowHostModal] = useState(false);
+  const [hostStep, setHostStep] = useState<0 | 1>(0); // 0 = host pass check, 1 = meeting details
   const [friendsConfirm, setFriendsConfirm] = useState<Meeting | null>(null);
   const [endTarget, setEndTarget] = useState<Meeting | null>(null);
 
@@ -119,7 +120,28 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
       alert("You already have a live meeting. End it first to host a new one.");
       return;
     }
+    setHostStep(0);
     setShowHostModal(true);
+  };
+
+  const closeHostModal = () => {
+    setShowHostModal(false);
+    setHostStep(0);
+    setPassword("");
+  };
+
+  // Step 0 → 1: check the host pass server-side before showing the details form
+  const handleVerifyPass = async () => {
+    if (submitting || !password) return;
+    setSubmitting(true);
+    try {
+      await manageMeeting({ action: "verify", password });
+      setHostStep(1);
+    } catch (e) {
+      alert((e as Error).message || "Wrong password");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleHost = async () => {
@@ -141,6 +163,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
     try {
       await manageMeeting({ action: "create", password, title, mode, url, joinType, startsAtMillis, expiresAtMillis: endAtMillis });
       setShowHostModal(false);
+      setHostStep(0);
       setTitle(""); setUrl(""); setPassword(""); setJoinType("open"); setStartAtMillis(0); setEndAtMillis(0);
     } catch (e) {
       alert((e as Error).message || "Failed to start meeting");
@@ -357,13 +380,14 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
       {/* Host meeting modal */}
       {showHostModal && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={() => setShowHostModal(false)} aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/40 z-[60]" onClick={closeHostModal} aria-hidden="true" />
           <div className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-bold text-sm">Host a Meeting</h3>
-              <button onClick={() => setShowHostModal(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
+              <button onClick={closeHostModal} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
-            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
+            {hostStep === 0 ? (
+            <div className="p-4 space-y-3" style={{ paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
               <div>
                 <p className="text-xs font-bold text-gray-500 mb-1">Host pass</p>
                 <input
@@ -371,9 +395,21 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Host pass"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") handleVerifyPass(); }}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange"
                 />
               </div>
+              <button
+                onClick={handleVerifyPass}
+                disabled={!password || submitting}
+                className="w-full py-3 text-sm font-bold text-white bg-accent-orange rounded-full disabled:opacity-40"
+              >
+                {submitting ? "Checking..." : "Next"}
+              </button>
+            </div>
+            ) : (
+            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
               <div>
                 <p className="text-xs font-bold text-gray-500 mb-1">Title</p>
                 <input
@@ -475,6 +511,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
                 {submitting ? "Starting..." : "Go Live"}
               </button>
             </div>
+            )}
           </div>
         </>
       )}
