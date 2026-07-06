@@ -17,8 +17,11 @@ export default function SafeAreaTuner() {
       const shortfall = window.screen.height - window.innerHeight;
       if (shortfall > 8) {
         document.documentElement.style.setProperty("--safe-bottom", "0px");
+        // The OS band itself acts as bottom spacing, so flush layouts look right
+        document.documentElement.style.setProperty("--login-cta-mb", "0px");
       } else {
         document.documentElement.style.removeProperty("--safe-bottom");
+        document.documentElement.style.removeProperty("--login-cta-mb");
       }
     };
 
