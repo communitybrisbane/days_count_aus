@@ -38,6 +38,11 @@ import { compressImage } from "@/lib/imageUtils";
 import { useAsciiInput, NON_ASCII_EMOJI_MULTILINE } from "@/hooks/useAsciiInput";
 import { emitGroupRead } from "@/hooks/useUnreadGroups";
 
+// Chat retention: messages auto-delete after 30 days (Firestore TTL policy on expireAt)
+const MESSAGE_TTL_DAYS = 30;
+const messageExpireAt = () =>
+  Timestamp.fromMillis(Date.now() + MESSAGE_TTL_DAYS * 24 * 60 * 60 * 1000);
+
 interface Message {
   id: string;
   senderId: string;
@@ -202,6 +207,7 @@ export default function GroupChatPage() {
       senderId: "system",
       text,
       createdAt: serverTimestamp(),
+      expireAt: messageExpireAt(),
       reactions: {},
     });
   };
@@ -270,6 +276,7 @@ export default function GroupChatPage() {
           senderId: user.uid,
           text: farewell,
           createdAt: serverTimestamp(),
+          expireAt: messageExpireAt(),
           reactions: {},
         });
       }
@@ -316,6 +323,7 @@ export default function GroupChatPage() {
       senderId: user.uid,
       text: msg,
       createdAt: serverTimestamp(),
+      expireAt: messageExpireAt(),
       reactions: {},
     });
     await updateDoc(doc(db, "groups", groupId), {
