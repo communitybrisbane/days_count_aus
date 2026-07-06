@@ -15,6 +15,18 @@
 
 ## ✅ 完了（新しい順）
 
+- **2026-07-06** ミーティング開催を2段階フローに: 先にホストパスをサーバー検証（`manageMeeting` に `verify` アクション追加、Functionsデプロイ済み）→ 通過後に詳細フォーム表示
+
+- **2026-07-06** グループチャットを30日保持に: 全メッセージに `expireAt`（送信+30日）を付与し、Firestore TTLポリシー（`messages`/`expireAt`、コンソールで設定済み）で自動削除。既存90件もバックフィル済み（30日超の78件は自動削除待ち）。表示は従来どおり最新100件
+
+- **2026-07-06** Add to Home Screen バナーの表示頻度を「初回+10回に1回」に抑制（localStorageで訪問回数カウント）
+
+- **2026-07-06** 設定画面: Edit Profile 展開時に Log Out / Delete Account の固定ブロックに Save ボタンが隠れる問題を修正（ブロックをスクロール領域末尾へ移動）
+
+- **2026-07-06** Goal & History モーダルの bottom を `4rem` 決め打ちから `NAV_HEIGHT` 参照に修正（フッターとの隙間解消）
+
+- **2026-07-06** セーフエリア対応を刷新（PR #3〜#10）: `env(safe-area-inset-*)` 直書きを全廃し、CSS変数 `--safe-top` / `--safe-bottom`（standalone/fullscreen表示時のみ有効、`globals.css`）に統一。Safariのブラウザ枠との二重余白を解消。`SafeAreaTuner`（root layout常駐）が新iOSのPWAでOSが下部領域（約62pt）を予約済みの場合に `--safe-bottom` を実行時0に補正。EXPLORE/Communityヘッダーの上padding削減、ログイン画面は背景`geo-bg`の下端160pxをforestへフェード+下部余白ゼロに。**失敗知見**: フッターをiOS予約領域へ沈める実験はiOSがシステムカバーを上描きするため不成立（revert済み）、manifest `fullscreen` も効果なし（standaloneに戻した）
+
 - **2026-07-05** 通知バナーを「Enable」一択に変更（No廃止）。ブラウザ許可が未解決の間は毎回表示され続け、種類の選択（3トグル）は設定画面で行う二段構えに。「You can choose which kinds in Settings」の案内文を追加
 
 - **2026-07-05** セキュリティ強化を本番リリース: XP・ストリーク・いいねクォータをサーバー権威化（`onPostCreatedXP` 新設 + `onLikeCreated` 拡張、ルールでクライアントのXP系書き込みを全面禁止、プロフィール作成時のXP初期値検証も追加）。投稿レートリミット（1時間5件、超過はサーバーが自動非表示+moderation_logs記録、クライアントも事前ブロック）。利用規約・プライバシーポリシーを現行仕様に更新（Sentry/App Check開示・相互ブロック・ミーティング等）
