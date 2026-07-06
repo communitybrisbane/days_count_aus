@@ -29,7 +29,7 @@ export default function BottomNav({ onExploreClick, onMyClick }: BottomNavProps 
   return (
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[450px] bg-forest/95 backdrop-blur-md border-t border-forest-light/30 z-50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      style={{ paddingBottom: "var(--nav-safe-bottom, 0px)" }}
     >
       <div className="flex items-center justify-around h-10 px-2">
         {/* HOME */}

@@ -18,6 +18,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Bottom nav safe-area: only needed in installed PWA (standalone).
+   In-browser, Safari/Chrome already keep fixed elements above their own toolbar,
+   so adding env(safe-area-inset-bottom) there creates a double gap. */
+:root {
+  --nav-safe-bottom: 0px;
+}
+@media (display-mode: standalone) {
+  :root {
+    --nav-safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 html,
 body {
   overscroll-behavior: none;
