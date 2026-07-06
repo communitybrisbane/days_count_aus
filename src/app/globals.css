@@ -70,8 +70,12 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  /* Linen / canvas texture */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23ffffff' opacity='0.02'/%3E%3Crect width='1' height='1' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
+  /* Bottom fade into the html background color (forest), then linen / canvas texture.
+     The fade hides the hard cutoff where the layout viewport ends above the physical
+     screen bottom (iOS PWA) and the OS paints the html background below it. */
+  background-image:
+    linear-gradient(to bottom, rgba(26, 60, 46, 0) calc(100% - 160px), #1A3C2E 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23ffffff' opacity='0.02'/%3E%3Crect width='1' height='1' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
 }
