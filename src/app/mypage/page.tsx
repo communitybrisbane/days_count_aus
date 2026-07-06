@@ -65,10 +65,10 @@ export default function MyPage() {
       </div>
       <div className="flex-1 overflow-y-auto overflow-x-hidden relative z-[1]" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — アバター左・名前＋統計右の横並びレイアウト */}
-      <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="relative px-5 pb-3" style={{ paddingTop: "max(1rem, var(--safe-top, 0px))" }}>
 
         {/* 設定アイコン — 右上 */}
-        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.push("/settings")} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1rem, var(--safe-top, 0px))" }}>
           <IconSettings size={24} />
         </button>
 

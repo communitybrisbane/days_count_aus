@@ -192,7 +192,7 @@ export default function CreateGroupPage() {
       )}
 
       {/* Header */}
-      <div className="shrink-0 flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="shrink-0 flex items-center px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, var(--safe-top, 0px))" }}>
         <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M13 4L7 10L13 16" />
@@ -352,7 +352,7 @@ export default function CreateGroupPage() {
           </div>
 
           {/* Fixed bottom button */}
-          <div className="shrink-0 px-4 py-3 border-t border-forest-light/20" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
+          <div className="shrink-0 px-4 py-3 border-t border-forest-light/20" style={{ paddingBottom: "max(0.75rem, var(--safe-bottom, 0px))" }}>
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}

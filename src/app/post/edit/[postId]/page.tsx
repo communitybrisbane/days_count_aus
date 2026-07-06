@@ -100,7 +100,7 @@ export default function EditPostPage() {
   const modeInfo = FOCUS_MODES.find((m) => m.id === mode);
 
   return (
-    <div className="min-h-dvh flex flex-col" style={{ paddingTop: "max(0rem, env(safe-area-inset-top, 0px))", paddingBottom: "max(0rem, env(safe-area-inset-bottom, 0px))" }}>
+    <div className="min-h-dvh flex flex-col" style={{ paddingTop: "max(0rem, var(--safe-top, 0px))", paddingBottom: "max(0rem, var(--safe-bottom, 0px))" }}>
       {/* Region picker modal — drum wheel */}
       {showRegionPicker && (
         <RegionWheelModal
@@ -156,7 +156,7 @@ export default function EditPostPage() {
       )}
 
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, var(--safe-top, 0px))" }}>
         <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white" aria-label="Back">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4L7 10L13 16" /></svg>
         </button>

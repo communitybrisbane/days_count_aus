@@ -410,7 +410,7 @@ export default function GroupChatPage() {
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
       {/* Fixed header — Row 1 only */}
-      <div className="shrink-0 bg-forest/95 backdrop-blur-md border-b border-forest-light/20 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="shrink-0 bg-forest/95 backdrop-blur-md border-b border-forest-light/20 px-4 py-3 z-10" style={{ paddingTop: "max(0.75rem, var(--safe-top, 0px))" }}>
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/60 text-xl -ml-2">
             ←
@@ -772,7 +772,7 @@ export default function GroupChatPage() {
 
       {/* Input or closed banner */}
       {isMember && !isClosed && (
-        <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-2" style={{ paddingBottom: "max(0.5rem, var(--safe-bottom, 0px))" }}>
           {profile?.restricted && <p className="text-red-400 text-xs font-bold mb-1 ml-1 text-center">This account has been restricted</p>}
           {showWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">English characters only</p>}
           {showLinkWarn && <p className="text-red-400 text-xs font-bold mb-1 ml-1">Links are not allowed</p>}
@@ -807,7 +807,7 @@ export default function GroupChatPage() {
         </div>
       )}
       {isMember && isClosed && (
-        <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-3 text-center" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="sticky bottom-0 bg-forest/95 backdrop-blur-md border-t border-forest-light/20 px-3 pt-2 pb-3 text-center" style={{ paddingBottom: "max(0.75rem, var(--safe-bottom, 0px))" }}>
           <p className="text-white/40 text-xs mb-2">This group has been closed. You can still read messages.</p>
           <button
             onClick={async () => {

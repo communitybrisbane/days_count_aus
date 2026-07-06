@@ -18,15 +18,17 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Bottom nav safe-area: only needed in installed PWA (standalone).
-   In-browser, Safari/Chrome already keep fixed elements above their own toolbar,
-   so adding env(safe-area-inset-bottom) there creates a double gap. */
+/* Safe-area insets: only needed in installed PWA (standalone).
+   In-browser, Safari/Chrome chrome (address bar / toolbar) already covers the
+   unsafe areas, so adding env(safe-area-inset-*) there creates a double gap. */
 :root {
-  --nav-safe-bottom: 0px;
+  --safe-top: 0px;
+  --safe-bottom: 0px;
 }
 @media (display-mode: standalone) {
   :root {
-    --nav-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -68,8 +70,12 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  /* Linen / canvas texture */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23ffffff' opacity='0.02'/%3E%3Crect width='1' height='1' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
+  /* Bottom fade into the html background color (forest), then linen / canvas texture.
+     The fade hides the hard cutoff where the layout viewport ends above the physical
+     screen bottom (iOS PWA) and the OS paints the html background below it. */
+  background-image:
+    linear-gradient(to bottom, rgba(26, 60, 46, 0) calc(100% - 160px), #1A3C2E 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23ffffff' opacity='0.02'/%3E%3Crect width='1' height='1' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
 }

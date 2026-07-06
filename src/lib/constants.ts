@@ -78,8 +78,8 @@ export const POST_XP_DAILY_MAX = 3;
 export const LIKE_SEND_XP = 3;
 export const LIKE_RECEIVE_XP = 5;
 
-/** Bottom navigation bar height (CSS value) — keep in sync with BottomNav h-10 + its safe-area padding (--nav-safe-bottom, defined in globals.css) */
-export const NAV_HEIGHT = "calc(2.5rem + var(--nav-safe-bottom, 0px))";
+/** Bottom navigation bar height (CSS value) — keep in sync with BottomNav h-10 + its safe-area padding (--safe-bottom, defined in globals.css) */
+export const NAV_HEIGHT = "calc(2.5rem + var(--safe-bottom, 0px))";
 
 /** Region → IANA timezone (mirrors REGION_TZ in functions/src/index.ts) */
 export const REGION_TZ: Record<string, string> = {

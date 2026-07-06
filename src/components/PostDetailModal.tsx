@@ -86,7 +86,7 @@ export default function PostDetailModal({ posts, selectedIndex, onClose, onDelet
       <div className="fixed inset-0 z-40 flex justify-center" role="dialog" aria-modal="true">
         <div ref={swipe.ref} className="relative w-full max-w-[430px] flex flex-col" style={{ paddingBottom: NAV_HEIGHT }} {...swipe.handlers}>
           {/* Header */}
-          <div className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}>
+          <div className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20" style={{ paddingTop: "max(0.5rem, var(--safe-top, 0px))" }}>
             <button
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center text-white/70 active:text-white"
