@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ForegroundNotification from "@/components/ForegroundNotification";
 import RestrictedBanner from "@/components/RestrictedBanner";
+import SafeAreaTuner from "@/components/SafeAreaTuner";
 import "./globals.css";
 
 // Body text uses Arial (globals.css); these are only exposed as CSS variables, so skip preloading
@@ -62,6 +63,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-forest min-h-dvh geo-bg`}
       >
+        <SafeAreaTuner />
         <AuthProvider>
           <div className="mx-auto max-w-[450px] min-h-dvh bg-forest/80 relative shadow-2xl backdrop-blur-sm overflow-hidden">
             <RestrictedBanner />
