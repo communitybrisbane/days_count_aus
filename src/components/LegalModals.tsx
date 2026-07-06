@@ -40,6 +40,15 @@ function LegalModalShell({
   const [DOMPurify, setDOMPurify] = useState<typeof import("dompurify").default | null>(null);
   useEffect(() => { import("dompurify").then((m) => setDOMPurify(() => m.default)); }, []);
 
+  // Paint the canvas white while the modal is open so the OS-reserved zone
+  // below the viewport (normally showing the forest html background) blends in
+  useEffect(() => {
+    const el = document.documentElement;
+    const prev = el.style.background;
+    el.style.background = "#ffffff";
+    return () => { el.style.background = prev; };
+  }, []);
+
   const title = lang === "ja" ? titleJa : titleEn;
   const body = lang === "ja"
     ? content?.contentJa || fallbackJa
