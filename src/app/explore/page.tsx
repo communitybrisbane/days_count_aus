@@ -290,10 +290,10 @@ export default function ExplorePage() {
     <div className="h-dvh flex flex-col overflow-hidden" style={{ paddingBottom: NAV_HEIGHT }}>
       <div
         className="shrink-0 bg-forest/95 backdrop-blur-md z-10 border-b border-forest-light/20"
-        style={{ paddingTop: "max(0.75rem, var(--safe-top, 0px))" }}
+        style={{ paddingTop: "var(--safe-top, 0px)" }}
       >
         {/* Search bar */}
-        <div className="px-4 pt-3 pb-2">
+        <div className="px-4 pt-2 pb-2">
           <div className="flex items-center gap-2 bg-forest-light/20 rounded-full px-3 py-2">
             <IconSearch size={16} className="text-white/40 shrink-0" />
             <input
