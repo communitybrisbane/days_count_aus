@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/lib/firebase";
-import { FOCUS_MODES, resolveMode, REGION_TZ, DEFAULT_TZ } from "@/lib/constants";
+import { FOCUS_MODES, resolveMode, REGION_TZ, DEFAULT_TZ, NAV_HEIGHT } from "@/lib/constants";
 import { modeGradient } from "@/lib/postUtils";
 import { FocusModeIcon, IconLock } from "@/components/icons";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -381,13 +381,13 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
       {showHostModal && (
         <>
           <div className="fixed inset-0 bg-black/40 z-[60]" onClick={closeHostModal} aria-hidden="true" />
-          <div className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up">
+          <div className="fixed inset-x-0 z-[60] bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up" style={{ bottom: NAV_HEIGHT }}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <h3 className="font-bold text-sm">Host a Meeting</h3>
               <button onClick={closeHostModal} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
             {hostStep === 0 ? (
-            <div className="p-4 space-y-3" style={{ paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
+            <div className="p-4 space-y-3">
               <div>
                 <p className="text-xs font-bold text-gray-500 mb-1">Host pass</p>
                 <input
@@ -409,7 +409,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
               </button>
             </div>
             ) : (
-            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
+            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "1rem" }}>
               <div>
                 <p className="text-xs font-bold text-gray-500 mb-1">Title</p>
                 <input
