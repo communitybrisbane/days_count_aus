@@ -50,8 +50,8 @@ export default function LoginPage() {
           <p className="text-sm text-white/50">count the days that count</p>
         </div>
 
-        {/* Bottom CTA */}
-        <div className="w-full">
+        {/* Bottom CTA — flush on iOS PWA (OS band provides spacing), margined elsewhere */}
+        <div className="w-full" style={{ marginBottom: "max(var(--login-cta-mb, 1.5rem), var(--safe-bottom, 0px))" }}>
           {/* Legal links */}
           <div className="flex justify-center gap-3 mb-3">
             <button type="button" onClick={() => setOpenModal("terms")} className="text-[11px] text-accent-orange underline">Terms</button>
