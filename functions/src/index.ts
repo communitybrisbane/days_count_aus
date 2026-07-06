@@ -755,6 +755,11 @@ export const manageMeeting = onCall(
       throw new HttpsError("permission-denied", "Wrong password.");
     }
 
+    // Password-only check so the client can gate the host form behind the pass
+    if (action === "verify") {
+      return { ok: true };
+    }
+
     if (action === "create") {
       const { title, mode, url, joinType, expiresAtMillis, startsAtMillis } = request.data as {
         title: string; mode: string; url: string; joinType: string; expiresAtMillis: number; startsAtMillis: number;
