@@ -113,7 +113,7 @@ export default function PublicProfilePage() {
     <div className="h-dvh flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto" style={NO_SCROLLBAR_STYLE}>
       {/* プロフィール — Instagram風中央レイアウト（myタブと統一） */}
-      <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="relative px-5 pb-4" style={{ paddingTop: "max(1.5rem, var(--safe-top, 0px))" }}>
         {/* Geometric background for profile header */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-10 -right-10 w-48 h-48 bg-forest-light/15 rotate-45" />
@@ -121,7 +121,7 @@ export default function PublicProfilePage() {
         </div>
 
         {/* 戻るボタン — 右上 */}
-        <button onClick={() => router.back()} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1.5rem, env(safe-area-inset-top, 0px))" }}>
+        <button onClick={() => router.back()} className="absolute top-0 right-3 text-white/40 w-10 h-10 flex items-center justify-center z-10" style={{ marginTop: "max(1.5rem, var(--safe-top, 0px))" }}>
           &times;
         </button>
 

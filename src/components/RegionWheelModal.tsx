@@ -37,7 +37,7 @@ export default function RegionWheelModal({ value, onDone, onClose }: {
       <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} aria-hidden="true" />
       <div
         className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl animate-slide-up"
-        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}
+        style={{ paddingBottom: "max(0.5rem, var(--safe-bottom, 0px))" }}
         role="dialog"
         aria-modal="true"
       >

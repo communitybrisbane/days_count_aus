@@ -240,7 +240,7 @@ export default function SettingsPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-forest-light/20 bg-forest/95 backdrop-blur-md" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-forest-light/20 bg-forest/95 backdrop-blur-md" style={{ paddingTop: "max(0.75rem, var(--safe-top, 0px))" }}>
         <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center text-white/40 text-xl -ml-2">←</button>
         <h1 className="text-lg font-bold text-white/90">Settings</h1>
         <div className="w-10" />
@@ -440,7 +440,7 @@ export default function SettingsPage() {
       </div>
 
       {/* フッター直上: Legal links・Log Out・Delete Account */}
-      <div className="shrink-0 border-t border-forest-light/15 px-4 py-4 space-y-3" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}>
+      <div className="shrink-0 border-t border-forest-light/15 px-4 py-4 space-y-3" style={{ paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
         <p className="text-center text-xs text-white/30">
           produced by{" "}
           <a href="https://www.instagram.com/count_taku/" target="_blank" rel="noopener noreferrer" className="text-accent-orange underline">@count_taku</a>

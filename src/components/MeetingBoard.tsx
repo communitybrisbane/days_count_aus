@@ -363,7 +363,7 @@ export default function MeetingBoard({ currentUid, region }: { currentUid?: stri
               <h3 className="font-bold text-sm">Host a Meeting</h3>
               <button onClick={() => setShowHostModal(false)} className="text-gray-400 text-lg w-8 h-8 flex items-center justify-center" aria-label="Close">&times;</button>
             </div>
-            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}>
+            <div className="p-4 space-y-3 overflow-y-auto" style={{ scrollbarWidth: "none", paddingBottom: "max(1rem, var(--safe-bottom, 0px))" }}>
               <div>
                 <p className="text-xs font-bold text-gray-500 mb-1">Host pass</p>
                 <input

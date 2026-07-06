@@ -153,7 +153,7 @@ export default function PWAInstallBanner() {
         </div>
 
         {/* Skip / Next */}
-        <div className="flex justify-between px-6 pb-8" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex justify-between px-6 pb-8" style={{ paddingBottom: "max(2rem, var(--safe-bottom, 0px))" }}>
           <button onClick={dismiss} className="text-sm text-white/30">Skip</button>
           <button onClick={() => setStep(2)} className="text-sm font-bold text-accent-orange">Next &rarr;</button>
         </div>
@@ -201,7 +201,7 @@ export default function PWAInstallBanner() {
           </div>
         </div>
 
-        <div className="flex justify-between px-6 pb-8" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 0px))" }}>
+        <div className="flex justify-between px-6 pb-8" style={{ paddingBottom: "max(2rem, var(--safe-bottom, 0px))" }}>
           <button onClick={() => setStep(1)} className="text-sm text-white/30">&larr; Back</button>
           <button onClick={() => setStep(3)} className="text-sm font-bold text-accent-orange">Next &rarr;</button>
         </div>
@@ -213,7 +213,7 @@ export default function PWAInstallBanner() {
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-black/85 backdrop-blur-sm">
       {/* Mock top-right area */}
-      <div className="flex justify-end px-4 pt-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="flex justify-end px-4 pt-4" style={{ paddingTop: "max(1rem, var(--safe-top, 0px))" }}>
         <div className="bg-accent-orange/15 border-2 border-accent-orange rounded-lg px-5 py-2 relative">
           <span className="text-sm font-bold text-accent-orange">Add</span>
           <div className="absolute -bottom-7 left-1/2 -translate-x-1/2">
@@ -236,7 +236,7 @@ export default function PWAInstallBanner() {
         </p>
       </div>
 
-      <div className="flex flex-col items-center px-6 pb-8 gap-3" style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 0px))" }}>
+      <div className="flex flex-col items-center px-6 pb-8 gap-3" style={{ paddingBottom: "max(2rem, var(--safe-bottom, 0px))" }}>
         <button
           onClick={dismiss}
           className="w-full max-w-xs py-4 bg-accent-orange text-white text-base font-black rounded-2xl shadow-lg shadow-accent-orange/30 active:scale-95 transition-transform"

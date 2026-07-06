@@ -271,7 +271,7 @@ export default function PostPage() {
       {/* Header — back button left, post button right */}
       <div
         className="shrink-0 flex items-center justify-between px-2 py-2 bg-forest/95 backdrop-blur-md border-b border-forest-light/20"
-        style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}
+        style={{ paddingTop: "max(0.5rem, var(--safe-top, 0px))" }}
       >
         <button
           onClick={() => router.back()}

@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center h-dvh px-6 geo-bg" style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="flex flex-col items-center justify-center h-dvh px-6 geo-bg" style={{ paddingTop: "var(--safe-top, 0px)", paddingBottom: "var(--safe-bottom, 0px)" }}>
         {/* Logo area */}
         <div className="flex-1 flex flex-col items-center justify-center">
           <img

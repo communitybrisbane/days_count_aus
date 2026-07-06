@@ -39,7 +39,7 @@ export default function ImageCropper({
       {/* Top bar: Cancel left, Confirm right */}
       <div
         className="shrink-0 flex items-center justify-between px-4 py-3 z-10"
-        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+        style={{ paddingTop: "max(0.75rem, var(--safe-top, 0px))" }}
       >
         <button
           onClick={onCancel}

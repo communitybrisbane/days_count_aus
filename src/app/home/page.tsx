@@ -170,7 +170,7 @@ export default function HomePage() {
       )}
 
       {/* ===== 1. Hero Header — Fixed, Day Count with polygon overlay ===== */}
-      <div className="shrink-0 relative text-white pb-7 px-5 rounded-b-[1.5rem] overflow-hidden" style={{ paddingTop: "max(0.875rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="shrink-0 relative text-white pb-7 px-5 rounded-b-[1.5rem] overflow-hidden" style={{ paddingTop: "max(0.875rem, var(--safe-top, 0px))" }}>
         {/* Polygon gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-accent-orange via-accent-orange-light to-accent-orange-dark" />
         {/* Geometric polygon overlays */}

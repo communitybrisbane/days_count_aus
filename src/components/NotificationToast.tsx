@@ -54,7 +54,7 @@ export default function NotificationToast({ show, title, body, link, type, icon,
               ? "bg-gradient-to-r from-red-50 to-white border-red-200"
               : "bg-white border-gray-100"
           }`}
-          style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+          style={{ paddingTop: "max(0.75rem, var(--safe-top, 0px))" }}
         >
           <div className="flex items-center gap-3 px-4 pb-3">
             {/* Icon */}

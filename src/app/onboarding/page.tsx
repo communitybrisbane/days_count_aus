@@ -192,7 +192,7 @@ export default function OnboardingPage() {
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
       {/* Header: back + progress */}
-      <div className="shrink-0 px-4 pt-3 pb-2" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}>
+      <div className="shrink-0 px-4 pt-3 pb-2" style={{ paddingTop: "max(0.75rem, var(--safe-top, 0px))" }}>
         <div className="flex items-center gap-3 mb-3">
           {step > 1 ? (
             <button onClick={goBack} className="w-10 h-10 flex items-center justify-center text-gray-400 active:text-gray-700">

@@ -18,15 +18,17 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Bottom nav safe-area: only needed in installed PWA (standalone).
-   In-browser, Safari/Chrome already keep fixed elements above their own toolbar,
-   so adding env(safe-area-inset-bottom) there creates a double gap. */
+/* Safe-area insets: only needed in installed PWA (standalone).
+   In-browser, Safari/Chrome chrome (address bar / toolbar) already covers the
+   unsafe areas, so adding env(safe-area-inset-*) there creates a double gap. */
 :root {
-  --nav-safe-bottom: 0px;
+  --safe-top: 0px;
+  --safe-bottom: 0px;
 }
 @media (display-mode: standalone) {
   :root {
-    --nav-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
